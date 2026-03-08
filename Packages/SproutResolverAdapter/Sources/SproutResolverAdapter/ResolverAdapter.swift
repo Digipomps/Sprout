@@ -1,5 +1,6 @@
 import Foundation
 import SproutCrypto
+import SproutEconomics
 
 public struct StarterPurposeInterest: Codable, Equatable, Sendable {
     public var purpose: String
@@ -461,6 +462,8 @@ public struct PortholeAccessRequest: Codable, Equatable, Sendable {
     public var interests: [String]
     public var capability_grants: [String]
     public var entity_evidence_contract_id: String?
+    public var declared_deposit_rau: Int64?
+    public var pricing_contract: CloudBridgePricingContract?
 
     public init(
         scaffold_domain: String,
@@ -475,7 +478,9 @@ public struct PortholeAccessRequest: Codable, Equatable, Sendable {
         goal: String,
         interests: [String],
         capability_grants: [String],
-        entity_evidence_contract_id: String?
+        entity_evidence_contract_id: String?,
+        declared_deposit_rau: Int64? = nil,
+        pricing_contract: CloudBridgePricingContract? = nil
     ) {
         self.scaffold_domain = scaffold_domain
         self.entity_id = entity_id
@@ -490,6 +495,8 @@ public struct PortholeAccessRequest: Codable, Equatable, Sendable {
         self.interests = interests
         self.capability_grants = capability_grants
         self.entity_evidence_contract_id = entity_evidence_contract_id
+        self.declared_deposit_rau = declared_deposit_rau
+        self.pricing_contract = pricing_contract
     }
 }
 
@@ -511,6 +518,8 @@ public struct PortholeAccessContract: Codable, Equatable, Sendable {
     public var expires_at: String
     public var issued_by: String
     public var entity_evidence_contract_id: String?
+    public var declared_deposit_rau: Int64?
+    public var pricing_plan: CompiledCloudBridgePricingPlan?
     public var signature: ResolverSignatureEnvelope
 
     public init(
@@ -531,6 +540,8 @@ public struct PortholeAccessContract: Codable, Equatable, Sendable {
         expires_at: String,
         issued_by: String,
         entity_evidence_contract_id: String?,
+        declared_deposit_rau: Int64? = nil,
+        pricing_plan: CompiledCloudBridgePricingPlan? = nil,
         signature: ResolverSignatureEnvelope
     ) {
         self.contract_id = contract_id
@@ -550,6 +561,8 @@ public struct PortholeAccessContract: Codable, Equatable, Sendable {
         self.expires_at = expires_at
         self.issued_by = issued_by
         self.entity_evidence_contract_id = entity_evidence_contract_id
+        self.declared_deposit_rau = declared_deposit_rau
+        self.pricing_plan = pricing_plan
         self.signature = signature
     }
 

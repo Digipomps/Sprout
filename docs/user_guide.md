@@ -10,6 +10,8 @@ Sprout now does five things explicitly:
 4. verifies a resolver-signed entity inclusion proof
 5. obtains a signed `PortholeAccessContract` for web, CLI or native access
 
+It does not try to be the wallet UI or the billing backend. Pricing is explicit contract/policy input to bootstrap and access, not hidden background logic.
+
 ## Safe startup path (CLI)
 Mock/local path:
 ```bash
@@ -44,6 +46,8 @@ Important:
 - `--entity-link <file>` provides explicit entity-link evidence.
 - `--entity-anchor <file>` enables the file-backed anchor resolver path.
 - `--resolved-entity <id>` is only for the mock resolver and local testing.
+- `--pricing-contract <file>` attaches an explicit CloudBridge tariff contract to the access request.
+- `--deposit-rau <int64>` declares the deposit that the resolver will evaluate against the tariff contract.
 
 ## Consume porthole contracts
 Generate a web handoff descriptor:
@@ -101,6 +105,33 @@ Note:
 - the authoritative server-side resolver implementation is still an external deployment dependency
 - standard GitHub/macOS release builds do not embed live `CellProtocol` native runtime
 - native Linux scope is `sprout` + `sprout-updater`; full Linux WSS runtime is not part of the current baseline
+
+## Economics commands
+Convert accounting units:
+```bash
+.build/debug/sprout economics units --ore 200
+```
+
+Ask how a pricing contract will resolve for a given deposit:
+```bash
+.build/debug/sprout economics compile-contract \
+  --contract TestVectors/cloud_bridge_pricing_contract.example.json \
+  --deposit-rau 1500000 \
+  --requested-capabilities cap.join,cap.discover
+```
+
+Simulate top-up pressure with default Stripe domestic card fees:
+```bash
+.build/debug/sprout economics stripe-sim \
+  --topups-nok 20,50,100,300 \
+  --daily-spend-nok 5
+```
+
+Key rules:
+- RAU is the source of truth.
+- IMU and ore are views only.
+- If `deposit < min_deposit`, the resolver may only `deny` or apply the predeclared degraded capability set.
+- Rollups aggregate usage before ledger writes, so Sprout does not write one event per micro-op.
 
 Ask the updater if a specific install is allowed:
 ```bash

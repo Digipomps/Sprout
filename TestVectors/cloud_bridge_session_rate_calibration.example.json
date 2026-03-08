@@ -1,0 +1,8 @@
+{
+  "rau_per_thread_minute": 100,
+  "rau_per_gib_minute": 1000,
+  "rau_per_cpu_second": 50,
+  "rau_per_message": 3,
+  "rau_per_audit_event": 7,
+  "target_margin_bps": 2500
+}

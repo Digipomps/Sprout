@@ -2,6 +2,7 @@ import Foundation
 import SproutCore
 import SproutBridge
 import SproutCrypto
+import SproutEconomics
 import SproutResolverAdapter
 import SproutStorage
 
@@ -26,6 +27,8 @@ struct SproutCLI {
                 try runPorthole(arguments: Array(arguments.dropFirst()))
             case "verify":
                 try runVerify(arguments: Array(arguments.dropFirst()))
+            case "economics":
+                try await runEconomics(arguments: Array(arguments.dropFirst()))
             case "update":
                 try runUpdate(arguments: Array(arguments.dropFirst()))
             default:
@@ -64,6 +67,12 @@ struct SproutCLI {
         }
         let entityAnchorSnapshot = try flags["entity-anchor"].map { path in
             try JSONDecoder().decode(EntityAnchorSnapshot.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+        }
+        let pricingContract = try flags["pricing-contract"].map { path in
+            try JSONDecoder().decode(CloudBridgePricingContract.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
+        }
+        let declaredDepositRAU = try flags["deposit-rau"].map { value in
+            try parseInt64(value, name: "deposit-rau")
         }
 
         let auditPath = flags["audit"] ?? ".sprout/audit.log"
@@ -152,7 +161,11 @@ struct SproutCLI {
             domain: domain,
             requestedPortholeKind: requestedPortholeKind,
             purposeGoal: BootstrapPurposeGoal(purpose: purpose, goal: goal, interests: interests),
-            starterAuthPayload: starterPayload
+            starterAuthPayload: starterPayload,
+            economics: BootstrapEconomicsContext(
+                declared_deposit_rau: declaredDepositRAU,
+                pricing_contract: pricingContract
+            )
         )
 
         let result = await stateMachine.run(initialContext: context)
@@ -167,11 +180,13 @@ struct SproutCLI {
             scaffold_admin_public_key: result.context.scaffoldAdminIdentity?.admin_public_key,
             porthole_contract_id: result.context.portholeAccessContract?.contract_id,
             porthole_protocol: result.context.portholeAccessContract?.porthole_protocol.rawValue,
+            declared_deposit_rau: result.context.portholeAccessContract?.declared_deposit_rau,
+            pricing_outcome: result.context.portholeAccessContract?.pricing_plan?.outcome.rawValue,
             error: result.error.map { String(describing: $0) }
         )
 
         print(String(data: try JSONEncoder.pretty.encode(output), encoding: .utf8) ?? "{}")
-        if result.finalState != .done {
+        if result.finalState != SproutBootstrapState.done {
             exit(2)
         }
     }
@@ -296,6 +311,11 @@ struct SproutCLI {
             exit(valid ? 0 : 2)
         }
 
+        if let _ = try? JSONDecoder().decode(CloudBridgePricingContract.self, from: data) {
+            print("CloudBridgePricingContract parsed")
+            exit(0)
+        }
+
         if let _ = try? JSONDecoder().decode(UpdateGrantPolicy.self, from: data) {
             print("UpdateGrantPolicy parsed")
             exit(0)
@@ -328,6 +348,85 @@ struct SproutCLI {
         case let .deny(reason):
             print("update denied: \(reason)")
             exit(2)
+        }
+    }
+
+    private static func runEconomics(arguments: [String]) async throws {
+        guard let subcommand = arguments.first else {
+            throw CLIError.invalidArguments("Expected: economics units|compile-contract|stripe-sim|rollup|suggest-rate")
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+
+        switch subcommand {
+        case "units":
+            let amount: RAUAmount
+            if let rau = flags["rau"] {
+                amount = RAUAmount(try parseInt64(rau, name: "rau"))
+            } else if let imu = flags["imu"] {
+                amount = .fromIMU(try parseInt64(imu, name: "imu"))
+            } else if let ore = flags["ore"] {
+                amount = .fromOre(try parseInt64(ore, name: "ore"))
+            } else if let nok = flags["nok"] {
+                amount = .fromNOK(try parseInt64(nok, name: "nok"))
+            } else {
+                throw CLIError.invalidArguments("economics units requires --rau, --imu, --ore or --nok")
+            }
+            try emitJSON(UnitConversionOutput(rau: amount.rawValue, imu: amount.imuView, ore: amount.oreView, nok: amount.nokView), outPath: flags["out"])
+        case "compile-contract":
+            let contractPath = try requiredFlag("contract", flags)
+            let contract = try JSONDecoder.economics.decode(
+                CloudBridgePricingContract.self,
+                from: Data(contentsOf: URL(fileURLWithPath: contractPath))
+            )
+            let depositRAU = try parseInt64(flags["deposit-rau"] ?? "0", name: "deposit-rau")
+            let requestedCapabilities = parseSetFlag(flags["requested-capabilities"])
+            let compiled = CloudBridgePricingCompiler.compile(contract: contract, declaredDepositRAU: depositRAU, requestedCapabilities: requestedCapabilities)
+            try emitJSON(compiled, outPath: flags["out"])
+            if compiled.outcome == .deny {
+                exit(2)
+            }
+        case "stripe-sim":
+            let topUps = parseSetFlag(flags["topups-nok"] ?? "20,50,100,300").compactMap { Int64($0) }
+            let dailySpendNOK = try parseInt64(flags["daily-spend-nok"] ?? "5", name: "daily-spend-nok")
+            let results = StripeTopUpSimulator.simulate(topUpNOK: topUps, dailySpendOre: dailySpendNOK * 100)
+            try emitJSON(results, outPath: flags["out"])
+        case "rollup":
+            let usagePath = try requiredFlag("usage", flags)
+            let deltas = try JSONDecoder.economics.decode(
+                [CloudBridgeUsageDelta].self,
+                from: Data(contentsOf: URL(fileURLWithPath: usagePath))
+            )
+            let pricingContract = try flags["contract"].map { path in
+                try JSONDecoder.economics.decode(
+                    CloudBridgePricingContract.self,
+                    from: Data(contentsOf: URL(fileURLWithPath: path))
+                )
+            }
+            let aggregator = CloudBridgeRollupAggregator(pricingContract: pricingContract)
+            var entries: [CloudBridgeLedgerEntry] = []
+            for delta in deltas {
+                entries.append(contentsOf: await aggregator.record(delta))
+            }
+            entries.append(contentsOf: await aggregator.close())
+            try emitJSON(entries, outPath: flags["out"])
+        case "suggest-rate":
+            let recordsPath = try requiredFlag("records", flags)
+            let records = try JSONDecoder.economics.decode(
+                [CloudBridgeSessionRecord].self,
+                from: Data(contentsOf: URL(fileURLWithPath: recordsPath))
+            )
+            let calibration = SessionRateCalibration(
+                rau_per_thread_minute: try parseInt64(flags["rau-per-thread-minute"] ?? "100000", name: "rau-per-thread-minute"),
+                rau_per_gib_minute: try parseInt64(flags["rau-per-gib-minute"] ?? "1000000", name: "rau-per-gib-minute"),
+                rau_per_cpu_second: try parseInt64(flags["rau-per-cpu-second"] ?? "50000", name: "rau-per-cpu-second"),
+                rau_per_message: try parseInt64(flags["rau-per-message"] ?? "1000", name: "rau-per-message"),
+                rau_per_audit_event: try parseInt64(flags["rau-per-audit-event"] ?? "2000", name: "rau-per-audit-event"),
+                target_margin_bps: try parseInt64(flags["target-margin-bps"] ?? "2500", name: "target-margin-bps")
+            )
+            let suggestion = SessionRateEstimator.suggest(records: records, calibration: calibration)
+            try emitJSON(suggestion, outPath: flags["out"])
+        default:
+            throw CLIError.invalidArguments("Expected: economics units|compile-contract|stripe-sim|rollup|suggest-rate")
         }
     }
 
@@ -467,6 +566,13 @@ struct SproutCLI {
         return kind
     }
 
+    private static func parseInt64(_ value: String, name: String) throws -> Int64 {
+        guard let parsed = Int64(value) else {
+            throw CLIError.invalidArguments("Invalid --\(name) value. Expected int64.")
+        }
+        return parsed
+    }
+
     private static func emitJSON<T: Encodable>(_ value: T, outPath: String?) throws {
         let data = try JSONEncoder.pretty.encode(value)
         if let outPath {
@@ -491,6 +597,11 @@ struct SproutCLI {
           sprout porthole web-bootstrap --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
           sprout porthole native-spec --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
           sprout verify <file> [--now <ISO8601>]
+          sprout economics units --rau <int64>|--imu <int64>|--ore <int64>|--nok <int64> [--out <json>]
+          sprout economics compile-contract --contract <pricing-contract.json> [--deposit-rau <int64>] [--requested-capabilities <cap1,cap2>] [--out <json>]
+          sprout economics stripe-sim [--topups-nok <20,50,100,300>] [--daily-spend-nok <int64>] [--out <json>]
+          sprout economics rollup --usage <usage-deltas.json> [--contract <pricing-contract.json>] [--out <json>]
+          sprout economics suggest-rate --records <session-records.json> [--rau-per-thread-minute <int64>] [--rau-per-gib-minute <int64>] [--rau-per-cpu-second <int64>] [--rau-per-message <int64>] [--rau-per-audit-event <int64>] [--target-margin-bps <int64>] [--out <json>]
           sprout update --policy <policy.json> --artifact <name> --hash <sha256_b64url> --version <semver> --channel <stable|beta> --trigger <pubkey-or-contract> [--auto]
         """
         print(text)
@@ -517,7 +628,16 @@ private struct BootstrapCommandOutput: Codable {
     var scaffold_admin_public_key: String?
     var porthole_contract_id: String?
     var porthole_protocol: String?
+    var declared_deposit_rau: Int64?
+    var pricing_outcome: String?
     var error: String?
+}
+
+private struct UnitConversionOutput: Codable {
+    var rau: Int64
+    var imu: Decimal
+    var ore: Decimal
+    var nok: Decimal
 }
 
 private enum CLIError: Error {

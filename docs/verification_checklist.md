@@ -11,6 +11,7 @@ Status per 2026-03-08:
 
 ## Correctness og interop
 - [ ] Alle JSON schemas validerer eksempelobjekter (JSON Schema 2020-12).
+- [ ] `CloudBridgePricingContract` schema + eksempelinstans validerer.
 - [ ] JCS canonicalization matcher RFC 8785 for de støttede datatypene, og avviser unsupported numbers deterministisk.
 - [ ] Golden test vectors: signatur og sha256 matcher bit-for-bit for StarterAuthPayload, BridgeDescriptor, EntityLinkContract.
 - [ ] `EntityAnchorSnapshot` og `EntityInclusionProof` validerer mot schema og verifiserer signatur/expiry.
@@ -20,6 +21,9 @@ Status per 2026-03-08:
 - [ ] `ScaffoldAdminIdentity` blir derivert eksplisitt fra signert bridge metadata eller annen autoritativ kilde.
 - [ ] Live resolver adapter er bak eksplisitt feature flag og har tester for issuer pinning og full bootstrap happy path.
 - [ ] Negativtestene dekker: feil signatur, utløpt payload, feil domene, manglende route, capability denial, unresolved entity, invalid entity evidence, invalid inclusion proof.
+- [ ] RAU er eneste persisted accounting unit; IMU og ore er views/konverteringer.
+- [ ] Pricing compiler håndhever `min_deposit`, `max_rate`, underfunded `deny|degrade` og eventuelt always-on escrow.
+- [ ] Rollups aggregerer per `(wallet, cell, counterparty, minute)` og flushes ved terskel eller close.
 
 ## Sikkerhet og personvern
 - [ ] Ingen nettverkskall uten eksplisitt Purpose/Goal i request-context; dokumentert i code review.
@@ -31,6 +35,7 @@ Status per 2026-03-08:
 - [ ] Transport baseline TLS 1.3 (https/wss); eventuelle alternativer (HTTP/2, QUIC/HTTP3) er bak feature flags.
 - [ ] Linux release-scope er eksplisitt begrenset når transportparitet mangler; WSS på Linux er ikke implisitt støttet.
 - [ ] NSM-prinsipper brukt som sikkerhetsbaseline i THREAT_MODEL.md (risikobasert, tiltak, logging, adgangskontroll).
+- [ ] Session-overhead profiling samler bare eksplisitt operasjonell kostdata for outbound-sesjoner, ikke skjult atferdssporing eller inferred interests.
 
 ## Distribusjon og supply chain
 - [ ] Reproducible build-prosedyre dokumentert og kan kjøres av tredjepart; target: bit-for-bit for CLI.
@@ -41,3 +46,10 @@ Status per 2026-03-08:
 - [ ] Update behavior er policy-gated via UpdateGrantPolicy (default deny), og tester verifiserer at updater aldri overskrider eksplisitte grants.
 - [ ] Sprout kan distribueres uten self-update som default for CLI/server; hvis custom updater aktiveres, er den policy-gated og separert fra bootstrap trust path.
 - [ ] Hvis macOS-app distribueres utenfor App Store: notarization og code signing er del av release-prosessen og dokumentert.
+
+## Economics og tariff
+- [ ] CloudBridge session cost profiler logger per outbound-tilkobling: tråder, RSS/heap delta, CPU-tid, meldingsmengde og varighet.
+- [ ] `economics suggest-rate` kan foreslå session-minute rate fra målte records og eksplisitte kalibreringskonstanter.
+- [ ] Economics test vectors dekker `rollup` og `suggest-rate` med bit-for-bit expected outputs.
+- [ ] Stripe-overlay scenarioer finnes for top-ups `20/50/100/300 NOK`.
+- [ ] Edge pricing holder stateless worker costs og stateful residency costs adskilt.

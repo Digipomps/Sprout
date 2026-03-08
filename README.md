@@ -6,6 +6,7 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 - P0 is implemented: deterministic bootstrap state machine, JCS subset, Ed25519, strict base64url, schemas, OpenAPI, golden vectors and CLI reference flow.
 - P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI signing.
 - Native Linux baseline is now part of the repo scope for `sprout` and `sprout-updater`: Ubuntu 22.04 `x86_64`, no Docker required for build or deployment.
+- Economics baseline is implemented: RAU is the storage unit, IMU and ore are derived views, resolver-enforced pricing contracts exist, rollups aggregate micro-usage, and session profiling can calibrate a session-minute tariff from observed process cost.
 - Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-linux linux-x86_64`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-linux "" /tmp/sprout-dist-linux/SHA256SUMS-linux-x86_64.b64url`.
 - GitHub Actions is configured for self-contained macOS and Ubuntu 22.04 builds.
 - GitHub release `v0.1.1` is published with signed CLI artifacts and checksum manifest.
@@ -19,7 +20,7 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 - resolve the identity into an entity or stop explicitly
 - obtain a signed porthole handoff artifact
 
-It should not be the general-purpose client and should not mutate itself.
+It should not be the general-purpose client, billing backend or wallet UI, and it should not mutate itself.
 
 ## Quickstart
 Build and test:
@@ -98,6 +99,14 @@ Consume signed porthole contracts:
 .build/debug/sprout-macos
 ```
 
+Inspect and calibrate pricing:
+```bash
+.build/debug/sprout economics units --ore 200
+.build/debug/sprout economics compile-contract --contract TestVectors/cloud_bridge_pricing_contract.example.json --deposit-rau 1500000 --requested-capabilities cap.join,cap.discover
+.build/debug/sprout economics stripe-sim --topups-nok 20,50,100,300 --daily-spend-nok 5
+.build/debug/sprout economics suggest-rate --records <session-records.json>
+```
+
 `sprout-macos` in the standalone GitHub build consumes `web` contracts directly and can inspect/copy signed `native` descriptors. Live CellProtocol-native runtime is reserved for a future explicit integration path and is not part of the default release artifact.
 
 Build and verify a release bundle:
@@ -115,6 +124,7 @@ bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64ur
 
 ## Key docs
 - `docs/entity_bootstrap_and_porthole_access.md`
+- `docs/economics_and_pricing.md`
 - `docs/update_hardening_strategy.md`
 - `docs/linux_deployment.md`
 - `docs/developer_guide.md`

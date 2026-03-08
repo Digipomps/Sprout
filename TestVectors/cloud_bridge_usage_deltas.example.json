@@ -1,0 +1,32 @@
+[
+  {
+    "wallet_id": "wallet_1",
+    "cell_id": "cell.alpha",
+    "counterparty_id": "bridge.example",
+    "timestamp": "2026-03-08T14:00:10Z",
+    "message_count": 2,
+    "byte_count": 900,
+    "audit_event_count": 1,
+    "session_milliseconds": 20000
+  },
+  {
+    "wallet_id": "wallet_1",
+    "cell_id": "cell.alpha",
+    "counterparty_id": "bridge.example",
+    "timestamp": "2026-03-08T14:00:25Z",
+    "message_count": 3,
+    "byte_count": 500,
+    "audit_event_count": 1,
+    "session_milliseconds": 15000
+  },
+  {
+    "wallet_id": "wallet_1",
+    "cell_id": "cell.beta",
+    "counterparty_id": "edge.example",
+    "timestamp": "2026-03-08T14:01:05Z",
+    "message_count": 1,
+    "byte_count": 1024,
+    "audit_event_count": 0,
+    "session_milliseconds": 60000
+  }
+]

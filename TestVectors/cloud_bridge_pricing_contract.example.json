@@ -1,0 +1,20 @@
+{
+  "contract_id": "cbc_example_0001",
+  "session_fee_per_minute_rau": 3000,
+  "per_message_fee_rau": 10,
+  "per_kb_fee_rau": 20,
+  "audit_fee_per_event_rau": 20,
+  "min_deposit_rau": 500000,
+  "max_rate_rau_per_minute": 100000,
+  "underfunded_mode": "degrade",
+  "degraded_capability_grants": ["cap.discover"],
+  "requires_always_on": true,
+  "do_duration_escrow_rau": 900000,
+  "edge_pricing": {
+    "worker_request_fee_rau": 2,
+    "worker_cpu_ms_fee_rau": 1,
+    "durable_object_request_fee_rau": 3,
+    "durable_object_duration_ms_fee_rau": 1,
+    "durable_object_storage_gib_month_fee_rau": 1000
+  }
+}

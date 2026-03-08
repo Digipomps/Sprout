@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/CloudBridgePricingContract.schema.json",
+  "title": "CloudBridgePricingContract",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "session_fee_per_minute_rau",
+    "per_message_fee_rau",
+    "per_kb_fee_rau",
+    "audit_fee_per_event_rau",
+    "min_deposit_rau",
+    "max_rate_rau_per_minute",
+    "underfunded_mode",
+    "degraded_capability_grants",
+    "requires_always_on"
+  ],
+  "properties": {
+    "contract_id": { "type": "string" },
+    "session_fee_per_minute_rau": { "type": "integer" },
+    "per_message_fee_rau": { "type": "integer" },
+    "per_kb_fee_rau": { "type": "integer" },
+    "audit_fee_per_event_rau": { "type": "integer" },
+    "min_deposit_rau": { "type": "integer" },
+    "max_rate_rau_per_minute": { "type": "integer" },
+    "underfunded_mode": { "enum": ["deny", "degrade"] },
+    "degraded_capability_grants": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requires_always_on": { "type": "boolean" },
+    "do_duration_escrow_rau": { "type": ["integer", "null"] },
+    "edge_pricing": {
+      "type": ["object", "null"],
+      "properties": {
+        "worker_request_fee_rau": { "type": "integer" },
+        "worker_cpu_ms_fee_rau": { "type": "integer" },
+        "durable_object_request_fee_rau": { "type": "integer" },
+        "durable_object_duration_ms_fee_rau": { "type": "integer" },
+        "durable_object_storage_gib_month_fee_rau": { "type": "integer" }
+      },
+      "required": [
+        "worker_request_fee_rau",
+        "worker_cpu_ms_fee_rau",
+        "durable_object_request_fee_rau",
+        "durable_object_duration_ms_fee_rau",
+        "durable_object_storage_gib_month_fee_rau"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

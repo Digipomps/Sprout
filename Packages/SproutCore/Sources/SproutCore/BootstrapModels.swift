@@ -1,6 +1,7 @@
 import Foundation
 import SproutBridge
 import SproutCrypto
+import SproutEconomics
 import SproutResolverAdapter
 
 public enum SproutRuntimeProfile: String, Codable, Sendable {
@@ -103,6 +104,19 @@ public struct BootstrapEnvironmentReport: Codable, Equatable, Sendable {
     }
 }
 
+public struct BootstrapEconomicsContext: Codable, Equatable, Sendable {
+    public var declared_deposit_rau: Int64?
+    public var pricing_contract: CloudBridgePricingContract?
+
+    public init(
+        declared_deposit_rau: Int64? = nil,
+        pricing_contract: CloudBridgePricingContract? = nil
+    ) {
+        self.declared_deposit_rau = declared_deposit_rau
+        self.pricing_contract = pricing_contract
+    }
+}
+
 public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
     public var runtime: SproutRuntimeProfile
     public var domain: String
@@ -113,6 +127,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
     public var entityLinkEvidence: EntityLinkEvidence?
     public var entityResolution: EntityResolutionDecision?
     public var environmentReport: BootstrapEnvironmentReport?
+    public var economics: BootstrapEconomicsContext?
     public var discoveredBridges: [BridgeDescriptor]
     public var selectedBridge: BridgeDescriptor?
     public var scaffoldAdminIdentity: ScaffoldAdminIdentity?
@@ -131,6 +146,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         entityLinkEvidence: EntityLinkEvidence? = nil,
         entityResolution: EntityResolutionDecision? = nil,
         environmentReport: BootstrapEnvironmentReport? = nil,
+        economics: BootstrapEconomicsContext? = nil,
         discoveredBridges: [BridgeDescriptor] = [],
         selectedBridge: BridgeDescriptor? = nil,
         scaffoldAdminIdentity: ScaffoldAdminIdentity? = nil,
@@ -148,6 +164,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         self.entityLinkEvidence = entityLinkEvidence
         self.entityResolution = entityResolution
         self.environmentReport = environmentReport
+        self.economics = economics
         self.discoveredBridges = discoveredBridges
         self.selectedBridge = selectedBridge
         self.scaffoldAdminIdentity = scaffoldAdminIdentity

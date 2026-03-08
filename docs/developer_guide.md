@@ -7,6 +7,7 @@
 - `Packages/SproutTransport`: channel interfaces + HTTPS/WSS adapters + gRPC/QUIC stubs.
 - `Packages/SproutBridge`: descriptor validation, bridge manager, discovery client/mock server.
 - `Packages/SproutResolverAdapter`: resolver protocol, entity anchor snapshot, inclusion proof, scaffold admin identity, porthole access contract, mock and file-backed resolver adapters.
+- `Packages/SproutEconomics`: RAU/IMU/ore units, pricing contracts/compiler, cost profiler, rollup ledger helpers, Stripe fee overlay.
 - `Packages/SproutAppSupport`: reusable porthole client session logic and native runtime adapter/fallbacks for app consumers.
 - `Apps/sprout-cli`: reference bootstrap executable.
 - `Apps/sprout-updater`: separate policy-gated updater/verification executable.
@@ -47,7 +48,7 @@ Sprout is intentionally narrow. Its implemented responsibility is:
 6. obtain a signed `PortholeAccessContract`
 7. hand the contract off to a client-specific consumer
 
-Sprout is not the main user client. Web, CLI and native bindings consume the handoff artifacts after bootstrap.
+Sprout is not the main user client or full billing backend. Web, CLI and native bindings consume the handoff artifacts after bootstrap, while economics stays as explicit policy and measurement support.
 
 ## First-class artifacts in code
 - `BootstrapIdentity`: identity only, no embedded `entity_id`
@@ -60,6 +61,10 @@ Sprout is not the main user client. Web, CLI and native bindings consume the han
 - `WebPortholeBootstrapDescriptor`: web consumer output
 - `NativePortholeBindingDescriptor`: native consumer output
 - `PortholeClientSession`: macOS-side consumer session model for handoff artifacts
+- `CloudBridgePricingContract`: resolver-consumed tariff contract with min deposit, rate cap and optional always-on escrow
+- `CompiledCloudBridgePricingPlan`: resolver-enforced outcome of a pricing contract for a specific deposit and capability request
+- `CloudBridgeSessionRecord`: measured per-session overhead record for pricing calibration
+- `CloudBridgeRollupAggregator`: per `(wallet, cell, counterparty, minute)` rollup aggregator for ledger writes
 
 ## Key constraints in code
 - No network action before explicit purpose/goal/interests are present.
@@ -67,7 +72,54 @@ Sprout is not the main user client. Web, CLI and native bindings consume the han
 - No porthole access contract without explicit entity resolution.
 - No inclusion proof accepted unless it matches domain, identity and scaffold admin key.
 - No capability amplification between resolver capability decision and returned porthole contract.
+- No pricing-based capability amplification: underfunding may only degrade or deny, never expand access.
+- RAU is the only persisted accounting unit; IMU and ore are derived views.
 - `sprout` never mutates installed binaries; update behavior is separated into `sprout-updater`.
+
+## Economics model
+- `RAU` is the int64 source of truth in ledger, wallet and pricing enforcement.
+- `IMU` and `ore` are conversion views only.
+- Conversion constants are hardcoded in code:
+  - `1 IMU = 1000 RAU`
+  - `1 ore = 10_000 IMU = 10_000_000 RAU`
+- Resolver-side pricing enforcement happens through optional fields on `PortholeAccessRequest`:
+  - `declared_deposit_rau`
+  - `pricing_contract`
+- Resolver returns:
+  - `declared_deposit_rau`
+  - `pricing_plan`
+- Underfunded behavior is explicit:
+  - `deny`
+  - `degrade` to a predeclared capability subset
+- Rollups are the default ledger write shape, not per-micro-op writes.
+- Cloudflare-style edge costs are modeled separately from generic session/message/audit fees.
+
+## Economics CLI flows
+Convert between accounting views:
+```bash
+.build/debug/sprout economics units --rau 10000000
+```
+
+Compile a pricing contract for a specific deposit:
+```bash
+.build/debug/sprout economics compile-contract \
+  --contract TestVectors/cloud_bridge_pricing_contract.example.json \
+  --deposit-rau 1500000 \
+  --requested-capabilities cap.join,cap.discover
+```
+
+Simulate Stripe top-up pressure:
+```bash
+.build/debug/sprout economics stripe-sim \
+  --topups-nok 20,50,100,300 \
+  --daily-spend-nok 5
+```
+
+Suggest a session-minute tariff from measured records:
+```bash
+.build/debug/sprout economics suggest-rate \
+  --records <session-records.json>
+```
 
 ## CLI reference flows
 Bootstrap with file-backed anchor resolver:

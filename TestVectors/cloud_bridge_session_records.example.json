@@ -1,0 +1,38 @@
+[
+  {
+    "session_id": "10000000-0000-0000-0000-000000000001",
+    "endpoint": "wss://bridge.example/cell",
+    "counterparty_id": "bridge.example",
+    "started_at": "2026-03-08T14:00:00Z",
+    "ended_at": "2026-03-08T14:01:00Z",
+    "duration_milliseconds": 60000,
+    "outbound_message_count": 4,
+    "inbound_message_count": 6,
+    "outbound_bytes": 1024,
+    "inbound_bytes": 2048,
+    "audit_event_count": 2,
+    "thread_delta": 1,
+    "rss_delta_bytes": 1073741824,
+    "heap_delta_bytes": 1048576,
+    "user_cpu_microseconds_delta": 700000,
+    "system_cpu_microseconds_delta": 300000
+  },
+  {
+    "session_id": "10000000-0000-0000-0000-000000000002",
+    "endpoint": "wss://bridge.example/cell",
+    "counterparty_id": "bridge.example",
+    "started_at": "2026-03-08T15:00:00Z",
+    "ended_at": "2026-03-08T15:01:00Z",
+    "duration_milliseconds": 60000,
+    "outbound_message_count": 4,
+    "inbound_message_count": 6,
+    "outbound_bytes": 1024,
+    "inbound_bytes": 2048,
+    "audit_event_count": 2,
+    "thread_delta": 1,
+    "rss_delta_bytes": 1073741824,
+    "heap_delta_bytes": 1048576,
+    "user_cpu_microseconds_delta": 700000,
+    "system_cpu_microseconds_delta": 300000
+  }
+]

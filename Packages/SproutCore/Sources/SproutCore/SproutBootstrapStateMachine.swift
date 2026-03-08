@@ -1,5 +1,6 @@
 import Foundation
 import SproutBridge
+import SproutEconomics
 import SproutStorage
 import SproutResolverAdapter
 
@@ -181,7 +182,9 @@ public actor SproutBootstrapStateMachine {
                 goal: purposeGoal.goal,
                 interests: purposeGoal.interests,
                 capability_grants: capabilities.granted,
-                entity_evidence_contract_id: context.entityLinkEvidence?.contract.contract_id
+                entity_evidence_contract_id: context.entityLinkEvidence?.contract.contract_id,
+                declared_deposit_rau: context.economics?.declared_deposit_rau,
+                pricing_contract: context.economics?.pricing_contract
             )
             let portholeDecision = try await dependencies.resolver.issuePortholeAccessContract(accessRequest)
             guard portholeDecision.allowed else {
@@ -314,8 +317,25 @@ public actor SproutBootstrapStateMachine {
         guard contract.entity_evidence_contract_id == request.entity_evidence_contract_id else {
             throw BootstrapError.invalidPortholeAccessContract("contract evidence reference does not match request")
         }
+        guard contract.declared_deposit_rau == request.declared_deposit_rau else {
+            throw BootstrapError.invalidPortholeAccessContract("contract declared deposit does not match request")
+        }
         if let expectedResolverPublicKey, contract.issued_by != expectedResolverPublicKey {
             throw BootstrapError.invalidPortholeAccessContract("contract issuer does not match entity inclusion proof issuer")
+        }
+
+        if let requestPricingContract = request.pricing_contract {
+            guard let pricingPlan = contract.pricing_plan else {
+                throw BootstrapError.invalidPortholeAccessContract("contract pricing plan missing for priced request")
+            }
+            guard pricingPlan.contract_id == requestPricingContract.contract_id else {
+                throw BootstrapError.invalidPortholeAccessContract("contract pricing plan does not reference requested pricing contract")
+            }
+            guard pricingPlan.declared_deposit_rau == max(request.declared_deposit_rau ?? 0, 0) else {
+                throw BootstrapError.invalidPortholeAccessContract("contract pricing plan deposit does not match request")
+            }
+        } else if contract.pricing_plan != nil {
+            throw BootstrapError.invalidPortholeAccessContract("unexpected pricing plan returned for unpriced request")
         }
 
         let grantedSet = Set(grantedCapabilities)

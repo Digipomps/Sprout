@@ -96,6 +96,21 @@
 - Rationale: macOS and Linux artifacts must not collide in checksum, manifest or published asset names.
 - Notes: CI and release workflows now emit platform-specific bundle names and checksum files.
 
+### D-019: RAU is the sole accounting source of truth
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: persisted balances and tariffs must be integer and deterministic across runtimes; presentation units must not drift the ledger.
+- Notes: IMU and ore are conversion views only and are not stored as canonical ledger values.
+
+### D-020: CloudBridge pricing is hybrid and resolver-enforced
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: bridge access needs an explicit tariff that can degrade or deny access before runtime costs escape policy bounds.
+- Notes: pricing contract currently includes session-minute, per-message, per-kilobyte, per-audit-event, min deposit, max rate and optional always-on escrow.
+
+### D-021: Rollups are the default ledger write shape
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: micro-op writes are too expensive and noisy for billing/audit; aggregation by `(wallet, cell, counterparty, minute)` is the safer baseline.
+- Notes: flush happens on threshold or close; finer-grained audit trails still belong in dedicated audit logs, not the billing ledger.
+
 ## Open Questions (OPEN)
 
 ### OQ-001: Hosting default

@@ -4,6 +4,7 @@ import PackageDescription
 var products: [Product] = [
     .library(name: "SproutCore", targets: ["SproutCore"]),
     .library(name: "SproutCrypto", targets: ["SproutCrypto"]),
+    .library(name: "SproutEconomics", targets: ["SproutEconomics"]),
     .library(name: "SproutStorage", targets: ["SproutStorage"]),
     .library(name: "SproutTransport", targets: ["SproutTransport"]),
     .library(name: "SproutBridge", targets: ["SproutBridge"]),
@@ -23,6 +24,11 @@ var targets: [Target] = [
             path: "Packages/SproutCrypto/Sources/SproutCrypto"
         ),
         .target(
+            name: "SproutEconomics",
+            dependencies: ["SproutTransport"],
+            path: "Packages/SproutEconomics/Sources/SproutEconomics"
+        ),
+        .target(
             name: "SproutStorage",
             dependencies: ["SproutCrypto"],
             path: "Packages/SproutStorage/Sources/SproutStorage"
@@ -34,7 +40,7 @@ var targets: [Target] = [
         ),
         .target(
             name: "SproutResolverAdapter",
-            dependencies: ["SproutCrypto"],
+            dependencies: ["SproutCrypto", "SproutEconomics"],
             path: "Packages/SproutResolverAdapter/Sources/SproutResolverAdapter"
         ),
         .target(
@@ -69,6 +75,7 @@ var targets: [Target] = [
             dependencies: [
                 "SproutCore",
                 "SproutCrypto",
+                "SproutEconomics",
                 "SproutBridge",
                 "SproutResolverAdapter",
                 "SproutStorage"
@@ -89,10 +96,16 @@ var targets: [Target] = [
             path: "Tests/SproutCryptoTests"
         ),
         .testTarget(
+            name: "SproutEconomicsTests",
+            dependencies: ["SproutEconomics"],
+            path: "Tests/SproutEconomicsTests"
+        ),
+        .testTarget(
             name: "SproutCoreTests",
             dependencies: [
                 "SproutCore",
                 "SproutCrypto",
+                "SproutEconomics",
                 "SproutBridge",
                 "SproutResolverAdapter",
                 "SproutStorage",

@@ -32,6 +32,10 @@ final class SchemaValidationTests: XCTestCase {
         try validate(vector: "TestVectors/porthole_access_contract.example.json", schema: "Schemas/PortholeAccessContract.schema.json")
     }
 
+    func testCloudBridgePricingContractVectorMatchesSchema() throws {
+        try validate(vector: "TestVectors/cloud_bridge_pricing_contract.example.json", schema: "Schemas/CloudBridgePricingContract.schema.json")
+    }
+
     func testGeneratedEntityAnchorSnapshotMatchesSchema() throws {
         let snapshot = try ResolverFixtureFactory.makeSignedEntityAnchorSnapshot(
             identities: [

@@ -1,0 +1,32 @@
+[
+  {
+    "amount_rau" : 3130,
+    "audit_event_count" : 2,
+    "byte_count" : 1400,
+    "cell_id" : "cell.alpha",
+    "counterparty_id" : "bridge.example",
+    "created_at" : "2026-03-08T14:00:25Z",
+    "description" : "rollup for cell.alpha -> bridge.example @ 2026-03-08T14:00:00Z",
+    "entry_id" : "00000000-0000-0000-0000-000000000001",
+    "kind" : "rollup",
+    "message_count" : 5,
+    "minute_bucket" : "2026-03-08T14:00:00Z",
+    "session_milliseconds" : 35000,
+    "wallet_id" : "wallet_1"
+  },
+  {
+    "amount_rau" : 3030,
+    "audit_event_count" : 0,
+    "byte_count" : 1024,
+    "cell_id" : "cell.beta",
+    "counterparty_id" : "edge.example",
+    "created_at" : "2026-03-08T14:01:05Z",
+    "description" : "rollup for cell.beta -> edge.example @ 2026-03-08T14:01:00Z",
+    "entry_id" : "00000000-0000-0000-0000-000000000002",
+    "kind" : "rollup",
+    "message_count" : 1,
+    "minute_bucket" : "2026-03-08T14:01:00Z",
+    "session_milliseconds" : 60000,
+    "wallet_id" : "wallet_1"
+  }
+]

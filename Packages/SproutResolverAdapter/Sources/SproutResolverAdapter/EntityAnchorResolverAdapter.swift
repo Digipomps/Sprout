@@ -224,6 +224,15 @@ public actor EntityAnchorResolverAdapter: SproutResolverAdapter {
             )
         }
 
+        let pricingEnforcement = PortholePricingEnforcer.evaluate(request)
+        if let denialReason = pricingEnforcement.denialReason {
+            return PortholeAccessDecision(
+                allowed: false,
+                contract: nil,
+                reason: denialReason
+            )
+        }
+
         let issuedAt = now()
         let issuedAtString = iso8601String(issuedAt)
         let expiresAtString = iso8601String(issuedAt.addingTimeInterval(300))
@@ -239,7 +248,7 @@ public actor EntityAnchorResolverAdapter: SproutResolverAdapter {
             bridge_endpoint: request.bridge_endpoint,
             client_kind: request.client_kind,
             porthole_protocol: request.porthole_protocol,
-            capability_grants: request.capability_grants.sorted(),
+            capability_grants: pricingEnforcement.effectiveCapabilityGrants.sorted(),
             purpose: request.purpose,
             goal: request.goal,
             interests: request.interests.sorted(),
@@ -247,6 +256,8 @@ public actor EntityAnchorResolverAdapter: SproutResolverAdapter {
             expires_at: expiresAtString,
             issued_by: issuerPublicKeyBase64URL,
             entity_evidence_contract_id: request.entity_evidence_contract_id,
+            declared_deposit_rau: request.declared_deposit_rau,
+            pricing_plan: pricingEnforcement.pricingPlan,
             signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
         )
 
