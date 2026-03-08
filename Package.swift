@@ -1,29 +1,20 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
-let package = Package(
-    name: "sprout",
-    platforms: [
-        .macOS(.v13),
-        .iOS(.v16)
-    ],
-    products: [
-        .library(name: "SproutCore", targets: ["SproutCore"]),
-        .library(name: "SproutCrypto", targets: ["SproutCrypto"]),
-        .library(name: "SproutStorage", targets: ["SproutStorage"]),
-        .library(name: "SproutTransport", targets: ["SproutTransport"]),
-        .library(name: "SproutBridge", targets: ["SproutBridge"]),
-        .library(name: "SproutResolverAdapter", targets: ["SproutResolverAdapter"]),
-        .library(name: "SproutAppSupport", targets: ["SproutAppSupport"]),
-        .executable(name: "sprout-cli", targets: ["sproutCLI"]),
-        .executable(name: "sprout", targets: ["sproutCLI"]),
-        .executable(name: "sprout-updater", targets: ["sproutUpdater"]),
-        .executable(name: "sprout-macos", targets: ["sproutMacOS"])
-    ],
-    dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.15.1")
-    ],
-    targets: [
+var products: [Product] = [
+    .library(name: "SproutCore", targets: ["SproutCore"]),
+    .library(name: "SproutCrypto", targets: ["SproutCrypto"]),
+    .library(name: "SproutStorage", targets: ["SproutStorage"]),
+    .library(name: "SproutTransport", targets: ["SproutTransport"]),
+    .library(name: "SproutBridge", targets: ["SproutBridge"]),
+    .library(name: "SproutResolverAdapter", targets: ["SproutResolverAdapter"]),
+    .library(name: "SproutAppSupport", targets: ["SproutAppSupport"]),
+    .executable(name: "sprout-cli", targets: ["sproutCLI"]),
+    .executable(name: "sprout", targets: ["sproutCLI"]),
+    .executable(name: "sprout-updater", targets: ["sproutUpdater"])
+]
+
+var targets: [Target] = [
         .target(
             name: "SproutCrypto",
             dependencies: [
@@ -92,11 +83,6 @@ let package = Package(
             ],
             path: "Apps/sprout-updater/Sources/sprout-updater"
         ),
-        .executableTarget(
-            name: "sproutMacOS",
-            dependencies: ["SproutAppSupport"],
-            path: "Apps/sprout-macos/Sources/sprout-macos"
-        ),
         .testTarget(
             name: "SproutCryptoTests",
             dependencies: ["SproutCrypto"],
@@ -129,5 +115,28 @@ let package = Package(
             dependencies: ["SproutBridge", "SproutCrypto"],
             path: "Tests/SproutBridgeTests"
         )
-    ]
+]
+
+#if os(macOS)
+products.append(.executable(name: "sprout-macos", targets: ["sproutMacOS"]))
+targets.append(
+    .executableTarget(
+        name: "sproutMacOS",
+        dependencies: ["SproutAppSupport"],
+        path: "Apps/sprout-macos/Sources/sprout-macos"
+    )
+)
+#endif
+
+let package = Package(
+    name: "sprout",
+    platforms: [
+        .macOS(.v13),
+        .iOS(.v16)
+    ],
+    products: products,
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.15.1")
+    ],
+    targets: targets
 )
