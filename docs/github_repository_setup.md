@@ -14,6 +14,7 @@ Dette dokumentet beskriver det faktiske GitHub-oppsettet for `Digipomps/Sprout` 
 ## Tags og release-linje
 - `v0.1.0` finnes og peker til den første baseline-commiten før workflow-fiksene.
 - `v0.1.1` er publisert fra den første grønne, self-contained GitHub Actions-pipen.
+- Neste release-linje er konfigurert til å publisere plattform-suffikserte macOS- og Linux CLI-artefakter fra samme workflow.
 - Release trigger:
   - automatisk via `git push origin <tag>`
   - alternativt via `gh workflow run release.yml -f release_tag=<tag>`
@@ -22,15 +23,25 @@ Dette dokumentet beskriver det faktiske GitHub-oppsettet for `Digipomps/Sprout` 
 
 ### CI
 - Workflow: `.github/workflows/ci.yml`
-- Jobbnavn / required check: `build-test-release`
+- Jobbnavn / anbefalte required checks:
+  - `build-test-macos`
+  - `build-test-linux`
 - Validerer:
-  - `swift build --product sprout`
-  - `swift build --product sprout-updater`
-  - `swift build --product sprout-macos`
-  - `swift test`
-  - `zsh Scripts/build_release_bundle.sh dist`
-  - `zsh Scripts/sign_release_bundle.sh dist`
-  - `zsh Scripts/verify_release_bundle.sh dist`
+  - macOS:
+    - `swift build --product sprout`
+    - `swift build --product sprout-updater`
+    - `swift build --product sprout-macos`
+    - `swift test`
+    - `bash Scripts/build_release_bundle.sh dist macos-<arch>`
+    - `bash Scripts/sign_release_bundle.sh dist dist/SHA256SUMS-macos-<arch>.b64url`
+    - `bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-macos-<arch>.b64url`
+  - Linux:
+    - `swift build --product sprout`
+    - `swift build --product sprout-updater`
+    - `swift test`
+    - `bash Scripts/build_release_bundle.sh dist linux-<arch>`
+    - `bash Scripts/sign_release_bundle.sh dist dist/SHA256SUMS-linux-<arch>.b64url`
+    - `bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-<arch>.b64url`
 
 ### Release
 - Workflow: `.github/workflows/release.yml`
@@ -38,13 +49,21 @@ Dette dokumentet beskriver det faktiske GitHub-oppsettet for `Digipomps/Sprout` 
   - tags `v*`
   - `workflow_dispatch`
 - Publiserer:
-  - `sprout`
-  - `sprout-updater`
-  - `SHA256SUMS.b64url`
-  - `release-manifest.json`
-  - `sprout.spdx.json`
+  - macOS CLI artifacts:
+    - `sprout-macos-<arch>`
+    - `sprout-updater-macos-<arch>`
+    - `release-manifest-macos-<arch>.json`
+    - `SHA256SUMS-macos-<arch>.b64url`
+    - `sprout-macos-<arch>.spdx.json`
+  - Linux CLI artifacts:
+    - `sprout-linux-<arch>`
+    - `sprout-updater-linux-<arch>`
+    - `release-manifest-linux-<arch>.json`
+    - `SHA256SUMS-linux-<arch>.b64url`
+    - `sprout-linux-<arch>.spdx.json`
   - cosign-signaturer hvis generert
   - GPG-signatur på checksum-fil hvis secrets er satt
+- `sprout-macos`-appen bygges i macOS-jobben, men er ikke del av `dist/`-publiseringen i dagens release-script.
 
 ## Repo-variabler og secrets
 
@@ -73,7 +92,9 @@ Anbefalt policy:
 - nekt force push
 - nekt branch deletion
 - enforce for admins
-- required status check: `build-test-release`
+- required status checks:
+  - `build-test-macos`
+  - `build-test-linux`
 
 Faktisk status:
 - forsøk på å aktivere branch protection via GitHub API returnerte `HTTP 403`
@@ -81,11 +102,14 @@ Faktisk status:
 - dette er derfor ikke implementert på repoet ennå
 
 ## Viktig releasegrense
-- GitHub-byggene er nå self-contained.
+- GitHub-byggene er self-contained.
 - Standard release-artifakter bygger ikke inn live `CellProtocol`-runtime.
-- `sprout-macos` i release-artifakter:
+- `sprout-macos` i repoet:
+  - bygges i CI
   - kjører `web` handoff
-  - kan inspisere/kopiere signed `native` descriptor
-  - tilbyr ikke live native runtime som default
+  - kan inspisere/kopiere signert `native` descriptor
+  - har egen fremtidig packaging/notarization-path utenfor dagens CLI release bundle
+- Native Linux-baseline gjelder `sprout` og `sprout-updater` på Ubuntu 22.04 `x86_64`.
+- Linux WSS-transport er ikke release-baseline ennå.
 
-Dette er bevisst for å unngå private, transitive GitHub-avhengigheter i Actions.
+Dette er bevisst for å unngå private, transitive GitHub-avhengigheter i Actions og for å holde Linux-scope smalt til det som faktisk er verifisert.

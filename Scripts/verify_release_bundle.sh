@@ -1,16 +1,34 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 set -euo pipefail
 
 dist_dir="${1:-dist}"
+artifact_path="${2:-}"
+checksum_file="${3:-}"
 
-artifact="${2:-$dist_dir/sprout}"
-checksum_file="${3:-$dist_dir/SHA256SUMS.b64url}"
+resolve_checksum_file() {
+  local dist="$1"
+  local explicit="${2:-}"
+  if [[ -n "$explicit" ]]; then
+    printf "%s" "$explicit"
+    return 0
+  fi
 
-swift run sprout-updater verify-bundle --artifact-path "$artifact" --checksum-file "$checksum_file"
+  shopt -s nullglob
+  local candidates=("$dist"/SHA256SUMS*.b64url)
+  shopt -u nullglob
 
-if [[ -f "$dist_dir/SHA256SUMS.b64url.asc" ]]; then
-  gpg --verify "$dist_dir/SHA256SUMS.b64url.asc" "$dist_dir/SHA256SUMS.b64url"
-fi
+  if [[ "${#candidates[@]}" -eq 1 ]]; then
+    printf "%s" "${candidates[0]}"
+    return 0
+  fi
+
+  if [[ "${#candidates[@]}" -eq 0 ]]; then
+    echo "no checksum file found in $dist" >&2
+  else
+    echo "multiple checksum files found in $dist; pass the checksum file explicitly" >&2
+  fi
+  exit 1
+}
 
 verify_cosign_blob() {
   local artifact="$1"
@@ -30,6 +48,29 @@ verify_cosign_blob() {
   fi
 }
 
-verify_cosign_blob "$dist_dir/sprout"
-verify_cosign_blob "$dist_dir/sprout-updater"
-verify_cosign_blob "$dist_dir/SHA256SUMS.b64url"
+resolved_checksum_file="$(resolve_checksum_file "$dist_dir" "$checksum_file")"
+
+artifacts=()
+if [[ -n "$artifact_path" ]]; then
+  artifacts=("$artifact_path")
+else
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    file_name="$(awk '{print $2}' <<<"$line" | tr -d '*')"
+    artifacts+=("$dist_dir/$file_name")
+  done < "$resolved_checksum_file"
+fi
+
+for artifact in "${artifacts[@]}"; do
+  swift run sprout-updater verify-bundle --artifact-path "$artifact" --checksum-file "$resolved_checksum_file"
+done
+
+asc_file="${resolved_checksum_file}.asc"
+if [[ -f "$asc_file" ]]; then
+  gpg --verify "$asc_file" "$resolved_checksum_file"
+fi
+
+for artifact in "${artifacts[@]}"; do
+  verify_cosign_blob "$artifact"
+done
+verify_cosign_blob "$resolved_checksum_file"

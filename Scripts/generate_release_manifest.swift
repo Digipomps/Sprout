@@ -1,9 +1,4 @@
 import Foundation
-#if canImport(CryptoKit)
-import CryptoKit
-#else
-import Crypto
-#endif
 
 struct ReleaseArtifact: Codable {
     let name: String
@@ -33,7 +28,7 @@ let artifacts: [ReleaseArtifact] = try artifactPaths.map { path in
     return ReleaseArtifact(
         name: url.lastPathComponent,
         size_bytes: data.count,
-        sha256_b64url: base64url(Data(SHA256.hash(data: data)))
+        sha256_b64url: try sha256Base64URL(for: url)
     )
 }
 
@@ -57,4 +52,96 @@ func base64url(_ data: Data) -> String {
         .replacingOccurrences(of: "+", with: "-")
         .replacingOccurrences(of: "/", with: "_")
         .replacingOccurrences(of: "=", with: "")
+}
+
+func sha256Base64URL(for url: URL) throws -> String {
+    let hexDigest = try sha256HexDigest(for: url)
+    return base64url(try dataFromHex(hexDigest))
+}
+
+func sha256HexDigest(for url: URL) throws -> String {
+    let candidates: [[String]] = [
+        ["shasum", "-a", "256", url.path],
+        ["sha256sum", url.path],
+        ["openssl", "dgst", "-sha256", url.path]
+    ]
+
+    for candidate in candidates {
+        do {
+            let output = try run(command: candidate)
+            if let digest = parseDigest(from: output) {
+                return digest.lowercased()
+            }
+        } catch {
+            continue
+        }
+    }
+
+    throw ManifestError.hashingToolUnavailable
+}
+
+func run(command: [String]) throws -> String {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    process.arguments = command
+
+    let stdout = Pipe()
+    let stderr = Pipe()
+    process.standardOutput = stdout
+    process.standardError = stderr
+
+    try process.run()
+    process.waitUntilExit()
+
+    let output = String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    if process.terminationStatus == 0 {
+        return output
+    }
+
+    let errorOutput = String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    throw ManifestError.commandFailed(command.joined(separator: " "), errorOutput)
+}
+
+func parseDigest(from output: String) -> String? {
+    let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+    let components = trimmed.split(whereSeparator: \.isWhitespace)
+    guard let first = components.first else {
+        return nil
+    }
+    let candidate = String(first)
+    if candidate.count == 64, candidate.allSatisfy({ $0.isHexDigit }) {
+        return candidate
+    }
+    if let range = trimmed.range(of: "= ") {
+        let digest = String(trimmed[range.upperBound...])
+        if digest.count == 64, digest.allSatisfy({ $0.isHexDigit }) {
+            return digest
+        }
+    }
+    return nil
+}
+
+func dataFromHex(_ hex: String) throws -> Data {
+    guard hex.count.isMultiple(of: 2) else {
+        throw ManifestError.invalidHexDigest(hex)
+    }
+
+    var data = Data(capacity: hex.count / 2)
+    var index = hex.startIndex
+    while index < hex.endIndex {
+        let nextIndex = hex.index(index, offsetBy: 2)
+        let byteString = hex[index..<nextIndex]
+        guard let byte = UInt8(byteString, radix: 16) else {
+            throw ManifestError.invalidHexDigest(hex)
+        }
+        data.append(byte)
+        index = nextIndex
+    }
+    return data
+}
+
+enum ManifestError: Error {
+    case hashingToolUnavailable
+    case commandFailed(String, String)
+    case invalidHexDigest(String)
 }

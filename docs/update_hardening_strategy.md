@@ -17,13 +17,13 @@ This reduces:
 Implemented now:
 - `sprout update ...` only evaluates policy and never mutates binaries.
 - `sprout-updater plan ...` produces an operator-applied install plan when policy allows it.
-- `sprout-updater verify-bundle ...` verifies artifact hash against `SHA256SUMS.b64url`.
+- `sprout-updater verify-bundle ...` verifies artifact hash against the selected `SHA256SUMS*.b64url` file.
 - `Scripts/build_release_bundle.sh` and `Scripts/verify_release_bundle.sh` provide the local release/verification path.
 - `Scripts/sign_release_bundle.sh` provides keyless cosign signing for release artifacts.
 - CI builds both binaries separately and produces:
-  - `release-manifest.json`
-  - `SHA256SUMS.b64url`
-  - `sprout.spdx.json`
+  - `release-manifest*.json`
+  - `SHA256SUMS*.b64url`
+  - `sprout*.spdx.json`
   - optional GitHub build provenance attestation
   - optional GitHub SBOM attestation
   - cosign keyless signatures
@@ -56,6 +56,13 @@ Preferred:
 If outside App Store:
 - manual installer/update path in P1
 - Sparkle only in P2 and only if grants explicitly allow it
+
+### Linux CLI/server
+Preferred:
+- native Ubuntu 22.04 `x86_64` artifact
+- operator-managed replacement after checksum/signature verification
+- no Docker required for the baseline
+- no claim of Linux WSS parity until transport support exists
 
 ## High-risk update failures to avoid
 - bootstrap binary replaces itself without explicit grant

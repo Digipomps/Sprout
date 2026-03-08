@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Tag to release, for example v0.1.0"
+        description: "Tag to release, for example v0.2.0"
         required: true
         type: string
 
@@ -17,10 +17,9 @@ permissions:
   attestations: write
 
 jobs:
-  release:
+  build-release-macos:
     runs-on: macos-latest
     env:
-      RELEASE_TAG: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
       SPROUT_GPG_PRIVATE_KEY: ${{ secrets.SPROUT_GPG_PRIVATE_KEY }}
       SPROUT_GPG_PASSPHRASE: ${{ secrets.SPROUT_GPG_PASSPHRASE }}
     steps:
@@ -29,10 +28,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Ensure tag exists for workflow dispatch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Set platform artifact names
         run: |
-          git tag --force "$RELEASE_TAG" "$GITHUB_SHA"
+          suffix="macos-$(uname -m)"
+          echo "SPROUT_RELEASE_SUFFIX=$suffix" >> "$GITHUB_ENV"
+          echo "SPROUT_CHECKSUM_FILE=dist/SHA256SUMS-$suffix.b64url" >> "$GITHUB_ENV"
+          echo "SPROUT_SBOM_FILE=dist/sprout-$suffix.spdx.json" >> "$GITHUB_ENV"
+          echo "SPROUT_ARTIFACT_SPROUT=dist/sprout-$suffix" >> "$GITHUB_ENV"
+          echo "SPROUT_ARTIFACT_UPDATER=dist/sprout-updater-$suffix" >> "$GITHUB_ENV"
 
       - name: Swift version
         run: swift --version
@@ -47,7 +50,7 @@ jobs:
         run: swift test
 
       - name: Build release bundle
-        run: zsh Scripts/build_release_bundle.sh dist
+        run: bash Scripts/build_release_bundle.sh dist "$SPROUT_RELEASE_SUFFIX"
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.7.0
@@ -55,7 +58,7 @@ jobs:
       - name: Keyless sign release bundle
         env:
           COSIGN_YES: "true"
-        run: zsh Scripts/sign_release_bundle.sh dist
+        run: bash Scripts/sign_release_bundle.sh dist "$SPROUT_CHECKSUM_FILE"
 
       - name: Optional GPG signing
         if: ${{ env.SPROUT_GPG_PRIVATE_KEY != '' }}
@@ -65,27 +68,129 @@ jobs:
           chmod 700 "$GNUPGHOME"
           printf '%s' "$SPROUT_GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
           gpg --batch --yes --pinentry-mode loopback --passphrase "$SPROUT_GPG_PASSPHRASE" \
-            --armor --detach-sign --output dist/SHA256SUMS.b64url.asc dist/SHA256SUMS.b64url
+            --armor --detach-sign --output "${SPROUT_CHECKSUM_FILE}.asc" "$SPROUT_CHECKSUM_FILE"
 
       - name: Verify release bundle
-        run: zsh Scripts/verify_release_bundle.sh dist
+        run: bash Scripts/verify_release_bundle.sh dist "" "$SPROUT_CHECKSUM_FILE"
 
       - name: Attest build provenance
         if: ${{ vars.SPROUT_ENABLE_GITHUB_ATTESTATIONS == 'true' }}
         uses: actions/attest-build-provenance@v3
         with:
           subject-path: |
-            dist/sprout
-            dist/sprout-updater
+            ${{ env.SPROUT_ARTIFACT_SPROUT }}
+            ${{ env.SPROUT_ARTIFACT_UPDATER }}
 
       - name: Attest SBOM
         if: ${{ vars.SPROUT_ENABLE_GITHUB_ATTESTATIONS == 'true' }}
         uses: actions/attest-sbom@v2
         with:
           subject-path: |
-            dist/sprout
-            dist/sprout-updater
-          sbom-path: dist/sprout.spdx.json
+            ${{ env.SPROUT_ARTIFACT_SPROUT }}
+            ${{ env.SPROUT_ARTIFACT_UPDATER }}
+          sbom-path: ${{ env.SPROUT_SBOM_FILE }}
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprout-dist-macos
+          path: dist/
+
+  build-release-linux:
+    runs-on: ubuntu-22.04
+    env:
+      SPROUT_GPG_PRIVATE_KEY: ${{ secrets.SPROUT_GPG_PRIVATE_KEY }}
+      SPROUT_GPG_PASSPHRASE: ${{ secrets.SPROUT_GPG_PASSPHRASE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "6.0"
+
+      - name: Set platform artifact names
+        run: |
+          suffix="linux-$(uname -m)"
+          echo "SPROUT_RELEASE_SUFFIX=$suffix" >> "$GITHUB_ENV"
+          echo "SPROUT_CHECKSUM_FILE=dist/SHA256SUMS-$suffix.b64url" >> "$GITHUB_ENV"
+          echo "SPROUT_SBOM_FILE=dist/sprout-$suffix.spdx.json" >> "$GITHUB_ENV"
+          echo "SPROUT_ARTIFACT_SPROUT=dist/sprout-$suffix" >> "$GITHUB_ENV"
+          echo "SPROUT_ARTIFACT_UPDATER=dist/sprout-updater-$suffix" >> "$GITHUB_ENV"
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build
+        run: |
+          swift build --product sprout
+          swift build --product sprout-updater
+
+      - name: Test
+        run: swift test
+
+      - name: Build release bundle
+        run: bash Scripts/build_release_bundle.sh dist "$SPROUT_RELEASE_SUFFIX"
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Keyless sign release bundle
+        env:
+          COSIGN_YES: "true"
+        run: bash Scripts/sign_release_bundle.sh dist "$SPROUT_CHECKSUM_FILE"
+
+      - name: Optional GPG signing
+        if: ${{ env.SPROUT_GPG_PRIVATE_KEY != '' }}
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          printf '%s' "$SPROUT_GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$SPROUT_GPG_PASSPHRASE" \
+            --armor --detach-sign --output "${SPROUT_CHECKSUM_FILE}.asc" "$SPROUT_CHECKSUM_FILE"
+
+      - name: Verify release bundle
+        run: bash Scripts/verify_release_bundle.sh dist "" "$SPROUT_CHECKSUM_FILE"
+
+      - name: Attest build provenance
+        if: ${{ vars.SPROUT_ENABLE_GITHUB_ATTESTATIONS == 'true' }}
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            ${{ env.SPROUT_ARTIFACT_SPROUT }}
+            ${{ env.SPROUT_ARTIFACT_UPDATER }}
+
+      - name: Attest SBOM
+        if: ${{ vars.SPROUT_ENABLE_GITHUB_ATTESTATIONS == 'true' }}
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: |
+            ${{ env.SPROUT_ARTIFACT_SPROUT }}
+            ${{ env.SPROUT_ARTIFACT_UPDATER }}
+          sbom-path: ${{ env.SPROUT_SBOM_FILE }}
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprout-dist-linux
+          path: dist/
+
+  publish-release:
+    needs: [build-release-macos, build-release-linux]
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag != '' && inputs.release_tag || github.ref_name }}
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sprout-dist-*
+          path: release-dist
+          merge-multiple: true
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
@@ -95,15 +200,4 @@ jobs:
           generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
-            dist/sprout
-            dist/sprout-updater
-            dist/SHA256SUMS.b64url
-            dist/SHA256SUMS.b64url.asc
-            dist/release-manifest.json
-            dist/sprout.spdx.json
-            dist/sprout.sig
-            dist/sprout.pem
-            dist/sprout-updater.sig
-            dist/sprout-updater.pem
-            dist/SHA256SUMS.b64url.sig
-            dist/SHA256SUMS.b64url.pem
+            release-dist/*

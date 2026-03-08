@@ -14,12 +14,28 @@
 - `Scripts/`: release bundle, SPDX SBOM and manifest generation.
 
 ## Build/test
+macOS workspace:
 ```bash
 swift build --product sprout
 swift build --product sprout-updater
 swift build --product sprout-macos
 swift test
 ```
+
+Linux baseline:
+```bash
+swift build --product sprout
+swift build --product sprout-updater
+swift test
+```
+
+## Linux baseline
+- Supported native Linux target: Ubuntu 22.04 `x86_64`.
+- No Docker is required for build or deployment.
+- `swift-crypto` is an explicit package dependency so `SproutCrypto` can build on Linux.
+- Current Linux release scope is `sprout` + `sprout-updater`.
+- `sprout-macos` is not part of Linux scope.
+- `WSSClient` still lacks Linux runtime support, so Linux release scope is bootstrap/update/verification first, not full transport parity.
 
 ## Current bootstrap model
 Sprout is intentionally narrow. Its implemented responsibility is:
@@ -76,9 +92,15 @@ Consume porthole contracts:
 
 Build a release bundle:
 ```bash
-zsh Scripts/build_release_bundle.sh dist
-zsh Scripts/sign_release_bundle.sh dist
-zsh Scripts/verify_release_bundle.sh dist
+bash Scripts/build_release_bundle.sh dist
+bash Scripts/sign_release_bundle.sh dist
+bash Scripts/verify_release_bundle.sh dist
+```
+
+Build a Linux-suffixed bundle:
+```bash
+bash Scripts/build_release_bundle.sh dist linux-x86_64
+bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64url
 ```
 
 ## Notes on current maturity
@@ -86,6 +108,6 @@ zsh Scripts/verify_release_bundle.sh dist
 - `HavenResolverHTTPAdapter` is implemented and tested, but authoritative HAVEN server-side resolver routes are still external to this repo.
 - `--resolved-entity` remains available only for the mock resolver path.
 - `sprout-updater` is intentionally narrow: it plans and verifies installs, but does not turn `sprout` into a self-updating binary.
-- CI can attest build provenance and SBOM, but production key management and published trust roots are still environment-dependent.
+- CI is configured for macOS and Ubuntu 22.04 and can attest build provenance and SBOM, but production key management and published trust roots are still environment-dependent.
 - Standard GitHub builds are self-contained and do not depend on the sibling `CellProtocol` repo.
 - `sprout-macos` currently ships with a standalone fallback for native contracts. A deeper CellProtocol-native runtime should return only through an explicit, versioned integration path.

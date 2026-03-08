@@ -6,29 +6,51 @@ stages: [lint, build, test, artifact, sign, verify, provenance]
 lint:
   stage: lint
   script:
-    - swift package diagnose-api-breaking-changes || true
+    - swift package dump-package > /dev/null
 
-build:
+build_macos:
   stage: build
+  tags: [macos]
   script:
     - swift build --product sprout
     - swift build --product sprout-updater
     - swift build --product sprout-macos
 
-test:
+build_linux:
+  stage: build
+  image: swift:6.0-jammy
+  script:
+    - swift build --product sprout
+    - swift build --product sprout-updater
+
+test_macos:
   stage: test
+  tags: [macos]
   script:
     - swift test
 
-artifact:
-  stage: artifact
+test_linux:
+  stage: test
+  image: swift:6.0-jammy
   script:
-    - zsh Scripts/build_release_bundle.sh dist
+    - swift test
+
+artifact_macos:
+  stage: artifact
+  tags: [macos]
+  script:
+    - bash Scripts/build_release_bundle.sh dist macos-arm64
+
+artifact_linux:
+  stage: artifact
+  image: swift:6.0-jammy
+  script:
+    - bash Scripts/build_release_bundle.sh dist linux-x86_64
 
 sign:
   stage: sign
   script:
-    - zsh Scripts/sign_release_bundle.sh dist
+    - bash Scripts/sign_release_bundle.sh dist
   rules:
     - if: '$CI_PIPELINE_SOURCE != "merge_request_event"'
 
@@ -40,5 +62,5 @@ provenance:
 verify:
   stage: verify
   script:
-    - zsh Scripts/verify_release_bundle.sh dist
+    - bash Scripts/verify_release_bundle.sh dist
 ```

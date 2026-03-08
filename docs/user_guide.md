@@ -69,9 +69,15 @@ swift build --product sprout-macos
 ## Verify release bundles and update plans
 Verify a local release bundle:
 ```bash
-zsh Scripts/build_release_bundle.sh dist
-zsh Scripts/sign_release_bundle.sh dist
-zsh Scripts/verify_release_bundle.sh dist
+bash Scripts/build_release_bundle.sh dist
+bash Scripts/sign_release_bundle.sh dist
+bash Scripts/verify_release_bundle.sh dist
+```
+
+Verify a Linux release bundle:
+```bash
+bash Scripts/build_release_bundle.sh dist linux-x86_64
+bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64url
 ```
 
 Use the live resolver path explicitly:
@@ -94,6 +100,7 @@ Note:
 - this repo contains the live resolver client path and tests
 - the authoritative server-side resolver implementation is still an external deployment dependency
 - standard GitHub/macOS release builds do not embed live `CellProtocol` native runtime
+- native Linux scope is `sprout` + `sprout-updater`; full Linux WSS runtime is not part of the current baseline
 
 Ask the updater if a specific install is allowed:
 ```bash
@@ -120,3 +127,4 @@ Ask the updater if a specific install is allowed:
 - The resolver must return a valid `EntityInclusionProof` before Sprout continues to porthole access.
 - `PortholeAccessContract` is the handoff boundary. Downstream web/CLI/native clients should use it as the access artifact.
 - Updates are not performed by `sprout`. Use `sprout-updater` and explicit grants in policy.
+- For Linux deployments, verify the platform-specific checksum file before installation. See `docs/linux_deployment.md`.

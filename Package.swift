@@ -20,10 +20,15 @@ let package = Package(
         .executable(name: "sprout-updater", targets: ["sproutUpdater"]),
         .executable(name: "sprout-macos", targets: ["sproutMacOS"])
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.15.1")
+    ],
     targets: [
         .target(
             name: "SproutCrypto",
+            dependencies: [
+                .product(name: "Crypto", package: "swift-crypto")
+            ],
             path: "Packages/SproutCrypto/Sources/SproutCrypto"
         ),
         .target(

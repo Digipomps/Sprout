@@ -32,6 +32,7 @@ Scope:
 - Actual `sprout-macos` client consuming web/native handoff.
 - Separate `sprout-updater` binary.
 - CI release bundle generation, checksum manifest, SPDX SBOM, optional GitHub attestation wiring and cosign keyless signing.
+- Native Linux baseline for `sprout` + `sprout-updater` on Ubuntu 22.04 `x86_64`.
 
 Exit criteria:
 - Anchor-backed entity resolution tests pass.
@@ -39,6 +40,7 @@ Exit criteria:
 - Web/native consumer tests pass.
 - `sprout-macos` builds and consumes signed contracts.
 - Release bundle can be built and verified locally.
+- Linux CLI/updater bundle can be built and verified locally without Docker.
 - `sprout` remains non-mutating; update actions stay in `sprout-updater`.
 
 ## P1 Next
@@ -47,12 +49,14 @@ Scope:
 - Authoritative HAVEN resolver server implementation behind the existing client contract.
 - Real iOS wrapper flows from `SproutCore`.
 - Published signed artifacts for macOS + Linux CLI.
+- Linux WSS transport parity if CLI/server runtime needs streaming bridge traffic.
 
 Exit criteria:
 - Interop tests pass across CLI <-> iOS <-> macOS for bootstrap and link flows.
 - Resolver can consume authoritative HAVEN entity anchor state and return explicit inclusion decisions.
 - Published signed artifacts verifiable from documented trust policy.
 - Resolver integration tests pass against live/staging API.
+- Linux transport parity status is explicit: either implemented or formally excluded from supported workflows.
 
 ## P2 (Planned)
 Scope:

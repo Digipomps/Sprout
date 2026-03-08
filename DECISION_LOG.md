@@ -79,6 +79,23 @@
 - Rationale: private transitive dependencies outside the Sprout repo caused GitHub Actions failures and are too brittle for release baseline.
 - Notes: standalone release builds keep web handoff and signed native descriptor handling; deeper CellProtocol-native runtime is deferred until it can be integrated through an explicit, versioned path.
 
+## 2026-03-08
+
+### D-016: Native Linux baseline is CLI/updater only, no Docker required
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: the narrowest safe Linux scope is `sprout` + `sprout-updater` on a known distro baseline, without claiming runtime parity that does not exist.
+- Notes: Ubuntu 22.04 `x86_64` is the initial supported target; `sprout-macos` is out of scope on Linux.
+
+### D-017: Linux crypto must use explicit `swift-crypto`
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: `import Crypto` on Linux must be backed by a declared dependency; implicit toolchain assumptions are too brittle for release baseline.
+- Notes: standalone release manifest generation was also decoupled from `CryptoKit`/`Crypto` so scripts stay portable.
+
+### D-018: Platform-suffixed release bundles are the release baseline
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: macOS and Linux artifacts must not collide in checksum, manifest or published asset names.
+- Notes: CI and release workflows now emit platform-specific bundle names and checksum files.
+
 ## Open Questions (OPEN)
 
 ### OQ-001: Hosting default
@@ -130,3 +147,8 @@
 - Options: GitHub OIDC keyless only / keyless + GPG checksum signing / dedicated org signing service
 - Owner: Release + Security
 - Unblock criteria: published verification policy and rotation procedure approved.
+
+### OQ-011: Linux transport parity scope
+- Options: keep Linux to bootstrap/update/verification only / implement Linux WSS / switch Linux transport to another streaming adapter
+- Owner: Networking + Platform
+- Unblock criteria: concrete supported Linux runtime workflows and transport requirements are approved.

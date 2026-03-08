@@ -5,10 +5,11 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 ## Status (2026-03-08)
 - P0 is implemented: deterministic bootstrap state machine, JCS subset, Ed25519, strict base64url, schemas, OpenAPI, golden vectors and CLI reference flow.
 - P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI signing.
-- Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `zsh Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `zsh Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`.
-- GitHub CI on `main` is green for commit `55bd7e5` and the repo is now configured for self-contained Actions builds.
+- Native Linux baseline is now part of the repo scope for `sprout` and `sprout-updater`: Ubuntu 22.04 `x86_64`, no Docker required for build or deployment.
+- Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-linux linux-x86_64`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-linux "" /tmp/sprout-dist-linux/SHA256SUMS-linux-x86_64.b64url`.
+- GitHub Actions is configured for self-contained macOS and Ubuntu 22.04 builds.
 - GitHub release `v0.1.1` is published with signed CLI artifacts and checksum manifest.
-- Still OPEN in the release scope of this repo: authoritative HAVEN server-side resolver routes, QR-based cross-device linking UX, iOS production wrapper, notarized macOS release flow, TUF hardening.
+- Still OPEN in the release scope of this repo: authoritative HAVEN server-side resolver routes, QR-based cross-device linking UX, iOS production wrapper, notarized macOS release flow, TUF hardening, and Linux WSS transport parity.
 
 ## Design boundary
 `sprout` is intentionally narrow. It should:
@@ -26,6 +27,13 @@ Build and test:
 swift build --product sprout
 swift build --product sprout-updater
 swift build --product sprout-macos
+swift test
+```
+
+On Linux, the supported baseline is the CLI/updater pair:
+```bash
+swift build --product sprout
+swift build --product sprout-updater
 swift test
 ```
 
@@ -94,14 +102,21 @@ Consume signed porthole contracts:
 
 Build and verify a release bundle:
 ```bash
-zsh Scripts/build_release_bundle.sh dist
-zsh Scripts/sign_release_bundle.sh dist
-zsh Scripts/verify_release_bundle.sh dist
+bash Scripts/build_release_bundle.sh dist
+bash Scripts/sign_release_bundle.sh dist
+bash Scripts/verify_release_bundle.sh dist
+```
+
+Build a Linux-suffixed release bundle locally:
+```bash
+bash Scripts/build_release_bundle.sh dist linux-x86_64
+bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64url
 ```
 
 ## Key docs
 - `docs/entity_bootstrap_and_porthole_access.md`
 - `docs/update_hardening_strategy.md`
+- `docs/linux_deployment.md`
 - `docs/developer_guide.md`
 - `docs/user_guide.md`
 - `docs/verification_checklist.md`
