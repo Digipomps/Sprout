@@ -13,6 +13,9 @@ permissions:
 jobs:
   build-test-release:
     runs-on: macos-latest
+    env:
+      SPROUT_GPG_PRIVATE_KEY: ${{ secrets.SPROUT_GPG_PRIVATE_KEY }}
+      SPROUT_GPG_PASSPHRASE: ${{ secrets.SPROUT_GPG_PASSPHRASE }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,10 +49,7 @@ jobs:
         run: zsh Scripts/sign_release_bundle.sh dist
 
       - name: Optional GPG signing
-        if: ${{ secrets.SPROUT_GPG_PRIVATE_KEY != '' }}
-        env:
-          SPROUT_GPG_PRIVATE_KEY: ${{ secrets.SPROUT_GPG_PRIVATE_KEY }}
-          SPROUT_GPG_PASSPHRASE: ${{ secrets.SPROUT_GPG_PASSPHRASE }}
+        if: ${{ env.SPROUT_GPG_PRIVATE_KEY != '' }}
         run: |
           export GNUPGHOME="$RUNNER_TEMP/gnupg"
           mkdir -p "$GNUPGHOME"
