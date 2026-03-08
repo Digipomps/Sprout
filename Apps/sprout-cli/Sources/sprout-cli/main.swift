@@ -33,9 +33,14 @@ struct SproutCLI {
                 exit(1)
             }
         } catch {
-            fputs("error: \(error)\n", stderr)
+            writeStandardError("error: \(error)\n")
             exit(2)
         }
+    }
+
+    private static func writeStandardError(_ message: String) {
+        let data = Data(message.utf8)
+        try? FileHandle.standardError.write(contentsOf: data)
     }
 
     private static func runBootstrap(arguments: [String]) async throws {
