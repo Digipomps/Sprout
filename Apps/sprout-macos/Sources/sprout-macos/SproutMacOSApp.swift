@@ -13,7 +13,7 @@ struct SproutMacOSApp: App {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Sprout macOS")
                         .font(.largeTitle)
-                    Text("Import a signed porthole contract and consume it as a real macOS web/native handoff client.")
+                    Text("Import a signed porthole contract and consume it as a macOS web/native handoff client.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -110,7 +110,7 @@ struct SproutMacOSApp: App {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Unsupported Contract Mode")
                                 .font(.title2)
-                            Text("This macOS client currently consumes `web` and previews `native` contracts. CLI-only contracts remain unsupported here.")
+                            Text("This macOS client currently consumes `web` contracts and can inspect `native` contracts. CLI-only contracts remain unsupported here.")
                                 .foregroundStyle(.secondary)
                         }
                         .padding(16)

@@ -20,9 +20,7 @@ let package = Package(
         .executable(name: "sprout-updater", targets: ["sproutUpdater"]),
         .executable(name: "sprout-macos", targets: ["sproutMacOS"])
     ],
-    dependencies: [
-        .package(path: "../CellProtocol")
-    ],
+    dependencies: [],
     targets: [
         .target(
             name: "SproutCrypto",
@@ -66,9 +64,7 @@ let package = Package(
             name: "SproutAppSupport",
             dependencies: [
                 "SproutCore",
-                "SproutCrypto",
-                .product(name: "CellBase", package: "CellProtocol"),
-                .product(name: "CellApple", package: "CellProtocol")
+                "SproutCrypto"
             ],
             path: "Packages/SproutAppSupport/Sources/SproutAppSupport"
         ),
@@ -93,11 +89,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "sproutMacOS",
-            dependencies: [
-                "SproutAppSupport",
-                .product(name: "CellBase", package: "CellProtocol"),
-                .product(name: "CellApple", package: "CellProtocol")
-            ],
+            dependencies: ["SproutAppSupport"],
             path: "Apps/sprout-macos/Sources/sprout-macos"
         ),
         .testTarget(

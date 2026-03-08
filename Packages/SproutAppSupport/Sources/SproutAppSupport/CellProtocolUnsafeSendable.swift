@@ -1,6 +1,6 @@
 import Foundation
 
-#if canImport(CellBase)
+#if SPROUT_ENABLE_CELLPROTOCOL_RUNTIME && canImport(CellBase)
 @preconcurrency import CellBase
 
 // CellProtocol predates strict Swift 6 sendability annotations.

@@ -7,7 +7,7 @@ import Combine
 import OpenCombine
 #endif
 
-#if canImport(CellBase) && canImport(CellApple)
+#if SPROUT_ENABLE_CELLPROTOCOL_RUNTIME && canImport(CellBase) && canImport(CellApple)
 @preconcurrency import CellBase
 @preconcurrency import CellApple
 
@@ -167,6 +167,44 @@ public final class NativePortholeBindingRuntime: ObservableObject {
         await MainActor.run {
             CellBase.defaultIdentityVault as? IdentityVault
         }
+    }
+}
+#else
+public enum NativePortholeBindingRuntimeError: Error, Equatable, Sendable {
+    case unsupportedMode
+    case descriptorUnavailable
+    case resolverUnavailable
+    case identityUnavailable
+    case connectionFailed(String)
+}
+
+@MainActor
+public final class NativePortholeBindingRuntime: ObservableObject {
+    @Published public private(set) var skeleton: Any?
+    @Published public private(set) var statusMessage = "Native runtime unavailable in standalone build"
+    @Published public private(set) var errorMessage: String?
+
+    public init() {}
+
+    public func connect(using session: PortholeClientSession) async {
+        guard session.mode == .native else {
+            errorMessage = String(describing: NativePortholeBindingRuntimeError.unsupportedMode)
+            statusMessage = "Unsupported contract mode"
+            return
+        }
+
+        guard session.nativeDescriptor != nil else {
+            errorMessage = String(describing: NativePortholeBindingRuntimeError.descriptorUnavailable)
+            statusMessage = "Missing native descriptor"
+            return
+        }
+
+        errorMessage = "This build does not embed CellProtocol. Native contracts can be inspected and copied, but live native binding requires a workspace-coupled build."
+        statusMessage = "Native runtime unavailable in standalone build"
+    }
+
+    public func disconnect() {
+        statusMessage = "Disconnected"
     }
 }
 #endif
