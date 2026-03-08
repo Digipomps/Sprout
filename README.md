@@ -7,6 +7,7 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 - P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI signing.
 - Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `zsh Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `zsh Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`.
 - GitHub CI on `main` is green for commit `55bd7e5` and the repo is now configured for self-contained Actions builds.
+- GitHub release `v0.1.1` is published with signed CLI artifacts and checksum manifest.
 - Still OPEN in the release scope of this repo: authoritative HAVEN server-side resolver routes, QR-based cross-device linking UX, iOS production wrapper, notarized macOS release flow, TUF hardening.
 
 ## Design boundary

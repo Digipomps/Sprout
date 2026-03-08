@@ -53,3 +53,6 @@ zsh Scripts/verify_release_bundle.sh dist
 ## Current repository note
 
 GitHub remote and `gh` authentication are configured for this workspace. The remaining platform caveat is GitHub attestations: on the current private Digipomps repo they must stay disabled unless the billing plan/repository support changes.
+
+Separate platform caveat:
+- branch protection on `main` cannot currently be enabled on this private repository because GitHub returns `HTTP 403` unless the repository is public or the billing plan is upgraded.

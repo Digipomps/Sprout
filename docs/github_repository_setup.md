@@ -13,7 +13,7 @@ Dette dokumentet beskriver det faktiske GitHub-oppsettet for `Digipomps/Sprout` 
 
 ## Tags og release-linje
 - `v0.1.0` finnes og peker til den første baseline-commiten før workflow-fiksene.
-- Ny publiserbar release skal tagges fra en grønn `main` etter workflow-fiksene. Bruk `v0.1.1`.
+- `v0.1.1` er publisert fra den første grønne, self-contained GitHub Actions-pipen.
 - Release trigger:
   - automatisk via `git push origin <tag>`
   - alternativt via `gh workflow run release.yml -f release_tag=<tag>`
@@ -64,7 +64,7 @@ Hvis disse ikke er satt:
 
 ## Branch protection for `main`
 
-Anbefalt og implementert policy:
+Anbefalt policy:
 - krev pull request før merge
 - krev 1 godkjenning
 - dismiss stale reviews
@@ -74,6 +74,11 @@ Anbefalt og implementert policy:
 - nekt branch deletion
 - enforce for admins
 - required status check: `build-test-release`
+
+Faktisk status:
+- forsøk på å aktivere branch protection via GitHub API returnerte `HTTP 403`
+- GitHub-respons: `Upgrade to GitHub Pro or make this repository public to enable this feature.`
+- dette er derfor ikke implementert på repoet ennå
 
 ## Viktig releasegrense
 - GitHub-byggene er nå self-contained.
