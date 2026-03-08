@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/StarterAuthPayload.schema.json",
+  "title": "StarterAuthPayload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "domain",
+    "identity_public_key",
+    "created_at",
+    "expires_at",
+    "nonce",
+    "purpose_interest",
+    "signature"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "domain": { "type": "string" },
+    "identity_public_key": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "nonce": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "purpose_interest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["purpose", "interests"],
+      "properties": {
+        "purpose": { "type": "string" },
+        "interests": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": { "type": "string", "enum": ["Ed25519"] },
+        "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/EntityLinkContract.schema.json",
+  "title": "EntityLinkContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "domain_a",
+    "pubkey_a",
+    "domain_b",
+    "pubkey_b",
+    "scope",
+    "created_at",
+    "revocation",
+    "signatures"
+  ],
+  "properties": {
+    "contract_id": { "type": "string" },
+    "domain_a": { "type": "string" },
+    "pubkey_a": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "domain_b": { "type": "string" },
+    "pubkey_b": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "scope": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "revocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["mutual", "owner-only"] }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["by_pubkey", "alg", "sig"],
+        "properties": {
+          "by_pubkey": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+          "alg": { "type": "string", "enum": ["Ed25519"] },
+          "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+        }
+      }
+    }
+  }
+}

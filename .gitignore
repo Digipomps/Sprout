@@ -1,0 +1,10 @@
+.DS_Store
+.build/
+.sprout/
+.swiftpm/
+dist/
+.tmp*
+haven_docs_for_chatgpt_*.zip
+haven_docs_plus_prompt_sources_*.zip
+**/.DS_Store
+**/xcuserdata/

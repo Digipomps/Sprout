@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/PortholeAccessContract.schema.json",
+  "title": "PortholeAccessContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "scaffold_domain",
+    "entity_id",
+    "identity_public_key",
+    "scaffold_admin_public_key",
+    "bridge_descriptor_id",
+    "bridge_endpoint",
+    "client_kind",
+    "porthole_protocol",
+    "capability_grants",
+    "purpose",
+    "goal",
+    "interests",
+    "issued_at",
+    "expires_at",
+    "issued_by",
+    "signature"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string"
+    },
+    "scaffold_domain": {
+      "type": "string"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "identity_public_key": {
+      "type": "string"
+    },
+    "scaffold_admin_public_key": {
+      "type": "string"
+    },
+    "bridge_descriptor_id": {
+      "type": "string"
+    },
+    "bridge_endpoint": {
+      "type": "string"
+    },
+    "client_kind": {
+      "type": "string",
+      "enum": ["web", "cli", "native"]
+    },
+    "porthole_protocol": {
+      "type": "string",
+      "enum": ["web", "cli", "cellprotocol"]
+    },
+    "capability_grants": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "goal": {
+      "type": "string"
+    },
+    "interests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "issued_by": {
+      "type": "string"
+    },
+    "entity_evidence_contract_id": {
+      "type": "string"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["Ed25519"]
+        },
+        "sig": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

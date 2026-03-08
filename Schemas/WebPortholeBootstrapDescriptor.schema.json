@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/WebPortholeBootstrapDescriptor.schema.json",
+  "title": "WebPortholeBootstrapDescriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "launch_url",
+    "contract_id",
+    "contract_payload_b64url",
+    "contract_sha256_b64url",
+    "scaffold_domain",
+    "entity_id",
+    "identity_public_key",
+    "headers",
+    "expires_at"
+  ],
+  "properties": {
+    "launch_url": { "type": "string" },
+    "contract_id": { "type": "string" },
+    "contract_payload_b64url": { "type": "string" },
+    "contract_sha256_b64url": { "type": "string" },
+    "scaffold_domain": { "type": "string" },
+    "entity_id": { "type": "string" },
+    "identity_public_key": { "type": "string" },
+    "headers": {
+      "type": "object"
+    },
+    "expires_at": { "type": "string", "format": "date-time" }
+  }
+}

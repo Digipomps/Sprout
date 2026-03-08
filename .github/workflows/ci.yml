@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "codex/**" ]
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build-test-release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Lint (syntax/package sanity)
+        run: swift package dump-package > /dev/null
+
+      - name: Build
+        run: |
+          swift build --product sprout
+          swift build --product sprout-updater
+          swift build --product sprout-macos
+
+      - name: Test
+        run: swift test
+
+      - name: Build release bundle
+        run: zsh Scripts/build_release_bundle.sh dist
+
+      - name: Install cosign
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Keyless sign release bundle
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          COSIGN_YES: "true"
+        run: zsh Scripts/sign_release_bundle.sh dist
+
+      - name: Optional GPG signing
+        if: ${{ secrets.SPROUT_GPG_PRIVATE_KEY != '' }}
+        env:
+          SPROUT_GPG_PRIVATE_KEY: ${{ secrets.SPROUT_GPG_PRIVATE_KEY }}
+          SPROUT_GPG_PASSPHRASE: ${{ secrets.SPROUT_GPG_PASSPHRASE }}
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          printf '%s' "$SPROUT_GPG_PRIVATE_KEY" | base64 --decode | gpg --batch --import
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$SPROUT_GPG_PASSPHRASE" \
+            --armor --detach-sign --output dist/SHA256SUMS.b64url.asc dist/SHA256SUMS.b64url
+
+      - name: Verify release bundle
+        run: zsh Scripts/verify_release_bundle.sh dist
+
+      - name: Attest build provenance
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist/sprout
+            dist/sprout-updater
+
+      - name: Attest SBOM
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: |
+            dist/sprout
+            dist/sprout-updater
+          sbom-path: dist/sprout.spdx.json
+
+      - name: Upload dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprout-dist
+          path: dist/

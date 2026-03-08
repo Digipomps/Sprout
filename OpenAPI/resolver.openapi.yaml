@@ -1,0 +1,311 @@
+openapi: 3.1.0
+info:
+  title: Sprout Resolver API
+  version: 1.0.0
+  description: Minimal live resolver contract for Sprout bootstrap.
+servers:
+  - url: https://resolver.example.haven.local
+paths:
+  /v1/resolver/starter-auth/register:
+    post:
+      summary: Register starter auth payload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StarterAuthPayload'
+      responses:
+        '200':
+          description: Registration result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResolverRegistrationResult'
+  /v1/resolver/capabilities/request:
+    post:
+      summary: Request capability decision
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CapabilityRequest'
+      responses:
+        '200':
+          description: Capability decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapabilityDecision'
+  /v1/resolver/entities/resolve:
+    post:
+      summary: Resolve identity into entity membership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityResolutionRequest'
+      responses:
+        '200':
+          description: Entity resolution decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityResolutionDecision'
+  /v1/resolver/membership/checks:
+    post:
+      summary: Perform membership checks after entity resolution
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipCheckRequest'
+      responses:
+        '200':
+          description: Membership decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MembershipDecision'
+  /v1/resolver/portholes/access:
+    post:
+      summary: Issue signed porthole access contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PortholeAccessRequest'
+      responses:
+        '200':
+          description: Porthole access decision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortholeAccessDecision'
+components:
+  schemas:
+    ResolverSignatureEnvelope:
+      type: object
+      required: [alg, sig]
+      properties:
+        alg: { type: string, const: Ed25519 }
+        sig: { type: string }
+    StarterPurposeInterest:
+      type: object
+      required: [purpose, interests]
+      properties:
+        purpose: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+    StarterAuthPayload:
+      type: object
+      required: [version, domain, identity_public_key, created_at, expires_at, nonce, purpose_interest, signature]
+      properties:
+        version: { type: string }
+        domain: { type: string }
+        identity_public_key: { type: string }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        nonce: { type: string }
+        purpose_interest: { $ref: '#/components/schemas/StarterPurposeInterest' }
+        signature: { $ref: '#/components/schemas/ResolverSignatureEnvelope' }
+    ResolverRegistrationResult:
+      type: object
+      required: [accepted]
+      properties:
+        accepted: { type: boolean }
+        registration_id: { type: string }
+        reason: { type: string }
+    CapabilityRequest:
+      type: object
+      required: [identity_public_key, domain, purpose, required_capabilities]
+      properties:
+        identity_public_key: { type: string }
+        domain: { type: string }
+        purpose: { type: string }
+        required_capabilities:
+          type: array
+          items: { type: string }
+    CapabilityDecision:
+      type: object
+      required: [granted, denied]
+      properties:
+        granted:
+          type: array
+          items: { type: string }
+        denied:
+          type: array
+          items: { type: string }
+    EntityEvidenceSummary:
+      type: object
+      required: [evidence_type, linked_public_keys, evidence_description]
+      properties:
+        evidence_type: { type: string }
+        contract_id: { type: string }
+        linked_public_keys:
+          type: array
+          items: { type: string }
+        evidence_description: { type: string }
+        evidence_sha256_b64url: { type: string }
+    EntityResolutionRequest:
+      type: object
+      required: [identity_public_key, domain, scaffold_admin_public_key, purpose, goal, interests]
+      properties:
+        identity_public_key: { type: string }
+        domain: { type: string }
+        scaffold_admin_public_key: { type: string }
+        purpose: { type: string }
+        goal: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        evidence: { $ref: '#/components/schemas/EntityEvidenceSummary' }
+    EntityInclusionProof:
+      type: object
+      required:
+        - proof_id
+        - scaffold_domain
+        - entity_id
+        - subject_identity_public_key
+        - subject_domain
+        - anchor_snapshot_id
+        - anchor_snapshot_sha256_b64url
+        - anchor_admin_public_key
+        - issued_at
+        - expires_at
+        - issued_by
+        - signature
+      properties:
+        proof_id: { type: string }
+        scaffold_domain: { type: string }
+        entity_id: { type: string }
+        subject_identity_public_key: { type: string }
+        subject_domain: { type: string }
+        anchor_snapshot_id: { type: string }
+        anchor_snapshot_sha256_b64url: { type: string }
+        anchor_admin_public_key: { type: string }
+        evidence_contract_id: { type: string }
+        issued_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        issued_by: { type: string }
+        signature: { $ref: '#/components/schemas/ResolverSignatureEnvelope' }
+    EntityResolutionDecision:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [resolved, unresolved]
+        entity_id: { type: string }
+        inclusion_proof: { $ref: '#/components/schemas/EntityInclusionProof' }
+        resolved_by: { type: string }
+        resolved_at: { type: string, format: date-time }
+        evidence_contract_id: { type: string }
+        reason: { type: string }
+    MembershipCheckRequest:
+      type: object
+      required: [identity_public_key, domain]
+      properties:
+        identity_public_key: { type: string }
+        domain: { type: string }
+    MembershipDecision:
+      type: object
+      required: [allowed]
+      properties:
+        allowed: { type: boolean }
+        reason: { type: string }
+    PortholeAccessRequest:
+      type: object
+      required:
+        - scaffold_domain
+        - identity_public_key
+        - scaffold_admin_public_key
+        - bridge_descriptor_id
+        - bridge_endpoint
+        - client_kind
+        - porthole_protocol
+        - purpose
+        - goal
+        - interests
+        - capability_grants
+      properties:
+        scaffold_domain: { type: string }
+        entity_id: { type: string }
+        identity_public_key: { type: string }
+        scaffold_admin_public_key: { type: string }
+        bridge_descriptor_id: { type: string }
+        bridge_endpoint: { type: string, format: uri }
+        client_kind:
+          type: string
+          enum: [web, cli, native]
+        porthole_protocol:
+          type: string
+          enum: [web, cli, cellprotocol]
+        purpose: { type: string }
+        goal: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        capability_grants:
+          type: array
+          items: { type: string }
+        entity_evidence_contract_id: { type: string }
+    PortholeAccessContract:
+      type: object
+      required:
+        - contract_id
+        - scaffold_domain
+        - entity_id
+        - identity_public_key
+        - scaffold_admin_public_key
+        - bridge_descriptor_id
+        - bridge_endpoint
+        - client_kind
+        - porthole_protocol
+        - capability_grants
+        - purpose
+        - goal
+        - interests
+        - issued_at
+        - expires_at
+        - issued_by
+        - signature
+      properties:
+        contract_id: { type: string }
+        scaffold_domain: { type: string }
+        entity_id: { type: string }
+        identity_public_key: { type: string }
+        scaffold_admin_public_key: { type: string }
+        bridge_descriptor_id: { type: string }
+        bridge_endpoint: { type: string, format: uri }
+        client_kind:
+          type: string
+          enum: [web, cli, native]
+        porthole_protocol:
+          type: string
+          enum: [web, cli, cellprotocol]
+        capability_grants:
+          type: array
+          items: { type: string }
+        purpose: { type: string }
+        goal: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        issued_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        issued_by: { type: string }
+        entity_evidence_contract_id: { type: string }
+        signature: { $ref: '#/components/schemas/ResolverSignatureEnvelope' }
+    PortholeAccessDecision:
+      type: object
+      required: [allowed]
+      properties:
+        allowed: { type: boolean }
+        contract: { $ref: '#/components/schemas/PortholeAccessContract' }
+        reason: { type: string }

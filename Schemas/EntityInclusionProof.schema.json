@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/EntityInclusionProof.schema.json",
+  "title": "EntityInclusionProof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "proof_id",
+    "scaffold_domain",
+    "entity_id",
+    "subject_identity_public_key",
+    "subject_domain",
+    "anchor_snapshot_id",
+    "anchor_snapshot_sha256_b64url",
+    "anchor_admin_public_key",
+    "issued_at",
+    "expires_at",
+    "issued_by",
+    "signature"
+  ],
+  "properties": {
+    "proof_id": { "type": "string" },
+    "scaffold_domain": { "type": "string" },
+    "entity_id": { "type": "string" },
+    "subject_identity_public_key": { "type": "string" },
+    "subject_domain": { "type": "string" },
+    "anchor_snapshot_id": { "type": "string" },
+    "anchor_snapshot_sha256_b64url": { "type": "string" },
+    "anchor_admin_public_key": { "type": "string" },
+    "evidence_contract_id": { "type": "string" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "issued_by": { "type": "string" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["Ed25519"]
+        },
+        "sig": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

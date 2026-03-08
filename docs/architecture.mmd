@@ -1,0 +1,10 @@
+flowchart LR
+    A["sprout-cli / iOS / macOS"] --> B["SproutCore BootstrapStateMachine"]
+    B --> C["SproutCrypto (JCS + Ed25519 + base64url)"]
+    B --> D["SproutBridge (descriptor validation + manager)"]
+    B --> E["SproutResolverAdapter (mock/real resolver + entity resolution + porthole contract)"]
+    B --> F["SproutTransport (HTTPS/WSS adapters)"]
+    B --> G["SproutStorage (audit log + key store + sqlite cache)"]
+    D --> H["Discovery Service (OpenAPI)"]
+    E --> I["HAVEN Resolver"]
+    B --> J["Bootstrap output: signed PortholeAccessContract"]

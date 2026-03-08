@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant App as Runtime (CLI/iOS/macOS)
+    participant Core as SproutCore
+    participant Disc as Discovery Service
+    participant Resolver as Resolver
+
+    App->>Core: bootstrap join (domain, purpose, goal, interests, requested porthole kind)
+    Core->>Core: Acquire identity
+    Core->>Core: Require explicit purpose/goal/interests
+    Core->>Disc: POST /v1/bridges/query (explicit purpose+interests)
+    Disc-->>Core: Signed BridgeDescriptors
+    Core->>Core: Validate descriptor signature/domain/purpose/expiry
+    Core->>Core: Derive explicit ScaffoldAdminIdentity from selected descriptor
+    Core->>Resolver: registerStarterAuth(payload)
+    Resolver-->>Core: accepted/denied
+    Core->>Resolver: resolveEntity(identity, evidence, purpose, goal, interests)
+    Resolver-->>Core: resolved(entity_id) or unresolved(reason)
+    Core->>Resolver: requestCapabilities + membershipChecks
+    Resolver-->>Core: grants + membership decision
+    Core->>Resolver: issuePortholeAccessContract(resolved entity, bridge, client kind)
+    Resolver-->>Core: signed PortholeAccessContract or deny
+    Core->>App: Done or Error

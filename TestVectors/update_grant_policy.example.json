@@ -1,0 +1,16 @@
+{
+  "policy_id": "ugp_0001",
+  "version": "1.0",
+  "allowed_artifacts": [
+    {
+      "name": "sprout-cli",
+      "sha256_b64url": "TpNXqpe74lagW4lUcLGjLDWyewUnUGZ2pnToKRF-rT0",
+      "semver": "1.0.0"
+    }
+  ],
+  "allowed_channels": ["stable"],
+  "authorized_triggers": ["m2J3MyPvQaEYNIJBlOVRZNMl65zcwQ3dp9EK3k-9j20"],
+  "auto_update_allowed": false,
+  "revoked_triggers": [],
+  "expires_at": "2026-12-31T23:59:59Z"
+}

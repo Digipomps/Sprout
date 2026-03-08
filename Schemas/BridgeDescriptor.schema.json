@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/BridgeDescriptor.schema.json",
+  "title": "BridgeDescriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "descriptor_id",
+    "bridge_endpoint",
+    "scaffold_domain",
+    "owner_pubkey",
+    "capability_requirements",
+    "purpose_constraints",
+    "expires_at",
+    "signature"
+  ],
+  "properties": {
+    "descriptor_id": { "type": "string" },
+    "bridge_endpoint": { "type": "string" },
+    "scaffold_domain": { "type": "string" },
+    "owner_pubkey": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "capability_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "purpose_constraints": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": { "type": "string", "enum": ["Ed25519"] },
+        "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      }
+    }
+  }
+}

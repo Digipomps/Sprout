@@ -1,0 +1,12 @@
+flowchart TD
+    A["Load Context"] --> B["Acquire Identity"]
+    B --> C["Collect Purpose/Goal + Interests"]
+    C --> D["Probe Environment"]
+    D --> E["Discover Signed BridgeDescriptors"]
+    E --> F["Derive explicit ScaffoldAdminIdentity"]
+    F --> G["Establish Bridge Channel"]
+    G --> H["registerStarterAuth(payload)"]
+    H --> I["ResolveEntity using explicit EntityLinkEvidence"]
+    I --> J["requestCapabilities + membershipChecks"]
+    J --> K["Issue signed PortholeAccessContract"]
+    K --> L["Persist Bootstrap + Audit"]

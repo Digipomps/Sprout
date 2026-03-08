@@ -1,0 +1,14 @@
+{
+  "contract_id":"elc_0001",
+  "domain_a":"example.haven.local",
+  "pubkey_a":"m2J3MyPvQaEYNIJBlOVRZNMl65zcwQ3dp9EK3k-9j20",
+  "domain_b":"iphone.example.haven.local",
+  "pubkey_b":"oJql9HpnWYAv-VX43C0qFKXJnSO-l_hkEn_5ODRVpPA",
+  "scope":"entity-link",
+  "created_at":"2026-02-26T08:10:00Z",
+  "revocation":{"mode":"mutual"},
+  "signatures":[
+    {"by_pubkey":"m2J3MyPvQaEYNIJBlOVRZNMl65zcwQ3dp9EK3k-9j20","alg":"Ed25519","sig":"OjD5jbjRMfrYpQXhxVPm21KvLnQ3ui_99hVoYlCV-R6ZY6JahRaVWOUB5nVklR0DZPiO-xBf0cqxxEPkF2SqDg"},
+    {"by_pubkey":"oJql9HpnWYAv-VX43C0qFKXJnSO-l_hkEn_5ODRVpPA","alg":"Ed25519","sig":"n5DdljKIDBxaYV-j3jGHsm1a-YxycZTmmcxHKMc_UpVFLVBzLCw9Ae4n4rD8rqLOfdYe1ztHr_ivnioLDBF1AQ"}
+  ]
+}

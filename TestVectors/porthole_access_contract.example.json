@@ -1,0 +1,28 @@
+{
+  "contract_id": "pac_o6Trrtu53JDsVhAq",
+  "scaffold_domain": "example.haven.local",
+  "entity_id": "entity_example_primary",
+  "identity_public_key": "m2J3MyPvQaEYNIJBlOVRZNMl65zcwQ3dp9EK3k-9j20",
+  "scaffold_admin_public_key": "QwRr_kCSs-lJlOraFdzCDYqqB7ZY_TlU644O-4vcpd4",
+  "bridge_descriptor_id": "bd_0001",
+  "bridge_endpoint": "wss://bridge.example.haven.local/cell",
+  "client_kind": "cli",
+  "porthole_protocol": "cli",
+  "capability_grants": [
+    "cap.discover",
+    "cap.join"
+  ],
+  "purpose": "bootstrap.join_scaffold",
+  "goal": "Join scaffold and register identity",
+  "interests": [
+    "haven.core.bootstrap",
+    "haven.core.bridge"
+  ],
+  "issued_at": "2026-02-26T08:01:00Z",
+  "expires_at": "2026-02-26T08:06:00Z",
+  "issued_by": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+  "signature": {
+    "alg": "Ed25519",
+    "sig": "jBhYz0PUJGOArVQgv33l6UxOCnBiRX1DeZlQNE9hwqKmpMihAlKGOK4jGnQJ2Vp_X_SJGhXwcc6azCsZBpBBDA"
+  }
+}

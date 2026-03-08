@@ -1,0 +1,10 @@
+{
+  "descriptor_id":"bd_0001",
+  "bridge_endpoint":"wss://bridge.example.haven.local/cell",
+  "scaffold_domain":"example.haven.local",
+  "owner_pubkey":"QwRr_kCSs-lJlOraFdzCDYqqB7ZY_TlU644O-4vcpd4",
+  "capability_requirements":["cap.join","cap.discover"],
+  "purpose_constraints":["bootstrap.join_scaffold"],
+  "expires_at":"2026-02-26T09:00:00Z",
+  "signature":{"alg":"Ed25519","sig":"AVJkuvlnZ-PIRtuxjvKu5OggmLOoHWvVQhBM2hgG5Ofxn4kjzwLenwHJVpoM7xADXT8hw_EH8XSfIeRfFj3qCA"}
+}

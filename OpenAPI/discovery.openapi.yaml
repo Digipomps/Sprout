@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: Sprout Bridge Discovery Service
+  version: 1.0.0
+  description: |
+    Minimal privacy-preserving discovery API. Query must include explicit purpose and interests.
+servers:
+  - url: https://discovery.example.haven.local
+paths:
+  /v1/bridges/query:
+    post:
+      summary: Query signed BridgeDescriptors
+      operationId: queryBridges
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [scaffold_domain, purpose, interests]
+              properties:
+                scaffold_domain:
+                  type: string
+                purpose:
+                  type: string
+                interests:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Signed bridge descriptors
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [bridges]
+                properties:
+                  bridges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BridgeDescriptor'
+        '400':
+          description: Invalid request
+        '403':
+          description: Policy denied
+components:
+  schemas:
+    SignatureEnvelope:
+      type: object
+      additionalProperties: false
+      required: [alg, sig]
+      properties:
+        alg:
+          type: string
+          enum: [Ed25519]
+        sig:
+          type: string
+    BridgeDescriptor:
+      type: object
+      additionalProperties: false
+      required:
+        - descriptor_id
+        - bridge_endpoint
+        - scaffold_domain
+        - owner_pubkey
+        - capability_requirements
+        - purpose_constraints
+        - expires_at
+        - signature
+      properties:
+        descriptor_id:
+          type: string
+        bridge_endpoint:
+          type: string
+        scaffold_domain:
+          type: string
+        owner_pubkey:
+          type: string
+        capability_requirements:
+          type: array
+          items:
+            type: string
+        purpose_constraints:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+        signature:
+          $ref: '#/components/schemas/SignatureEnvelope'

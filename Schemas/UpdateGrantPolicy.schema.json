@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/UpdateGrantPolicy.schema.json",
+  "title": "UpdateGrantPolicy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "policy_id",
+    "version",
+    "allowed_artifacts",
+    "allowed_channels",
+    "authorized_triggers",
+    "auto_update_allowed",
+    "revoked_triggers"
+  ],
+  "properties": {
+    "policy_id": { "type": "string" },
+    "version": { "type": "string" },
+    "allowed_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "sha256_b64url", "semver"],
+        "properties": {
+          "name": { "type": "string" },
+          "sha256_b64url": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+          "semver": { "type": "string" }
+        }
+      }
+    },
+    "denied_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "allowed_channels": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["stable", "beta"] }
+    },
+    "authorized_triggers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "auto_update_allowed": { "type": "boolean" },
+    "revoked_triggers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "expires_at": { "type": "string", "format": "date-time" }
+  }
+}
