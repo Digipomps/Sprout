@@ -76,13 +76,13 @@ Policy-gated install planning:
 ## CI release evidence
 GitHub Actions currently produces:
 - release bundle artifacts
-- GitHub build provenance attestation for `dist/sprout` and `dist/sprout-updater`
-- GitHub SBOM attestation for `dist/sprout.spdx.json`
 - cosign keyless signatures for `sprout`, `sprout-updater` and `SHA256SUMS.b64url`
 - optional detached GPG signature for the checksum file when release secrets are configured
+- optional GitHub build provenance / SBOM attestations when repo variable `SPROUT_ENABLE_GITHUB_ATTESTATIONS=true`
 
 Current limitation:
-- the workflow is configured, but this workspace cannot trigger a real remote release run until the repository has a publishable Git remote and valid `gh` authentication.
+- the repository and GitHub authentication are now configured
+- GitHub attestations are disabled by default because the private Digipomps repository plan does not currently support the attestation API
 
 ## Reproducible build target
 Target:
@@ -94,6 +94,7 @@ Target:
 Current status:
 - local bundle generation and checksum verification are implemented
 - CI keyless signing is wired for non-PR runs
+- GitHub attestations are opt-in and require repository support before they can be treated as release baseline
 - bit-for-bit reproducibility across independent environments remains an explicit release goal, not yet proven in CI
 
 ## Runtime-specific release policy

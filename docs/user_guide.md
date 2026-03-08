@@ -64,7 +64,7 @@ swift build --product sprout-macos
 
 `sprout-macos` now supports both:
 - embedded web handoff from a signed `web` contract
-- live native CellProtocol binding from a signed `native` contract
+- inspection/copy of a signed `native` contract descriptor in the standalone build
 
 ## Verify release bundles and update plans
 Verify a local release bundle:
@@ -93,6 +93,7 @@ SPROUT_RESOLVER_BASE_URL=https://resolver.example.haven.local \
 Note:
 - this repo contains the live resolver client path and tests
 - the authoritative server-side resolver implementation is still an external deployment dependency
+- standard GitHub/macOS release builds do not embed live `CellProtocol` native runtime
 
 Ask the updater if a specific install is allowed:
 ```bash

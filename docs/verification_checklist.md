@@ -34,7 +34,7 @@ Status per 2026-03-08:
 - [ ] Reproducible build-prosedyre dokumentert og kan kjøres av tredjepart; target: bit-for-bit for CLI.
 - [ ] Release bundle bygger både `sprout` og `sprout-updater`, genererer checksum manifest og kan verifiseres lokalt.
 - [ ] Signerte artefakter: minst én av (cosign keyless, GPG) er aktiv i CI, med dokumentert verifikasjon.
-- [ ] Provenance/attestation generert (SLSA-minimum + in-toto statement), og bundet til artefakt.
+- [ ] Provenance/attestation generert (SLSA-minimum + in-toto statement), og bundet til artefakt, eller eksplisitt deaktivert med dokumentert plattformbegrunnelse.
 - [ ] Update behavior er policy-gated via UpdateGrantPolicy (default deny), og tester verifiserer at updater aldri overskrider eksplisitte grants.
 - [ ] Sprout kan distribueres uten self-update som default for CLI/server; hvis custom updater aktiveres, er den policy-gated og separert fra bootstrap trust path.
 - [ ] Hvis macOS-app distribueres utenfor App Store: notarization og code signing er del av release-prosessen og dokumentert.

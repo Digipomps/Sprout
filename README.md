@@ -4,8 +4,9 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 
 ## Status (2026-03-08)
 - P0 is implemented: deterministic bootstrap state machine, JCS subset, Ed25519, strict base64url, schemas, OpenAPI, golden vectors and CLI reference flow.
-- P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI attestations/signing.
+- P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI signing.
 - Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `zsh Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `zsh Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`.
+- GitHub CI on `main` is green for commit `55bd7e5` and the repo is now configured for self-contained Actions builds.
 - Still OPEN in the release scope of this repo: authoritative HAVEN server-side resolver routes, QR-based cross-device linking UX, iOS production wrapper, notarized macOS release flow, TUF hardening.
 
 ## Design boundary
@@ -88,7 +89,7 @@ Consume signed porthole contracts:
 .build/debug/sprout-macos
 ```
 
-`sprout-macos` now builds against CellProtocol and uses the signed native descriptor to create a live native binding session instead of only previewing descriptor JSON.
+`sprout-macos` in the standalone GitHub build consumes `web` contracts directly and can inspect/copy signed `native` descriptors. Live CellProtocol-native runtime is reserved for a future explicit integration path and is not part of the default release artifact.
 
 Build and verify a release bundle:
 ```bash
@@ -103,3 +104,4 @@ zsh Scripts/verify_release_bundle.sh dist
 - `docs/developer_guide.md`
 - `docs/user_guide.md`
 - `docs/verification_checklist.md`
+- `docs/github_repository_setup.md`

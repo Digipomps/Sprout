@@ -24,8 +24,8 @@ Implemented now:
   - `release-manifest.json`
   - `SHA256SUMS.b64url`
   - `sprout.spdx.json`
-  - GitHub build provenance attestation
-  - GitHub SBOM attestation
+  - optional GitHub build provenance attestation
+  - optional GitHub SBOM attestation
   - cosign keyless signatures
   - optional detached GPG signature for checksum file
 

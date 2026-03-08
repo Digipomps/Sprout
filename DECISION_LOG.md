@@ -67,12 +67,17 @@
 ### D-013: First non-CLI consumer is the macOS handoff client
 - Status: Specified + Implemented (P1 bridge)
 - Rationale: `PortholeAccessContract` needed a real client consumer inside this repo.
-- Notes: `sprout-macos` embeds web handoff and now builds a live CellProtocol-native binding session from signed native descriptors; deeper UX hardening and iOS parity remain OPEN.
+- Notes: `sprout-macos` embeds web handoff and handles signed native descriptors; standalone release builds use the descriptor/fallback path while deeper native runtime integration remains OPEN.
 
 ### D-014: CellProtocol integration in `sprout-macos` is workspace-coupled for now
-- Status: Specified + Implemented (P1 bridge)
+- Status: Superseded by D-015
 - Rationale: the fastest path to a real native consumer was a local package dependency on the sibling `CellProtocol` repo.
-- Notes: this is acceptable for current workspace verification, but production distribution should move to a versioned dependency or release artifact strategy.
+- Notes: this was useful for initial exploration, but it is no longer the release baseline because GitHub builds must remain self-contained.
+
+### D-015: GitHub builds must remain self-contained
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: private transitive dependencies outside the Sprout repo caused GitHub Actions failures and are too brittle for release baseline.
+- Notes: standalone release builds keep web handoff and signed native descriptor handling; deeper CellProtocol-native runtime is deferred until it can be integrated through an explicit, versioned path.
 
 ## Open Questions (OPEN)
 

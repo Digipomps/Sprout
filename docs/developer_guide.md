@@ -7,7 +7,7 @@
 - `Packages/SproutTransport`: channel interfaces + HTTPS/WSS adapters + gRPC/QUIC stubs.
 - `Packages/SproutBridge`: descriptor validation, bridge manager, discovery client/mock server.
 - `Packages/SproutResolverAdapter`: resolver protocol, entity anchor snapshot, inclusion proof, scaffold admin identity, porthole access contract, mock and file-backed resolver adapters.
-- `Packages/SproutAppSupport`: reusable porthole client session logic and live native binding runtime for app consumers.
+- `Packages/SproutAppSupport`: reusable porthole client session logic and native runtime adapter/fallbacks for app consumers.
 - `Apps/sprout-cli`: reference bootstrap executable.
 - `Apps/sprout-updater`: separate policy-gated updater/verification executable.
 - `Apps/sprout-macos`: actual macOS consumer for signed web/native handoff artifacts.
@@ -87,4 +87,5 @@ zsh Scripts/verify_release_bundle.sh dist
 - `--resolved-entity` remains available only for the mock resolver path.
 - `sprout-updater` is intentionally narrow: it plans and verifies installs, but does not turn `sprout` into a self-updating binary.
 - CI can attest build provenance and SBOM, but production key management and published trust roots are still environment-dependent.
-- `sprout-macos` currently depends on the sibling `CellProtocol` repo by local path for live native binding. Treat this as workspace-coupled until a versioned dependency strategy is chosen.
+- Standard GitHub builds are self-contained and do not depend on the sibling `CellProtocol` repo.
+- `sprout-macos` currently ships with a standalone fallback for native contracts. A deeper CellProtocol-native runtime should return only through an explicit, versioned integration path.

@@ -31,7 +31,7 @@ Scope:
 - Web/native porthole consumer descriptors.
 - Actual `sprout-macos` client consuming web/native handoff.
 - Separate `sprout-updater` binary.
-- CI release bundle generation, checksum manifest, SPDX SBOM, GitHub attestation wiring and cosign keyless signing.
+- CI release bundle generation, checksum manifest, SPDX SBOM, optional GitHub attestation wiring and cosign keyless signing.
 
 Exit criteria:
 - Anchor-backed entity resolution tests pass.

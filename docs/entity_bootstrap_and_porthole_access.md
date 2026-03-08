@@ -56,7 +56,7 @@ Implemented now:
 - `web` consumer -> `WebPortholeBootstrapDescriptor`
 - `native` consumer -> `NativePortholeBindingDescriptor`
 - `cli` contract verification remains available, but the dedicated interactive CLI porthole is still OPEN
-- `sprout-macos` consumes `web` contracts directly and establishes a live native CellProtocol binding from signed `native` descriptors
+- `sprout-macos` consumes `web` contracts directly and handles signed `native` descriptors in the standalone build
 
 The bootstrap output is not the porthole itself. It is the signed contract that downstream consumers should honor.
 
