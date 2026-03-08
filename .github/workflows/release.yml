@@ -71,6 +71,7 @@ jobs:
         run: zsh Scripts/verify_release_bundle.sh dist
 
       - name: Attest build provenance
+        if: ${{ vars.SPROUT_ENABLE_GITHUB_ATTESTATIONS == 'true' }}
         uses: actions/attest-build-provenance@v3
         with:
           subject-path: |
@@ -78,6 +79,7 @@ jobs:
             dist/sprout-updater
 
       - name: Attest SBOM
+        if: ${{ vars.SPROUT_ENABLE_GITHUB_ATTESTATIONS == 'true' }}
         uses: actions/attest-sbom@v2
         with:
           subject-path: |
