@@ -32,6 +32,19 @@ public struct Ed25519KeyPair {
 }
 
 public enum Ed25519 {
+    public static func generateSeed() -> Data {
+        Curve25519.Signing.PrivateKey().rawRepresentation
+    }
+
+    public static func generateSeedBase64URL() -> String {
+        Base64URL.encode(generateSeed())
+    }
+
+    public static func publicKeyBase64URL(fromSeed seed: Data) throws -> String {
+        let keyPair = try Ed25519KeyPair(seed: seed)
+        return Base64URL.encode(keyPair.publicKeyData)
+    }
+
     public static func publicKeyBase64URL(fromSeedBase64URL seedBase64URL: String) throws -> String {
         let seed: Data
         do {
@@ -39,8 +52,7 @@ public enum Ed25519 {
         } catch {
             throw Ed25519Error.invalidBase64URL
         }
-        let keyPair = try Ed25519KeyPair(seed: seed)
-        return Base64URL.encode(keyPair.publicKeyData)
+        return try publicKeyBase64URL(fromSeed: seed)
     }
 
     public static func signBase64URL(data: Data, seedBase64URL: String) throws -> String {

@@ -21,6 +21,8 @@ struct SproutCLI {
                 try await runBootstrap(arguments: Array(arguments.dropFirst()))
             case "bridges":
                 try runBridges(arguments: Array(arguments.dropFirst()))
+            case "federation":
+                try await runFederation(arguments: Array(arguments.dropFirst()))
             case "link":
                 try runLink(arguments: Array(arguments.dropFirst()))
             case "porthole":
@@ -203,6 +205,34 @@ struct SproutCLI {
 
         for descriptor in descriptors {
             print("\(descriptor.descriptor_id) \(descriptor.bridge_endpoint) domain=\(descriptor.scaffold_domain) expires=\(descriptor.expires_at)")
+        }
+    }
+
+    private static func runFederation(arguments: [String]) async throws {
+        guard let subcommand = arguments.first else {
+            throw CLIError.invalidArguments("Expected: federation init|show|list")
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+        let storeRoot = URL(fileURLWithPath: flags["root"] ?? ".sprout/federation-contacts")
+        let store = FederationContactIdentityStore(root: storeRoot)
+
+        switch subcommand {
+        case "init":
+            let record = try await store.initialize(
+                remoteDomain: try requiredFlag("remote-domain", flags),
+                localScaffoldDomain: flags["local-domain"],
+                note: flags["note"],
+                overwrite: flags["overwrite"] == "true"
+            )
+            try emitJSON(record, outPath: flags["out"])
+        case "show":
+            let record = try await store.load(remoteDomain: try requiredFlag("remote-domain", flags))
+            try emitJSON(record, outPath: flags["out"])
+        case "list":
+            let records = try await store.list()
+            try emitJSON(records, outPath: flags["out"])
+        default:
+            throw CLIError.invalidArguments("Expected: federation init|show|list")
         }
     }
 
@@ -592,6 +622,9 @@ struct SproutCLI {
         sprout commands:
           sprout bootstrap join --domain <d> --purpose <p> --goal <g> --interests <i1,i2> --starter <file> --catalog <file> [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
+          sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
+          sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
+          sprout federation list [--root <dir>] [--out <json>]
           sprout link export --file <entity-link.json> [--out <canonical.json>]
           sprout link import --file <entity-link.json>
           sprout porthole web-bootstrap --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
