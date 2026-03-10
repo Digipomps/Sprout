@@ -272,7 +272,7 @@ final class HavenResolverHTTPAdapterTests: XCTestCase {
     }
 }
 
-private final class ResolverURLProtocol: URLProtocol {
+final class ResolverURLProtocol: URLProtocol {
     nonisolated(unsafe) static var handler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
     override class func canInit(with request: URLRequest) -> Bool {

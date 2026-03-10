@@ -75,7 +75,6 @@ Live discovery path:
   --purpose bootstrap.join_scaffold \
   --goal "Join scaffold and request next scaffold recommendation" \
   --interests haven.core.bootstrap,haven.core.bridge \
-  --starter <starter-auth-payload.json> \
   --discovery-url https://staging.haven.digipomps.org/v1/bridges/query \
   --enable-live-resolver \
   --resolver-base-url https://staging.haven.digipomps.org \
@@ -83,12 +82,26 @@ Live discovery path:
 ```
 
 `sprout bootstrap plan` is now the first planning stage used by `bootstrap join`.
+`sprout bootstrap plan` and `sprout bootstrap join --plan-only` do not perform bootstrap network calls.
 
-Starter auth lookup order:
+Starter auth lookup and acquisition order:
 - `--starter`
 - `SPROUT_STARTER_AUTH_PATH`
 - `.sprout/starters/<domain>.json`
 - `.sprout/starter_auth_payload.json`
+- signed starter bootstrap intent fetched from the scaffold when `purpose`, `goal` and `interests` are explicit
+
+Starter bootstrap intent endpoint resolution order:
+- `--starter-bootstrap-url`
+- `SPROUT_STARTER_BOOTSTRAP_URL`
+- resolver origin + `/v1/resolver/starter-auth/intent`
+- `https://<domain>/v1/resolver/starter-auth/intent`
+
+When intent bootstrap is used, `sprout`:
+- requests a short-lived signed bootstrap intent from the scaffold
+- creates or reuses a local starter identity under `.sprout/starter-identities`
+- materializes a signed `StarterAuthPayload`
+- caches it at `.sprout/starters/<domain>.json` unless `--starter-out` overrides the path
 
 If `--catalog` is omitted, `sprout` uses live bridge discovery. Endpoint resolution order:
 - `--discovery-url`
@@ -120,7 +133,6 @@ SPROUT_RESOLVER_BASE_URL=https://resolver.example.haven.local \
   --purpose bootstrap.join_scaffold \
   --goal "Join scaffold and register identity" \
   --interests haven.core.bootstrap,haven.core.bridge \
-  --starter TestVectors/starter_auth_payload.signed.json \
   --catalog TestVectors/bridge_descriptor.signed.json \
   --enable-live-resolver \
   --trusted-resolver-key <resolver-pubkey> \
@@ -165,5 +177,6 @@ bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64ur
 - `docs/linux_deployment.md`
 - `docs/developer_guide.md`
 - `docs/user_guide.md`
+- `OpenAPI/resolver.openapi.yaml`
 - `docs/verification_checklist.md`
 - `docs/github_repository_setup.md`

@@ -6,6 +6,22 @@ info:
 servers:
   - url: https://resolver.example.haven.local
 paths:
+  /v1/resolver/starter-auth/intent:
+    post:
+      summary: Issue signed starter bootstrap intent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StarterBootstrapIntentRequest'
+      responses:
+        '200':
+          description: Signed starter bootstrap intent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StarterBootstrapIntent'
   /v1/resolver/starter-auth/register:
     post:
       summary: Register starter auth payload
@@ -113,6 +129,44 @@ components:
         expires_at: { type: string, format: date-time }
         nonce: { type: string }
         purpose_interest: { $ref: '#/components/schemas/StarterPurposeInterest' }
+        signature: { $ref: '#/components/schemas/ResolverSignatureEnvelope' }
+    StarterBootstrapIntentRequest:
+      type: object
+      required: [scaffold_domain, purpose, goal, interests]
+      properties:
+        scaffold_domain: { type: string }
+        purpose: { type: string }
+        goal: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        runtime: { type: string }
+    StarterBootstrapIntent:
+      type: object
+      required:
+        - version
+        - scaffold_domain
+        - purpose
+        - goal
+        - interests
+        - created_at
+        - expires_at
+        - nonce
+        - issued_by
+        - signature
+      properties:
+        version: { type: string }
+        scaffold_domain: { type: string }
+        purpose: { type: string }
+        goal: { type: string }
+        interests:
+          type: array
+          items: { type: string }
+        runtime: { type: string }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        nonce: { type: string }
+        issued_by: { type: string }
         signature: { $ref: '#/components/schemas/ResolverSignatureEnvelope' }
     ResolverRegistrationResult:
       type: object

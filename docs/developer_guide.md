@@ -133,6 +133,8 @@ Inspect the bootstrap plan before making network calls:
   --resolved-entity entity_example_primary
 ```
 
+`bootstrap plan` and `bootstrap join --plan-only` must remain side-effect free: no starter-intent fetch, no discovery query and no resolver calls.
+
 Bootstrap with file-backed anchor resolver:
 ```bash
 .build/debug/sprout bootstrap join \
@@ -152,6 +154,19 @@ Starter auth lookup order for `bootstrap join`:
 - `SPROUT_STARTER_AUTH_PATH`
 - `.sprout/starters/<domain>.json`
 - `.sprout/starter_auth_payload.json`
+- signed starter bootstrap intent fetched from the scaffold when `purpose`, `goal` and `interests` are explicit
+
+Starter bootstrap intent endpoint resolution order:
+- `--starter-bootstrap-url`
+- `SPROUT_STARTER_BOOTSTRAP_URL`
+- resolver origin + `/v1/resolver/starter-auth/intent`
+- `https://<domain>/v1/resolver/starter-auth/intent`
+
+Auto-materialization flow in `bootstrap join`:
+1. request `StarterBootstrapIntent` from the scaffold
+2. load or create a local starter identity from `StarterIdentityStore`
+3. sign a local `StarterAuthPayload`
+4. write the payload to `.sprout/starters/<domain>.json` unless `--starter-out` overrides it
 
 Consume porthole contracts:
 ```bash

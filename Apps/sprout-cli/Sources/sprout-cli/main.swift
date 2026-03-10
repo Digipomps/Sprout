@@ -60,7 +60,23 @@ struct SproutCLI {
         let purposeGoal = parseBootstrapPurposeGoal(flags)
         let nowDate = try parseNow(flags["now"])
         let requestedPortholeKind = try parsePortholeKind(flags["porthole"] ?? "cli")
-        let starterSource = try resolveStarterAuthSource(flags: flags, environment: environment, domain: domain)
+        let wantsPlanOutput = subcommand == "plan" || flags["plan-only"] == "true"
+        var starterSource = try resolveStarterAuthSource(flags: flags, environment: environment, domain: domain)
+
+        if subcommand == "join",
+           !wantsPlanOutput,
+           starterSource == nil,
+           let purposeGoal,
+           purposeGoal.isExplicitlySet {
+            starterSource = try await materializeStarterAuthSource(
+                flags: flags,
+                environment: environment,
+                domain: domain,
+                runtime: runtime,
+                purposeGoal: purposeGoal
+            )
+        }
+
         let plan = try makeBootstrapPlan(
             flags: flags,
             environment: environment,
@@ -70,7 +86,7 @@ struct SproutCLI {
             starterSource: starterSource
         )
 
-        if subcommand == "plan" || flags["plan-only"] == "true" {
+        if wantsPlanOutput {
             try emitJSON(
                 BootstrapPlanOutput(
                     domain: domain,
@@ -659,6 +675,39 @@ struct SproutCLI {
         return url
     }
 
+    private static func resolveStarterBootstrapEndpoint(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String
+    ) throws -> URL {
+        if let raw = flags["starter-bootstrap-url"] ?? environment["SPROUT_STARTER_BOOTSTRAP_URL"], !raw.isEmpty {
+            guard let url = URL(string: raw) else {
+                throw CLIError.invalidArguments("Invalid starter bootstrap URL.")
+            }
+            return url
+        }
+
+        if let resolverRaw = flags["resolver-base-url"] ?? environment["SPROUT_RESOLVER_BASE_URL"],
+           let resolverURL = URL(string: resolverRaw),
+           let scheme = resolverURL.scheme,
+           let host = resolverURL.host {
+            var components = URLComponents()
+            components.scheme = scheme
+            components.host = host
+            components.port = resolverURL.port
+            components.path = "/v1/resolver/starter-auth/intent"
+            guard let url = components.url else {
+                throw CLIError.invalidArguments("Invalid starter bootstrap URL derived from resolver base URL.")
+            }
+            return url
+        }
+
+        guard let url = URL(string: "https://\(domain)/v1/resolver/starter-auth/intent") else {
+            throw CLIError.invalidArguments("Invalid starter bootstrap URL derived from scaffold domain.")
+        }
+        return url
+    }
+
     private static func parseBootstrapRuntime(_ rawValue: String?) throws -> SproutRuntimeProfile {
         guard let rawValue, !rawValue.isEmpty else {
             return .cliService
@@ -741,6 +790,9 @@ struct SproutCLI {
         if starterSource != nil {
             capabilities.insert(.localStarterAuthPayload)
         }
+        if purposeGoal?.isExplicitlySet == true {
+            capabilities.insert(.starterBootstrapIntentHTTP)
+        }
         if flags["catalog"] != nil {
             capabilities.insert(.offlineBridgeCatalog)
         }
@@ -784,6 +836,63 @@ struct SproutCLI {
                 entityResolutionPreference: entityResolutionPreference
             )
         )
+    }
+
+    private static func materializeStarterAuthSource(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String,
+        runtime: SproutRuntimeProfile,
+        purposeGoal: BootstrapPurposeGoal
+    ) async throws -> StarterAuthSource {
+        let endpoint = try resolveStarterBootstrapEndpoint(flags: flags, environment: environment, domain: domain)
+        let client = try StarterBootstrapHTTPClient(endpoint: endpoint)
+        let intent = try await client.issueIntent(
+            StarterBootstrapIntentRequest(
+                scaffold_domain: domain,
+                purpose: purposeGoal.purpose,
+                goal: purposeGoal.goal,
+                interests: purposeGoal.interests,
+                runtime: runtime.rawValue
+            )
+        )
+
+        let identityRoot = URL(fileURLWithPath: flags["starter-identity-root"] ?? ".sprout/starter-identities")
+        let identityStore = StarterIdentityStore(root: identityRoot)
+        let record = try await identityStore.loadOrCreate(scaffoldDomain: domain)
+        let seedBase64URL = try await identityStore.seedBase64URL(scaffoldDomain: domain)
+
+        var payload = StarterAuthPayload(
+            version: "1.0",
+            domain: intent.scaffold_domain,
+            identity_public_key: record.identity_public_key,
+            created_at: intent.created_at,
+            expires_at: intent.expires_at,
+            nonce: intent.nonce,
+            purpose_interest: StarterPurposeInterest(
+                purpose: intent.purpose,
+                interests: intent.interests
+            ),
+            signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
+        )
+        payload.signature = ResolverSignatureEnvelope(
+            alg: "Ed25519",
+            sig: try Ed25519.signBase64URL(
+                data: try payload.canonicalPayloadData(),
+                seedBase64URL: seedBase64URL
+            )
+        )
+
+        let outputPath = flags["starter-out"] ?? ".sprout/starters/\(domain).json"
+        let outputURL = URL(fileURLWithPath: outputPath)
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try JSONEncoder.pretty.encode(payload).write(to: outputURL, options: [.atomic])
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: outputURL.path)
+        return StarterAuthSource(origin: "bootstrap-intent", path: outputURL.path)
     }
 
     private static func parseSetFlag(_ rawValue: String?) -> [String] {
@@ -857,7 +966,7 @@ struct SproutCLI {
         let text = """
         sprout commands:
           sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
-          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
+          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
@@ -874,11 +983,21 @@ struct SproutCLI {
           sprout economics suggest-rate --records <session-records.json> [--rau-per-thread-minute <int64>] [--rau-per-gib-minute <int64>] [--rau-per-cpu-second <int64>] [--rau-per-message <int64>] [--rau-per-audit-event <int64>] [--target-margin-bps <int64>] [--out <json>]
           sprout update --policy <policy.json> --artifact <name> --hash <sha256_b64url> --version <semver> --channel <stable|beta> --trigger <pubkey-or-contract> [--auto]
 
-        starter auth lookup order for bootstrap:
+        starter auth lookup and acquisition order for bootstrap:
           1. --starter <file>
           2. SPROUT_STARTER_AUTH_PATH
           3. .sprout/starters/<domain>.json
           4. .sprout/starter_auth_payload.json
+          5. starter bootstrap intent from scaffold when purpose/goal/interests are explicit
+
+        note:
+          bootstrap plan and bootstrap join --plan-only do not perform bootstrap network calls
+        
+        starter bootstrap intent endpoint resolution order:
+          1. --starter-bootstrap-url
+          2. SPROUT_STARTER_BOOTSTRAP_URL
+          3. resolver origin + /v1/resolver/starter-auth/intent
+          4. https://<domain>/v1/resolver/starter-auth/intent
         """
         print(text)
     }

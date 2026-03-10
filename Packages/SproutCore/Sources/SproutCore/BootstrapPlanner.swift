@@ -3,6 +3,7 @@ import SproutResolverAdapter
 
 public enum BootstrapPlanningCapability: String, Codable, CaseIterable, Hashable, Sendable {
     case localStarterAuthPayload = "local_starter_auth_payload"
+    case starterBootstrapIntentHTTP = "starter_bootstrap_intent_http"
     case offlineBridgeCatalog = "offline_bridge_catalog"
     case signedBridgeDiscoveryHTTP = "signed_bridge_discovery_http"
     case liveResolverHTTP = "live_resolver_http"
@@ -60,6 +61,7 @@ public struct BootstrapPlanningRequest: Codable, Equatable, Sendable {
 public enum BootstrapPlanActionID: String, Codable, Sendable {
     case validateExplicitPurposeGoal = "validate-explicit-purpose-goal"
     case loadStarterAuthPayload = "load-starter-auth-payload"
+    case requestStarterBootstrapIntent = "request-starter-bootstrap-intent"
     case manualStarterBootstrap = "manual-starter-bootstrap"
     case loadOfflineBridgeCatalog = "load-offline-bridge-catalog"
     case discoverBridgeViaHTTP = "discover-bridge-via-http"
@@ -160,7 +162,15 @@ public struct BootstrapPlanner: Sendable {
             )
         }
 
-        missingCapabilities.insert(.localStarterAuthPayload)
+        if environment.availableCapabilities.contains(.starterBootstrapIntentHTTP) {
+            return BootstrapPlanAction(
+                id: .requestStarterBootstrapIntent,
+                description: "Fetch a signed starter bootstrap intent from the scaffold and materialize a local starter auth payload.",
+                blocking: false
+            )
+        }
+
+        missingCapabilities.formUnion([.localStarterAuthPayload, .starterBootstrapIntentHTTP])
         return BootstrapPlanAction(
             id: .manualStarterBootstrap,
             description: "No local starter auth payload is available. Provide one explicitly before bootstrap.",

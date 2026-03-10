@@ -12,6 +12,28 @@ public struct StarterPurposeInterest: Codable, Equatable, Sendable {
     }
 }
 
+public struct StarterBootstrapIntentRequest: Codable, Equatable, Sendable {
+    public var scaffold_domain: String
+    public var purpose: String
+    public var goal: String
+    public var interests: [String]
+    public var runtime: String?
+
+    public init(
+        scaffold_domain: String,
+        purpose: String,
+        goal: String,
+        interests: [String],
+        runtime: String? = nil
+    ) {
+        self.scaffold_domain = scaffold_domain
+        self.purpose = purpose
+        self.goal = goal
+        self.interests = interests
+        self.runtime = runtime
+    }
+}
+
 public struct ResolverSignatureEnvelope: Codable, Equatable, Sendable {
     public var alg: String
     public var sig: String
@@ -64,6 +86,69 @@ public struct StarterAuthPayload: Codable, Equatable, Sendable {
             data: payload,
             signatureBase64URL: signature.sig,
             publicKeyBase64URL: identity_public_key
+        )
+    }
+
+    public func isExpired(now: Date = Date()) -> Bool {
+        let formatter = ISO8601DateFormatter()
+        guard let expiry = formatter.date(from: expires_at) else {
+            return true
+        }
+        return now >= expiry
+    }
+}
+
+public struct StarterBootstrapIntent: Codable, Equatable, Sendable {
+    public var version: String
+    public var scaffold_domain: String
+    public var purpose: String
+    public var goal: String
+    public var interests: [String]
+    public var runtime: String?
+    public var created_at: String
+    public var expires_at: String
+    public var nonce: String
+    public var issued_by: String
+    public var signature: ResolverSignatureEnvelope
+
+    public init(
+        version: String,
+        scaffold_domain: String,
+        purpose: String,
+        goal: String,
+        interests: [String],
+        runtime: String?,
+        created_at: String,
+        expires_at: String,
+        nonce: String,
+        issued_by: String,
+        signature: ResolverSignatureEnvelope
+    ) {
+        self.version = version
+        self.scaffold_domain = scaffold_domain
+        self.purpose = purpose
+        self.goal = goal
+        self.interests = interests
+        self.runtime = runtime
+        self.created_at = created_at
+        self.expires_at = expires_at
+        self.nonce = nonce
+        self.issued_by = issued_by
+        self.signature = signature
+    }
+
+    public func canonicalPayloadData() throws -> Data {
+        let encoded = try JSONEncoder().encode(self)
+        return try JCSCanonicalizer.canonicalizeRemovingTopLevelKeys(encoded, keys: ["signature"])
+    }
+
+    public func verifySignature() throws -> Bool {
+        guard signature.alg == "Ed25519" else { return false }
+        let payload = try canonicalPayloadData()
+        return Ed25519.verifyBase64URL(
+            data: payload,
+            signatureBase64URL: signature.sig,
+            publicKeyBase64URL: issued_by
         )
     }
 

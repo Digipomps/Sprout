@@ -55,7 +55,38 @@ struct BootstrapPlannerTests {
 
         #expect(plan.actions.contains(where: { $0.id == .manualStarterBootstrap && $0.blocking }))
         #expect(plan.missingCapabilities.contains(.localStarterAuthPayload))
+        #expect(plan.missingCapabilities.contains(.starterBootstrapIntentHTTP))
         #expect(plan.readyForFirstConnection == false)
+    }
+
+    @Test
+    func canFetchStarterBootstrapIntentWhenLocalPayloadIsMissing() {
+        let planner = BootstrapPlanner()
+        let environment = BootstrapPlanningEnvironment(
+            runtime: .cliService,
+            availableCapabilities: [
+                .starterBootstrapIntentHTTP,
+                .signedBridgeDiscoveryHTTP,
+                .liveResolverHTTP,
+                .remoteHostRouting,
+                .portholeAttachment
+            ]
+        )
+
+        let plan = planner.plan(
+            environment: environment,
+            request: BootstrapPlanningRequest(
+                purposeGoal: BootstrapPurposeGoal(
+                    purpose: "bootstrap.join_scaffold",
+                    goal: "Connect to scaffold and request CLI help",
+                    interests: ["haven.core.bootstrap", "haven.core.bridge"]
+                ),
+                requestedPortholeKind: .cli
+            )
+        )
+
+        #expect(plan.actions.contains(where: { $0.id == .requestStarterBootstrapIntent && $0.blocking == false }))
+        #expect(plan.readyForFirstConnection)
     }
 
     @Test
