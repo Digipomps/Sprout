@@ -15,6 +15,14 @@ It does not try to be the wallet UI or the billing backend. Pricing is explicit 
 ## Safe startup path (CLI)
 Mock/local path:
 ```bash
+.build/debug/sprout bootstrap plan \
+  --domain example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Join scaffold and register identity" \
+  --interests haven.core.bootstrap,haven.core.bridge \
+  --starter TestVectors/starter_auth_payload.signed.json \
+  --resolved-entity entity_example_primary
+
 .build/debug/sprout bootstrap join \
   --domain example.haven.local \
   --purpose bootstrap.join_scaffold \
@@ -26,6 +34,14 @@ Mock/local path:
   --porthole cli \
   --now 2026-02-26T08:01:00Z
 ```
+
+`sprout bootstrap plan` is the plan-first path and uses the same planner as `bootstrap join`.
+
+Starter auth lookup order:
+- `--starter`
+- `SPROUT_STARTER_AUTH_PATH`
+- `.sprout/starters/<domain>.json`
+- `.sprout/starter_auth_payload.json`
 
 Live discovery path:
 ```bash

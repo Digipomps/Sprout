@@ -49,20 +49,74 @@ struct SproutCLI {
     }
 
     private static func runBootstrap(arguments: [String]) async throws {
-        guard arguments.first == "join" else {
-            throw CLIError.invalidArguments("Expected: bootstrap join")
+        guard let subcommand = arguments.first else {
+            throw CLIError.invalidArguments("Expected: bootstrap join|plan")
         }
 
         let flags = try parseFlags(Array(arguments.dropFirst()))
         let domain = try requiredFlag("domain", flags)
-        let purpose = try requiredFlag("purpose", flags)
-        let goal = try requiredFlag("goal", flags)
-        let interests = try requiredFlag("interests", flags).split(separator: ",").map { String($0) }
-        let starterPath = try requiredFlag("starter", flags)
+        let environment = ProcessInfo.processInfo.environment
+        let runtime = try parseBootstrapRuntime(flags["runtime"] ?? environment["SPROUT_BOOTSTRAP_RUNTIME"])
+        let purposeGoal = parseBootstrapPurposeGoal(flags)
         let nowDate = try parseNow(flags["now"])
         let requestedPortholeKind = try parsePortholeKind(flags["porthole"] ?? "cli")
+        let starterSource = try resolveStarterAuthSource(flags: flags, environment: environment, domain: domain)
+        let plan = try makeBootstrapPlan(
+            flags: flags,
+            environment: environment,
+            runtime: runtime,
+            purposeGoal: purposeGoal,
+            requestedPortholeKind: requestedPortholeKind,
+            starterSource: starterSource
+        )
 
-        let starterData = try Data(contentsOf: URL(fileURLWithPath: starterPath))
+        if subcommand == "plan" || flags["plan-only"] == "true" {
+            try emitJSON(
+                BootstrapPlanOutput(
+                    domain: domain,
+                    runtime: runtime.rawValue,
+                    starter_source: starterSource,
+                    bootstrap_plan: plan
+                ),
+                outPath: flags["out"] ?? flags["plan-out"]
+            )
+            return
+        }
+
+        guard subcommand == "join" else {
+            throw CLIError.invalidArguments("Expected: bootstrap join|plan")
+        }
+
+        guard plan.readyForFirstConnection else {
+            let output = BootstrapCommandOutput(
+                final_state: SproutBootstrapState.error.rawValue,
+                event_count: 0,
+                resolver_mode: try resolverMode(flags: flags).rawValue,
+                requested_porthole_kind: requestedPortholeKind.rawValue,
+                starter_source: starterSource,
+                bootstrap_plan: plan,
+                entity_resolution_status: nil,
+                resolved_entity_id: nil,
+                entity_inclusion_proof_id: nil,
+                scaffold_admin_public_key: nil,
+                porthole_contract_id: nil,
+                porthole_protocol: nil,
+                declared_deposit_rau: nil,
+                pricing_outcome: nil,
+                error: "bootstrap plan is blocked"
+            )
+            print(String(data: try JSONEncoder.pretty.encode(output), encoding: .utf8) ?? "{}")
+            exit(2)
+        }
+
+        guard let starterSource else {
+            throw CLIError.invalidArguments("No starter auth payload could be located.")
+        }
+        guard let purposeGoal else {
+            throw CLIError.invalidArguments("Purpose, goal, and interests must be set explicitly.")
+        }
+
+        let starterData = try Data(contentsOf: starterSource.url)
         let starterPayload = try JSONDecoder().decode(StarterAuthPayload.self, from: starterData)
         let entityLinkContract = try flags["entity-link"].map { path in
             try EntityLinkContractIO.load(from: URL(fileURLWithPath: path))
@@ -170,10 +224,10 @@ struct SproutCLI {
         )
 
         let context = BootstrapExecutionContext(
-            runtime: .cliService,
+            runtime: runtime,
             domain: domain,
             requestedPortholeKind: requestedPortholeKind,
-            purposeGoal: BootstrapPurposeGoal(purpose: purpose, goal: goal, interests: interests),
+            purposeGoal: purposeGoal,
             starterAuthPayload: starterPayload,
             economics: BootstrapEconomicsContext(
                 declared_deposit_rau: declaredDepositRAU,
@@ -187,6 +241,8 @@ struct SproutCLI {
             event_count: result.events.count,
             resolver_mode: try resolverMode(flags: flags).rawValue,
             requested_porthole_kind: requestedPortholeKind.rawValue,
+            starter_source: starterSource,
+            bootstrap_plan: plan,
             entity_resolution_status: result.context.entityResolution?.status.rawValue,
             resolved_entity_id: result.context.entityResolution?.entity_id,
             entity_inclusion_proof_id: result.context.entityResolution?.inclusion_proof?.proof_id,
@@ -603,6 +659,133 @@ struct SproutCLI {
         return url
     }
 
+    private static func parseBootstrapRuntime(_ rawValue: String?) throws -> SproutRuntimeProfile {
+        guard let rawValue, !rawValue.isEmpty else {
+            return .cliService
+        }
+
+        switch rawValue {
+        case "cliService", "cli-service":
+            return .cliService
+        case "onPremService", "on-prem-service":
+            return .onPremService
+        case "macOSApp", "macos-app":
+            return .macOSApp
+        case "iOSApp", "ios-app":
+            return .iOSApp
+        default:
+            throw CLIError.invalidArguments("Invalid --runtime value. Expected cli-service|on-prem-service|macos-app|ios-app.")
+        }
+    }
+
+    private static func parseBootstrapPurposeGoal(_ flags: [String: String]) -> BootstrapPurposeGoal? {
+        let purpose = flags["purpose"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let goal = flags["goal"]?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let interests = parseSetFlag(flags["interests"])
+
+        guard !purpose.isEmpty || !goal.isEmpty || !interests.isEmpty else {
+            return nil
+        }
+
+        return BootstrapPurposeGoal(purpose: purpose, goal: goal, interests: interests)
+    }
+
+    private static func resolveStarterAuthSource(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String
+    ) throws -> StarterAuthSource? {
+        if let path = flags["starter"], !path.isEmpty {
+            return try validateStarterAuthSource(path: path, origin: "flag")
+        }
+
+        if let path = environment["SPROUT_STARTER_AUTH_PATH"], !path.isEmpty {
+            return try validateStarterAuthSource(path: path, origin: "environment")
+        }
+
+        let candidates = [
+            StarterAuthSource(origin: "domain-cache", path: ".sprout/starters/\(domain).json"),
+            StarterAuthSource(origin: "default-cache", path: ".sprout/starter_auth_payload.json")
+        ]
+
+        for candidate in candidates {
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+
+        return nil
+    }
+
+    private static func validateStarterAuthSource(path: String, origin: String) throws -> StarterAuthSource {
+        guard FileManager.default.fileExists(atPath: path) else {
+            throw CLIError.invalidArguments("Starter auth payload not found at \(path).")
+        }
+        return StarterAuthSource(origin: origin, path: path)
+    }
+
+    private static func makeBootstrapPlan(
+        flags: [String: String],
+        environment: [String: String],
+        runtime: SproutRuntimeProfile,
+        purposeGoal: BootstrapPurposeGoal?,
+        requestedPortholeKind: PortholeClientKind,
+        starterSource: StarterAuthSource?
+    ) throws -> BootstrapPlan {
+        var capabilities: Set<BootstrapPlanningCapability> = [
+            .remoteHostRouting,
+            .portholeAttachment,
+            .signedBridgeDiscoveryHTTP
+        ]
+
+        if starterSource != nil {
+            capabilities.insert(.localStarterAuthPayload)
+        }
+        if flags["catalog"] != nil {
+            capabilities.insert(.offlineBridgeCatalog)
+        }
+
+        switch try resolverMode(flags: flags) {
+        case .liveHTTP:
+            capabilities.insert(.liveResolverHTTP)
+        case .entityAnchorSnapshot:
+            capabilities.insert(.entityAnchorSnapshot)
+        case .mock:
+            if flags["resolved-entity"] != nil {
+                capabilities.insert(.mockResolver)
+            }
+        }
+
+        let discoveryPreference: BridgeDiscoveryPreference = if flags["catalog"] != nil {
+            .offlineCatalog
+        } else {
+            .auto
+        }
+
+        let entityResolutionPreference: EntityResolutionPreference = switch try resolverMode(flags: flags) {
+        case .liveHTTP:
+            .liveHTTP
+        case .entityAnchorSnapshot:
+            .entityAnchorSnapshot
+        case .mock:
+            .mock
+        }
+
+        let planner = BootstrapPlanner()
+        return planner.plan(
+            environment: BootstrapPlanningEnvironment(
+                runtime: runtime,
+                availableCapabilities: capabilities
+            ),
+            request: BootstrapPlanningRequest(
+                purposeGoal: purposeGoal,
+                requestedPortholeKind: requestedPortholeKind,
+                discoveryPreference: discoveryPreference,
+                entityResolutionPreference: entityResolutionPreference
+            )
+        )
+    }
+
     private static func parseSetFlag(_ rawValue: String?) -> [String] {
         guard let rawValue, !rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return []
@@ -673,7 +856,8 @@ struct SproutCLI {
     private static func printUsage() {
         let text = """
         sprout commands:
-          sprout bootstrap join --domain <d> --purpose <p> --goal <g> --interests <i1,i2> --starter <file> [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--now <ISO8601>]
+          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
+          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
@@ -689,6 +873,12 @@ struct SproutCLI {
           sprout economics rollup --usage <usage-deltas.json> [--contract <pricing-contract.json>] [--out <json>]
           sprout economics suggest-rate --records <session-records.json> [--rau-per-thread-minute <int64>] [--rau-per-gib-minute <int64>] [--rau-per-cpu-second <int64>] [--rau-per-message <int64>] [--rau-per-audit-event <int64>] [--target-margin-bps <int64>] [--out <json>]
           sprout update --policy <policy.json> --artifact <name> --hash <sha256_b64url> --version <semver> --channel <stable|beta> --trigger <pubkey-or-contract> [--auto]
+
+        starter auth lookup order for bootstrap:
+          1. --starter <file>
+          2. SPROUT_STARTER_AUTH_PATH
+          3. .sprout/starters/<domain>.json
+          4. .sprout/starter_auth_payload.json
         """
         print(text)
     }
@@ -708,6 +898,8 @@ private struct BootstrapCommandOutput: Codable {
     var event_count: Int
     var resolver_mode: String
     var requested_porthole_kind: String
+    var starter_source: StarterAuthSource?
+    var bootstrap_plan: BootstrapPlan?
     var entity_resolution_status: String?
     var resolved_entity_id: String?
     var entity_inclusion_proof_id: String?
@@ -724,6 +916,22 @@ private struct UnitConversionOutput: Codable {
     var imu: Decimal
     var ore: Decimal
     var nok: Decimal
+}
+
+private struct BootstrapPlanOutput: Codable {
+    var domain: String
+    var runtime: String
+    var starter_source: StarterAuthSource?
+    var bootstrap_plan: BootstrapPlan
+}
+
+private struct StarterAuthSource: Codable {
+    var origin: String
+    var path: String
+
+    var url: URL {
+        URL(fileURLWithPath: path)
+    }
 }
 
 private enum CLIError: Error {

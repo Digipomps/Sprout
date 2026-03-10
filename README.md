@@ -48,6 +48,14 @@ Verify signed fixtures:
 
 Mock bootstrap path:
 ```bash
+.build/debug/sprout bootstrap plan \
+  --domain example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Join scaffold and register identity" \
+  --interests haven.core.bootstrap,haven.core.bridge \
+  --starter TestVectors/starter_auth_payload.signed.json \
+  --resolved-entity entity_example_primary
+
 .build/debug/sprout bootstrap join \
   --domain example.haven.local \
   --purpose bootstrap.join_scaffold \
@@ -74,7 +82,15 @@ Live discovery path:
   --porthole cli
 ```
 
-If `--catalog` is omitted, `sprout` now uses live bridge discovery. Endpoint resolution order:
+`sprout bootstrap plan` is now the first planning stage used by `bootstrap join`.
+
+Starter auth lookup order:
+- `--starter`
+- `SPROUT_STARTER_AUTH_PATH`
+- `.sprout/starters/<domain>.json`
+- `.sprout/starter_auth_payload.json`
+
+If `--catalog` is omitted, `sprout` uses live bridge discovery. Endpoint resolution order:
 - `--discovery-url`
 - `SPROUT_DISCOVERY_URL`
 - resolver origin + `/v1/bridges/query`

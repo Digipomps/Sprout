@@ -122,6 +122,17 @@ Suggest a session-minute tariff from measured records:
 ```
 
 ## CLI reference flows
+Inspect the bootstrap plan before making network calls:
+```bash
+.build/debug/sprout bootstrap plan \
+  --domain example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Join scaffold and register identity" \
+  --interests haven.core.bootstrap,haven.core.bridge \
+  --starter TestVectors/starter_auth_payload.signed.json \
+  --resolved-entity entity_example_primary
+```
+
 Bootstrap with file-backed anchor resolver:
 ```bash
 .build/debug/sprout bootstrap join \
@@ -135,6 +146,12 @@ Bootstrap with file-backed anchor resolver:
   --porthole native \
   --now 2026-02-26T08:01:00Z
 ```
+
+Starter auth lookup order for `bootstrap join`:
+- `--starter`
+- `SPROUT_STARTER_AUTH_PATH`
+- `.sprout/starters/<domain>.json`
+- `.sprout/starter_auth_payload.json`
 
 Consume porthole contracts:
 ```bash
