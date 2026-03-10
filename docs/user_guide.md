@@ -27,6 +27,26 @@ Mock/local path:
   --now 2026-02-26T08:01:00Z
 ```
 
+Live discovery path:
+```bash
+.build/debug/sprout bootstrap join \
+  --domain staging.haven.digipomps.org \
+  --purpose bootstrap.join_scaffold \
+  --goal "Join scaffold and request next scaffold recommendation" \
+  --interests haven.core.bootstrap,haven.core.bridge \
+  --starter <starter-auth-payload.json> \
+  --enable-live-resolver \
+  --resolver-base-url https://staging.haven.digipomps.org \
+  --discovery-url https://staging.haven.digipomps.org/v1/bridges/query \
+  --porthole cli
+```
+
+If `--catalog` is omitted, Sprout uses live bridge discovery. Endpoint resolution order:
+- `--discovery-url`
+- `SPROUT_DISCOVERY_URL`
+- resolver origin + `/v1/bridges/query`
+- `https://<domain>/v1/bridges/query`
+
 Anchor-backed path:
 ```bash
 .build/debug/sprout bootstrap join \

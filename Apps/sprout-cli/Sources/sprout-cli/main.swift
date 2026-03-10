@@ -82,6 +82,7 @@ struct SproutCLI {
 
         let bridgeManager = BridgeManager()
         let catalogPath = flags["catalog"]
+        let discoveryService = try makeBridgeDiscoveryService(flags: flags, domain: domain)
 
         let resolver = try makeResolver(
             flags: flags,
@@ -114,16 +115,26 @@ struct SproutCLI {
             },
             environmentProbe: { _ in
                 BootstrapEnvironmentReport(
-                    discovery_modes: [catalogPath == nil ? "remote" : "offline-catalog"],
+                    discovery_modes: [catalogPath == nil ? "remote-http-discovery" : "offline-catalog"],
                     available_transports: ["https", "wss"]
                 )
             },
             bridgeDiscovery: { context in
-                guard let catalogPath else {
-                    throw BootstrapError.invalidContext("--catalog is required in P0/P1")
+                if let catalogPath {
+                    let descriptors = try bridgeManager.loadCatalog(from: URL(fileURLWithPath: catalogPath))
+                    return descriptors.filter { $0.scaffold_domain == context.domain }
                 }
-                let descriptors = try bridgeManager.loadCatalog(from: URL(fileURLWithPath: catalogPath))
-                return descriptors.filter { $0.scaffold_domain == context.domain }
+                guard let purposeGoal = context.purposeGoal, purposeGoal.isExplicitlySet else {
+                    throw BootstrapError.networkCallWithoutPurposeGoal
+                }
+                let descriptors = try await discoveryService.queryBridges(
+                    BridgeDiscoveryQuery(
+                        scaffold_domain: context.domain,
+                        purpose: purposeGoal.purpose,
+                        interests: purposeGoal.interests
+                    )
+                )
+                return descriptors
             },
             scaffoldAdminIdentityProvider: { descriptor, _ in
                 ScaffoldAdminIdentity(
@@ -522,6 +533,15 @@ struct SproutCLI {
         )
     }
 
+    private static func makeBridgeDiscoveryService(
+        flags: [String: String],
+        domain: String
+    ) throws -> any BridgeDiscoveryService {
+        let environment = ProcessInfo.processInfo.environment
+        let endpoint = try resolveDiscoveryEndpoint(flags: flags, environment: environment, domain: domain)
+        return BridgeDiscoveryHTTPClient(endpoint: endpoint)
+    }
+
     private static func resolverMode(flags: [String: String]) throws -> ResolverMode {
         let environment = ProcessInfo.processInfo.environment
         let liveFlag = flags["enable-live-resolver"] == "true" || environment["SPROUT_ENABLE_LIVE_RESOLVER"] == "1"
@@ -546,6 +566,39 @@ struct SproutCLI {
         let raw = flags["resolver-base-url"] ?? environment["SPROUT_RESOLVER_BASE_URL"] ?? ""
         guard let url = URL(string: raw), !raw.isEmpty else {
             throw CLIError.invalidArguments("Invalid resolver base URL.")
+        }
+        return url
+    }
+
+    private static func resolveDiscoveryEndpoint(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String
+    ) throws -> URL {
+        if let raw = flags["discovery-url"] ?? environment["SPROUT_DISCOVERY_URL"], !raw.isEmpty {
+            guard let url = URL(string: raw) else {
+                throw CLIError.invalidArguments("Invalid discovery URL.")
+            }
+            return url
+        }
+
+        if let resolverRaw = flags["resolver-base-url"] ?? environment["SPROUT_RESOLVER_BASE_URL"],
+           let resolverURL = URL(string: resolverRaw),
+           let scheme = resolverURL.scheme,
+           let host = resolverURL.host {
+            var components = URLComponents()
+            components.scheme = scheme
+            components.host = host
+            components.port = resolverURL.port
+            components.path = "/v1/bridges/query"
+            guard let url = components.url else {
+                throw CLIError.invalidArguments("Invalid discovery URL derived from resolver base URL.")
+            }
+            return url
+        }
+
+        guard let url = URL(string: "https://\(domain)/v1/bridges/query") else {
+            throw CLIError.invalidArguments("Invalid discovery URL derived from scaffold domain.")
         }
         return url
     }
@@ -620,7 +673,7 @@ struct SproutCLI {
     private static func printUsage() {
         let text = """
         sprout commands:
-          sprout bootstrap join --domain <d> --purpose <p> --goal <g> --interests <i1,i2> --starter <file> --catalog <file> [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--now <ISO8601>]
+          sprout bootstrap join --domain <d> --purpose <p> --goal <g> --interests <i1,i2> --starter <file> [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
