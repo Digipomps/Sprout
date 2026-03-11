@@ -11,11 +11,14 @@ What changed after the first gap analysis:
 - both routes were verified live after source rebuild and redeploy of `CellScaffold`
 - staging now has a signed entity anchor snapshot configured in the live resolver path
 - a real `sprout bootstrap join` run against the live resolver now reaches `Done` on staging
+- staging now publishes a signed scaffold-admin trust-root descriptor at `/.well-known/haven-scaffold-admin-trust-root.json`
+- a real `sprout bootstrap join` run against staging now reaches `Done` without explicit `--trust-root` or `--resolver-base-url` when the starter identity is already anchored
 
 What is now proven on `staging.haven.digipomps.org`:
 
 - Sprout can obtain a signed starter bootstrap intent from the scaffold
 - Sprout can obtain a signed bridge descriptor from the scaffold
+- Sprout can obtain a signed scaffold-admin trust-root descriptor from the scaffold
 - the public bridge endpoint published by staging is:
   - `wss://staging.haven.digipomps.org/bridgehead/Porthole/CloudBridge`
 - a real `sprout bootstrap join` run from the staging host reaches `Done` when:
@@ -24,15 +27,16 @@ What is now proven on `staging.haven.digipomps.org`:
   - entity resolution is supplied via mock `--resolved-entity`
 - a real `sprout bootstrap join` run from the staging host also reaches `Done` when:
   - starter intent is fetched live
+  - scaffold-admin trust root is fetched live from `well-known`
   - bridge discovery is fetched live
   - entity resolution is performed by the live resolver against the configured anchor snapshot
 
 What is still not proven end-to-end:
 
-- a separate published scaffold-admin trust root
 - the full `sprout bootstrap join` flow from this local runtime, because public DNS resolution to `staging.haven.digipomps.org` failed in the local execution environment
+- full success for a completely fresh starter identity without prior anchor membership or accepted entity-link evidence
 
-This shifts the main gap from discovery and resolver authority to scaffold-admin trust-root publication and post-bootstrap routing.
+This shifts the main gap from discovery, resolver authority and trust-root publication to fresh-identity entity admission and post-bootstrap routing.
 
 ## Scope
 
@@ -57,6 +61,7 @@ Targets reviewed:
 Verified directly:
 
 - `GET https://staging.haven.digipomps.org/health` returns `200 OK`
+- `GET https://staging.haven.digipomps.org/.well-known/haven-scaffold-admin-trust-root.json` returns `200 OK`
 - `POST https://staging.haven.digipomps.org/v1/resolver/starter-auth/register` returns `400` for `{}`, which proves the resolver route is live
 - `POST https://staging.haven.digipomps.org/v1/resolver/starter-auth/intent` returns `200 OK` and a signed starter bootstrap intent
 - `POST https://staging.haven.digipomps.org/v1/bridges/query` returns `200 OK` and a signed bridge descriptor
@@ -72,10 +77,14 @@ Verified on host/container:
 Consequence:
 
 - staging exposes the resolver API surface
+- staging exposes a published scaffold-admin trust root
 - staging exposes live starter bootstrap intent publication
 - staging exposes live signed bridge discovery
 - staging resolver now resolves entity membership against a signed anchor snapshot
 - live resolver bootstrap reaches `Done` for the anchored staging subject identity
+- live resolver bootstrap with trust-root auto-fetch reaches:
+  - `Done` for an anchored starter identity
+  - explicit `entityUnresolved(...)` for a fresh starter identity that is not in the accepted anchor snapshot
 
 ### Dev
 
@@ -133,67 +142,72 @@ This is enforced by:
 
 ## Main Gaps Against the Intended Sprout Role
 
-### G-001: The CLI still requires a pre-built `StarterAuthPayload`
+### G-001: Fresh starter identities are still unresolved unless admitted by the entity anchor
 
 Current state:
 
-- the CLI requires `--starter <file>`
-- it does not generate, negotiate or fetch starter auth as part of bootstrap
+- `sprout` now auto-fetches trust root and starter bootstrap intent
+- it can materialize a local `StarterAuthPayload` without `--starter`
+- a fresh starter identity still fails correctly at entity resolution unless:
+  - the anchor snapshot already contains it, or
+  - accepted entity-link evidence ties it to an anchored identity
 
 Why this matters:
 
-- this is too much friction for the user
-- it prevents `sprout` from being the first-touch bootstrap tool
+- Sprout is now low-friction for trust establishment, but not yet low-friction for first-time entity admission
+- first-touch bootstrap for a brand new user/device still needs an explicit admission flow
 
 Needed change:
 
-- `sprout` must be able to create or acquire the starter identity itself
-- for personal devices, that means local identity initialization
-- for service runtimes, that means owner bootstrap via explicit context, QR, or other explicit bootstrap channel
+- define an explicit admission path for fresh starter identities
+- likely inputs:
+  - scaffold-owner decision
+  - accepted entity-link evidence
+  - later: QR or binding-assisted proof flow
 
-### G-002: Live bridge discovery exists in code, but is not used by the CLI bootstrap path
+### G-002: Purpose routing after bootstrap is still missing
 
 Current state:
 
-- `BridgeDiscoveryHTTPClient` exists
-- `bootstrap join` still requires `--catalog`
-- the current implementation throws if `--catalog` is missing
+- trust root, starter intent, bridge discovery and live resolver are now all usable from `bootstrap join`
+- Sprout still stops after porthole contract issuance
+- there is no shipped purpose-router contract telling Sprout which next scaffold/cell/binding should satisfy the user's goal
 
 Why this matters:
 
-- friction is still too high
-- staging does not expose a published discovery endpoint for signed bridge descriptors
+- the user still has to know what to do after bootstrap
+- this is the remaining friction point relative to the intended role
 
 Needed change:
 
-- either expose a real signed bridge discovery route on the scaffold
-- or define one canonical bootstrap descriptor URL per scaffold domain
+- define and implement a post-bootstrap purpose-router contract
+- let the scaffold or matching cell return:
+  - the next scaffold recommendation
+  - the next cell or assistant binding
+  - the required porthole mode
 
-Without this, `sprout` cannot discover the scaffold trust root or bridge route by itself.
-
-### G-003: Purpose/goal planning exists as a prototype, not as shipped bootstrap logic
+### G-003: `sprout` is still broader than the intended minimal bootstrap executable
 
 Current state:
 
-- `sprout/BootstrapPlanner.swift` models the right direction
-- it is not part of the shipped SwiftPM executable targets
-- the real CLI bootstrap does not use it
+- planner logic is now in shipped `SproutCore`
+- trust-root auto-fetch is in the shipped CLI
+- the executable still includes economics/update/admin-adjacent commands that are broader than strict bootstrap
 
 Why this matters:
 
-- the intended “describe purpose, let Sprout do the right things” workflow is not implemented
-- current bootstrap is still argument-driven rather than plan-driven
+- the bootstrap path is now correct enough
+- the remaining reduction should be about executable surface, not missing bootstrap primitives
 
 Needed change:
 
-- move the planner into `SproutCore`
-- feed it:
-  - runtime profile
-  - environment capabilities
-  - identity availability
-  - discovery channels
-  - scaffold capabilities
-- let it decide the next explicit bootstrap action
+- consider splitting economics and other non-bootstrap commands out of the default binary
+- keep `sprout` focused on:
+  - trust root
+  - starter identity
+  - bridge discovery
+  - entity admission
+  - porthole handoff
 
 ### G-004: Staging resolver is live, but not yet authoritative for entity membership
 

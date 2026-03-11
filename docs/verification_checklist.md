@@ -9,6 +9,11 @@ Status per 2026-03-08:
 - Lokalt verifisert i denne workspacen: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-linux linux-x86_64`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-linux "" /tmp/sprout-dist-linux/SHA256SUMS-linux-x86_64.b64url`.
 - Ikke marker listen som fullført før autoritativ server-side resolver, produksjonssignering og runtime-spesifikke release-krav faktisk er verifisert.
 
+Status per 2026-03-11:
+- staging publiserer nå `ScaffoldAdminTrustRootDescriptor` via `/.well-known/haven-scaffold-admin-trust-root.json`
+- `sprout verify` verifiserer descriptoren
+- `sprout bootstrap join` på staging fungerer uten eksplisitt `--trust-root` og uten eksplisitt `--resolver-base-url` når starter-identiteten allerede er ankeret
+
 ## Correctness og interop
 - [ ] Alle JSON schemas validerer eksempelobjekter (JSON Schema 2020-12).
 - [ ] `CloudBridgePricingContract` schema + eksempelinstans validerer.
@@ -19,6 +24,7 @@ Status per 2026-03-08:
 - [ ] Bootstrap state machine har deterministiske transitions og kan replayes fra auditlogg.
 - [ ] Ingen klientkode genererer syntetisk `entity_id`; entity er alltid `resolved` eller `unresolved` eksplisitt.
 - [ ] `ScaffoldAdminIdentity` blir derivert eksplisitt fra signert bridge metadata eller annen autoritativ kilde.
+- [ ] `ScaffoldAdminTrustRootDescriptor` schema/validator/generator er implementert, og bootstrap kan bruke den i stedet for å anta `bridge_owner == scaffold admin`.
 - [ ] Live resolver adapter er bak eksplisitt feature flag og har tester for issuer pinning og full bootstrap happy path.
 - [ ] Negativtestene dekker: feil signatur, utløpt payload, feil domene, manglende route, capability denial, unresolved entity, invalid entity evidence, invalid inclusion proof.
 - [ ] RAU er eneste persisted accounting unit; IMU og ore er views/konverteringer.
@@ -31,6 +37,7 @@ Status per 2026-03-08:
 - [ ] `EntityLinkContract` alene gir ikke tilgang; resolver må gi eksplisitt entity resolution.
 - [ ] `PortholeAccessContract` er signert, tidsbegrenset og kan ikke utvide capabilities utover resolverens beslutning.
 - [ ] Resolver-issued inclusion proof og porthole contract kommer fra samme issuer eller eksplisitt autorisert kjede.
+- [ ] Publisert scaffold trust-root er signert, expiry-bounded og verifiserbar fra `well-known`.
 - [ ] Nøkkellagring: Apple bruker Keychain/Secure Enclave; CLI har en sikker keystore-strategi dokumentert.
 - [ ] Transport baseline TLS 1.3 (https/wss); eventuelle alternativer (HTTP/2, QUIC/HTTP3) er bak feature flags.
 - [ ] Linux release-scope er eksplisitt begrenset når transportparitet mangler; WSS på Linux er ikke implisitt støttet.

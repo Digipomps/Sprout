@@ -5,7 +5,7 @@ Sprout bootstraps a HAVEN scaffold connection with explicit purpose/goal, signed
 
 Sprout now does five things explicitly:
 1. acquires a domain-scoped identity
-2. makes scaffold admin identity explicit from signed bridge metadata
+2. loads or fetches a signed scaffold-admin trust root
 3. resolves the user into an entity, or stops with an explicit unresolved state
 4. verifies a resolver-signed entity inclusion proof
 5. obtains a signed `PortholeAccessContract` for web, CLI or native access
@@ -65,16 +65,51 @@ Live discovery path:
   --goal "Join scaffold and request next scaffold recommendation" \
   --interests haven.core.bootstrap,haven.core.bridge \
   --enable-live-resolver \
-  --resolver-base-url https://staging.haven.digipomps.org \
-  --discovery-url https://staging.haven.digipomps.org/v1/bridges/query \
   --porthole cli
 ```
 
-If `--catalog` is omitted, Sprout uses live bridge discovery. Endpoint resolution order:
+If `--catalog` is omitted, Sprout uses live bridge discovery.
+If `--trust-root` and `--resolver-base-url` are omitted, Sprout now tries to fetch the scaffold trust root from `well-known` first.
+
+Trust-root lookup order:
+- `--trust-root`
+- `SPROUT_TRUST_ROOT_PATH`
+- `.sprout/trust-roots/<domain>.json`
+- `.sprout/scaffold_admin_trust_root.json`
+- `https://<domain>/.well-known/haven-scaffold-admin-trust-root.json`
+
+Discovery endpoint resolution order:
 - `--discovery-url`
 - `SPROUT_DISCOVERY_URL`
+- trust-root descriptor `bridge_discovery_url`
 - resolver origin + `/v1/bridges/query`
 - `https://<domain>/v1/bridges/query`
+
+Resolver base URL resolution order for live resolver:
+- `--resolver-base-url`
+- `SPROUT_RESOLVER_BASE_URL`
+- trust-root descriptor `resolver_base_url`
+
+Verified staging path on 2026-03-11:
+```bash
+.build/debug/sprout bootstrap join \
+  --domain staging.haven.digipomps.org \
+  --purpose bootstrap.join_scaffold \
+  --goal "Connect Sprout to staging scaffold" \
+  --interests haven.core.bootstrap,haven.core.bridge \
+  --enable-live-resolver \
+  --porthole cli
+```
+
+What is proven on staging:
+- trust root is fetched from `well-known`
+- starter bootstrap intent is fetched live
+- bridge discovery is fetched live
+- live resolver works without explicit `--resolver-base-url`
+
+Important:
+- a completely fresh starter identity still stops at `entityUnresolved(...)` until that identity is admitted by the scaffold entity anchor
+- this is expected and correct
 
 Anchor-backed path:
 ```bash
@@ -198,10 +233,12 @@ Ask the updater if a specific install is allowed:
 .build/debug/sprout verify TestVectors/bridge_descriptor.signed.json
 .build/debug/sprout verify TestVectors/entity_link_contract.mutual.json
 .build/debug/sprout verify TestVectors/porthole_access_contract.example.json --now 2026-02-26T08:03:00Z
+.build/debug/sprout verify /path/to/scaffold-admin-trust-root.json
 ```
 
 ## Trust model
 - Trust only artifacts/contracts signed by authorized keys for your domain.
+- `ScaffoldAdminTrustRootDescriptor` is the explicit root for scaffold bootstrap trust when available.
 - A valid mutual `EntityLinkContract` is not enough on its own to prove entity membership.
 - The resolver must return a valid `EntityInclusionProof` before Sprout continues to porthole access.
 - `PortholeAccessContract` is the handoff boundary. Downstream web/CLI/native clients should use it as the access artifact.
