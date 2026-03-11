@@ -19,7 +19,7 @@ struct SproutAdminCLI {
         do {
             try run(arguments: Array(CommandLine.arguments.dropFirst()))
         } catch {
-            fputs("error: \(error)\n", stderr)
+            FileHandle.standardError.write(Data("error: \(error)\n".utf8))
             exit(1)
         }
     }
