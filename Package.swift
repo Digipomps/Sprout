@@ -9,10 +9,12 @@ var products: [Product] = [
     .library(name: "SproutTransport", targets: ["SproutTransport"]),
     .library(name: "SproutBridge", targets: ["SproutBridge"]),
     .library(name: "SproutResolverAdapter", targets: ["SproutResolverAdapter"]),
+    .library(name: "SproutAdminSupport", targets: ["SproutAdminSupport"]),
     .library(name: "SproutAppSupport", targets: ["SproutAppSupport"]),
     .executable(name: "sprout-cli", targets: ["sproutCLI"]),
     .executable(name: "sprout", targets: ["sproutCLI"]),
-    .executable(name: "sprout-updater", targets: ["sproutUpdater"])
+    .executable(name: "sprout-updater", targets: ["sproutUpdater"]),
+    .executable(name: "sprout-admin", targets: ["sproutAdmin"])
 ]
 
 var targets: [Target] = [
@@ -42,6 +44,15 @@ var targets: [Target] = [
             name: "SproutResolverAdapter",
             dependencies: ["SproutCrypto", "SproutEconomics"],
             path: "Packages/SproutResolverAdapter/Sources/SproutResolverAdapter"
+        ),
+        .target(
+            name: "SproutAdminSupport",
+            dependencies: [
+                "SproutCrypto",
+                "SproutResolverAdapter",
+                .product(name: "Crypto", package: "swift-crypto")
+            ],
+            path: "Packages/SproutAdminSupport/Sources/SproutAdminSupport"
         ),
         .target(
             name: "SproutBridge",
@@ -90,6 +101,15 @@ var targets: [Target] = [
             ],
             path: "Apps/sprout-updater/Sources/sprout-updater"
         ),
+        .executableTarget(
+            name: "sproutAdmin",
+            dependencies: [
+                "SproutAdminSupport",
+                "SproutCrypto",
+                "SproutResolverAdapter"
+            ],
+            path: "Apps/sprout-admin/Sources/sprout-admin"
+        ),
         .testTarget(
             name: "SproutCryptoTests",
             dependencies: ["SproutCrypto"],
@@ -127,6 +147,15 @@ var targets: [Target] = [
             name: "SproutBridgeTests",
             dependencies: ["SproutBridge", "SproutCrypto"],
             path: "Tests/SproutBridgeTests"
+        ),
+        .testTarget(
+            name: "SproutAdminSupportTests",
+            dependencies: [
+                "SproutAdminSupport",
+                "SproutCrypto",
+                "SproutResolverAdapter"
+            ],
+            path: "Tests/SproutAdminSupportTests"
         )
 ]
 
