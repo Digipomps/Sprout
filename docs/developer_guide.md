@@ -7,9 +7,11 @@
 - `Packages/SproutTransport`: channel interfaces + HTTPS/WSS adapters + gRPC/QUIC stubs.
 - `Packages/SproutBridge`: descriptor validation, bridge manager, discovery client/mock server.
 - `Packages/SproutResolverAdapter`: resolver protocol, entity anchor snapshot, inclusion proof, scaffold admin identity, porthole access contract, mock and file-backed resolver adapters.
+- `Packages/SproutAdminSupport`: operator helpers for Vapor vault inspection and signed entity anchor snapshot generation.
 - `Packages/SproutEconomics`: RAU/IMU/ore units, pricing contracts/compiler, cost profiler, rollup ledger helpers, Stripe fee overlay.
 - `Packages/SproutAppSupport`: reusable porthole client session logic and native runtime adapter/fallbacks for app consumers.
 - `Apps/sprout-cli`: reference bootstrap executable.
+- `Apps/sprout-admin`: separate operator executable for Vapor vault inspection and entity-anchor snapshot generation.
 - `Apps/sprout-updater`: separate policy-gated updater/verification executable.
 - `Apps/sprout-macos`: actual macOS consumer for signed web/native handoff artifacts.
 - `Scripts/`: release bundle, SPDX SBOM and manifest generation.
@@ -18,6 +20,7 @@
 macOS workspace:
 ```bash
 swift build --product sprout
+swift build --product sprout-admin
 swift build --product sprout-updater
 swift build --product sprout-macos
 swift test
@@ -26,6 +29,7 @@ swift test
 Linux baseline:
 ```bash
 swift build --product sprout
+swift build --product sprout-admin
 swift build --product sprout-updater
 swift test
 ```
@@ -187,9 +191,27 @@ bash Scripts/build_release_bundle.sh dist linux-x86_64
 bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64url
 ```
 
+Inspect the Vapor vault on a scaffold host:
+```bash
+.build/debug/sprout-admin vapor-vault list-identities --vault-root /app/CellsContainer
+```
+
+Generate a signed entity anchor snapshot from a Vapor vault:
+```bash
+.build/debug/sprout-admin entity-anchor create-from-vapor-vault \
+  --vault-root /app/CellsContainer \
+  --identity-context Scaffold \
+  --scaffold-domain staging.haven.digipomps.org \
+  --entity-id entity_staging_demo \
+  --subject-public-key <base64url-ed25519-pubkey> \
+  --subject-domain staging.haven.digipomps.org \
+  --out /app/CellsContainer/sprout/entity-anchor-snapshot.json
+```
+
 ## Notes on current maturity
 - `EntityAnchorResolverAdapter` is a file-backed P1 bridge, not the final live HAVEN resolver integration.
 - `HavenResolverHTTPAdapter` is implemented and tested, but authoritative HAVEN server-side resolver routes are still external to this repo.
+- `sprout-admin` is intentionally separate from `sprout`: it is an operator tool, not part of the minimal bootstrap binary trust surface.
 - `--resolved-entity` remains available only for the mock resolver path.
 - `sprout-updater` is intentionally narrow: it plans and verifies installs, but does not turn `sprout` into a self-updating binary.
 - CI is configured for macOS and Ubuntu 22.04 and can attest build provenance and SBOM, but production key management and published trust roots are still environment-dependent.

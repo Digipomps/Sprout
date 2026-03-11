@@ -9,6 +9,8 @@ What changed after the first gap analysis:
 - staging now serves `POST /v1/resolver/starter-auth/intent`
 - staging now serves `POST /v1/bridges/query`
 - both routes were verified live after source rebuild and redeploy of `CellScaffold`
+- staging now has a signed entity anchor snapshot configured in the live resolver path
+- a real `sprout bootstrap join` run against the live resolver now reaches `Done` on staging
 
 What is now proven on `staging.haven.digipomps.org`:
 
@@ -20,16 +22,17 @@ What is now proven on `staging.haven.digipomps.org`:
   - starter intent is fetched live
   - bridge discovery is fetched live
   - entity resolution is supplied via mock `--resolved-entity`
-- the same `sprout bootstrap join` flow against the live resolver stops at:
-  - `entityUnresolved("no entity anchor snapshot configured")`
+- a real `sprout bootstrap join` run from the staging host also reaches `Done` when:
+  - starter intent is fetched live
+  - bridge discovery is fetched live
+  - entity resolution is performed by the live resolver against the configured anchor snapshot
 
 What is still not proven end-to-end:
 
 - a separate published scaffold-admin trust root
-- a live-resolver join that reaches `Done` without mock entity resolution
 - the full `sprout bootstrap join` flow from this local runtime, because public DNS resolution to `staging.haven.digipomps.org` failed in the local execution environment
 
-This shifts the main gap from discovery to resolver authority and post-bootstrap routing.
+This shifts the main gap from discovery and resolver authority to scaffold-admin trust-root publication and post-bootstrap routing.
 
 ## Scope
 
@@ -63,7 +66,7 @@ Verified on host/container:
 
 - `RP_ID=staging.haven.digipomps.org`
 - `RP_ORIGIN=https://staging.haven.digipomps.org`
-- no `SPROUT_ENTITY_ANCHOR_SNAPSHOT_PATH` in the running container environment
+- `SPROUT_ENTITY_ANCHOR_SNAPSHOT_PATH=/app/CellsContainer/sprout/entity-anchor-snapshot.json`
 - no `SPROUT_RESOLVER_BEARER_TOKEN` in the running container environment
 
 Consequence:
@@ -71,8 +74,8 @@ Consequence:
 - staging exposes the resolver API surface
 - staging exposes live starter bootstrap intent publication
 - staging exposes live signed bridge discovery
-- staging does not currently expose an entity-anchor snapshot to the resolver
-- staging resolver therefore cannot authoritatively resolve entity membership for `sprout bootstrap join`
+- staging resolver now resolves entity membership against a signed anchor snapshot
+- live resolver bootstrap reaches `Done` for the anchored staging subject identity
 
 ### Dev
 
