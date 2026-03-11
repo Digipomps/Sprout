@@ -2,6 +2,29 @@
 
 Date: 2026-03-10
 
+## Update 2026-03-11
+
+What changed after the first gap analysis:
+
+- staging now serves `POST /v1/resolver/starter-auth/intent`
+- staging now serves `POST /v1/bridges/query`
+- both routes were verified live after source rebuild and redeploy of `CellScaffold`
+
+What is now proven on `staging.haven.digipomps.org`:
+
+- Sprout can obtain a signed starter bootstrap intent from the scaffold
+- Sprout can obtain a signed bridge descriptor from the scaffold
+- the public bridge endpoint published by staging is:
+  - `wss://staging.haven.digipomps.org/bridgehead/Porthole/CloudBridge`
+
+What is still not proven end-to-end:
+
+- authoritative entity resolution on staging
+- a separate published scaffold-admin trust root
+- the full `sprout bootstrap join` flow from this local runtime, because public DNS resolution to `staging.haven.digipomps.org` failed in the local execution environment
+
+This shifts the main gap from discovery to resolver authority and post-bootstrap routing.
+
 ## Scope
 
 This document evaluates the current `sprout` executable against the intended role:
@@ -26,6 +49,8 @@ Verified directly:
 
 - `GET https://staging.haven.digipomps.org/health` returns `200 OK`
 - `POST https://staging.haven.digipomps.org/v1/resolver/starter-auth/register` returns `400` for `{}`, which proves the resolver route is live
+- `POST https://staging.haven.digipomps.org/v1/resolver/starter-auth/intent` returns `200 OK` and a signed starter bootstrap intent
+- `POST https://staging.haven.digipomps.org/v1/bridges/query` returns `200 OK` and a signed bridge descriptor
 - `GET https://staging.haven.digipomps.org/admin/api/scaffold-owner` returns `401`, which proves the operator endpoint is present and protected
 
 Verified on host/container:
@@ -38,6 +63,8 @@ Verified on host/container:
 Consequence:
 
 - staging exposes the resolver API surface
+- staging exposes live starter bootstrap intent publication
+- staging exposes live signed bridge discovery
 - staging does not currently expose an entity-anchor snapshot to the resolver
 - staging resolver therefore cannot authoritatively resolve entity membership for `sprout bootstrap join`
 
