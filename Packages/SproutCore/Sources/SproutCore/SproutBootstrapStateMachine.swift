@@ -117,6 +117,10 @@ public actor SproutBootstrapStateMachine {
             try await transition(to: .resolveEntity, detail: "resolve entity and verify entity-link evidence")
             try ensureExplicitPurposeGoal(context)
             context.entityLinkEvidence = try await dependencies.entityEvidenceProvider(context)
+            context.entityAdmissionEvidence = try await dependencies.entityAdmissionEvidenceProvider(context)
+            if context.entityLinkEvidence != nil, context.entityAdmissionEvidence != nil {
+                throw BootstrapError.invalidContext("provide either entity-link evidence or entity admission evidence, not both")
+            }
             if let evidence = context.entityLinkEvidence {
                 guard evidence.contains(identityPublicKey: identity.identity_public_key) else {
                     throw BootstrapError.invalidEntityLinkEvidence("entity-link evidence does not include acquired identity")
@@ -125,7 +129,16 @@ public actor SproutBootstrapStateMachine {
                     throw BootstrapError.invalidEntityLinkEvidence("entity-link mutual signatures did not verify")
                 }
             }
-            let evidenceSummary = try context.entityLinkEvidence?.resolverSummary()
+            if let admissionEvidence = context.entityAdmissionEvidence {
+                guard admissionEvidence.contains(identityPublicKey: identity.identity_public_key, domain: identity.domain) else {
+                    throw BootstrapError.invalidEntityAdmissionEvidence("admission evidence does not include acquired identity and domain")
+                }
+                guard try admissionEvidence.verify(now: now()) else {
+                    throw BootstrapError.invalidEntityAdmissionEvidence("admission contract or continuity proof did not verify")
+                }
+            }
+            let evidenceSummary = try context.entityAdmissionEvidence?.resolverSummary() ?? context.entityLinkEvidence?.resolverSummary()
+            let evidenceContractID = context.entityAdmissionEvidence?.contract.contract_id ?? context.entityLinkEvidence?.contract.contract_id
             let entityResolutionRequest = EntityResolutionRequest(
                 identity_public_key: identity.identity_public_key,
                 domain: context.domain,
@@ -141,7 +154,7 @@ public actor SproutBootstrapStateMachine {
                 identity: identity,
                 scaffoldAdminIdentity: scaffoldAdminIdentity,
                 domain: context.domain,
-                evidenceContractID: context.entityLinkEvidence?.contract.contract_id,
+                evidenceContractID: evidenceContractID,
                 now: now()
             )
 
@@ -188,7 +201,7 @@ public actor SproutBootstrapStateMachine {
                 goal: purposeGoal.goal,
                 interests: purposeGoal.interests,
                 capability_grants: capabilities.granted,
-                entity_evidence_contract_id: context.entityLinkEvidence?.contract.contract_id,
+                entity_evidence_contract_id: evidenceContractID,
                 declared_deposit_rau: context.economics?.declared_deposit_rau,
                 pricing_contract: context.economics?.pricing_contract
             )

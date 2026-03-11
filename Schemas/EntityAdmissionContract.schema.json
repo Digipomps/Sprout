@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/EntityAdmissionContract.schema.json",
+  "title": "EntityAdmissionContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "contract_id",
+    "target_scaffold_domain",
+    "target_entity_id",
+    "target_identity_public_key",
+    "target_identity_domain",
+    "continuity_proof_id",
+    "continuity_proof_sha256_b64url",
+    "source_scaffold_domain",
+    "source_entity_id",
+    "source_identity_public_key",
+    "purpose",
+    "goal",
+    "interests",
+    "issued_at",
+    "expires_at",
+    "issued_by",
+    "signature"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "contract_id": { "type": "string" },
+    "admission_request_id": { "type": "string" },
+    "target_scaffold_domain": { "type": "string" },
+    "target_entity_id": { "type": "string" },
+    "target_identity_public_key": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "target_identity_domain": { "type": "string" },
+    "continuity_proof_id": { "type": "string" },
+    "continuity_proof_sha256_b64url": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "source_scaffold_domain": { "type": "string" },
+    "source_entity_id": { "type": "string" },
+    "source_identity_public_key": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "purpose": { "type": "string" },
+    "goal": { "type": "string" },
+    "interests": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "issued_by": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": { "type": "string", "enum": ["Ed25519"] },
+        "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      }
+    }
+  }
+}

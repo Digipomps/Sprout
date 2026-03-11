@@ -25,6 +25,7 @@ Status per 2026-03-11:
 - [ ] Ingen klientkode genererer syntetisk `entity_id`; entity er alltid `resolved` eller `unresolved` eksplisitt.
 - [ ] `ScaffoldAdminIdentity` blir derivert eksplisitt fra signert bridge metadata eller annen autoritativ kilde.
 - [ ] `ScaffoldAdminTrustRootDescriptor` schema/validator/generator er implementert, og bootstrap kan bruke den i stedet for å anta `bridge_owner == scaffold admin`.
+- [ ] `CrossScaffoldEntityContinuityProof`, `EntityAdmissionRequest` og `EntityAdmissionContract` validerer mot schema og signaturreglene.
 - [ ] Live resolver adapter er bak eksplisitt feature flag og har tester for issuer pinning og full bootstrap happy path.
 - [ ] Negativtestene dekker: feil signatur, utløpt payload, feil domene, manglende route, capability denial, unresolved entity, invalid entity evidence, invalid inclusion proof.
 - [ ] RAU er eneste persisted accounting unit; IMU og ore er views/konverteringer.
@@ -35,6 +36,7 @@ Status per 2026-03-11:
 - [ ] Ingen nettverkskall uten eksplisitt Purpose/Goal i request-context; dokumentert i code review.
 - [ ] Discovery er opt-in og minimerer metadata; alignment med innebygd personvern og personvern som standard.
 - [ ] `EntityLinkContract` alene gir ikke tilgang; resolver må gi eksplisitt entity resolution.
+- [ ] Cross-scaffold continuity skaper ikke implicit global linkage; target-side admission må være eksplisitt og signert.
 - [ ] `PortholeAccessContract` er signert, tidsbegrenset og kan ikke utvide capabilities utover resolverens beslutning.
 - [ ] Resolver-issued inclusion proof og porthole contract kommer fra samme issuer eller eksplisitt autorisert kjede.
 - [ ] Publisert scaffold trust-root er signert, expiry-bounded og verifiserbar fra `well-known`.
@@ -53,6 +55,11 @@ Status per 2026-03-11:
 - [ ] Update behavior er policy-gated via UpdateGrantPolicy (default deny), og tester verifiserer at updater aldri overskrider eksplisitte grants.
 - [ ] Sprout kan distribueres uten self-update som default for CLI/server; hvis custom updater aktiveres, er den policy-gated og separert fra bootstrap trust path.
 - [ ] Hvis macOS-app distribueres utenfor App Store: notarization og code signing er del av release-prosessen og dokumentert.
+
+## Entity continuity
+- [ ] Cross-scaffold continuity er dokumentert som scaffold-local continuity + target-side admission, ikke som global personidentitet.
+- [ ] CLI-only flyt finnes for continuity proof -> admission request -> admission contract -> bootstrap join.
+- [ ] Åpne forskningsspørsmål om global entity/person-modell er eksplisitt dokumentert som `OPEN`, ikke skjult i implementasjonen.
 
 ## Economics og tariff
 - [ ] CloudBridge session cost profiler logger per outbound-tilkobling: tråder, RSS/heap delta, CPU-tid, meldingsmengde og varighet.

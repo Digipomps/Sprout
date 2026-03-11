@@ -36,6 +36,10 @@ struct SproutAdminCLI {
             try runEntityAnchor(arguments: Array(arguments.dropFirst()))
         case "scaffold-trust-root":
             try runScaffoldTrustRoot(arguments: Array(arguments.dropFirst()))
+        case "continuity-proof":
+            try runContinuityProof(arguments: Array(arguments.dropFirst()))
+        case "admission-contract":
+            try runAdmissionContract(arguments: Array(arguments.dropFirst()))
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -88,6 +92,32 @@ struct SproutAdminCLI {
         switch subcommand {
         case "create-from-vapor-vault":
             try createScaffoldTrustRootDescriptor(flags: flags)
+        default:
+            throw AdminCLIError.invalidArguments(usage)
+        }
+    }
+
+    private static func runContinuityProof(arguments: [String]) throws {
+        guard let subcommand = arguments.first else {
+            throw AdminCLIError.invalidArguments(usage)
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+        switch subcommand {
+        case "create-from-vapor-vault":
+            try createContinuityProof(flags: flags)
+        default:
+            throw AdminCLIError.invalidArguments(usage)
+        }
+    }
+
+    private static func runAdmissionContract(arguments: [String]) throws {
+        guard let subcommand = arguments.first else {
+            throw AdminCLIError.invalidArguments(usage)
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+        switch subcommand {
+        case "create-from-vapor-vault":
+            try createAdmissionContract(flags: flags)
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -209,6 +239,116 @@ struct SproutAdminCLI {
         try emitJSON(summary, outPath: flags["summary-out"])
     }
 
+    private static func createContinuityProof(flags: [String: String]) throws {
+        let sourceScaffoldDomain = try requiredFlag("source-scaffold-domain", flags)
+        let identityContext = try requiredFlag("identity-context", flags)
+        let sourceEntityID = try requiredFlag("source-entity-id", flags)
+        let sourceIdentityPublicKey = try requiredFlag("source-identity-public-key", flags)
+        let sourceIdentityDomain = try requiredFlag("source-identity-domain", flags)
+        let targetScaffoldDomain = try requiredFlag("target-scaffold-domain", flags)
+        let purpose = try requiredFlag("purpose", flags)
+        let goal = try requiredFlag("goal", flags)
+        let interests = parseCSV(flags["interests"])
+        guard !interests.isEmpty else {
+            throw AdminCLIError.invalidArguments("Missing required --interests")
+        }
+
+        let now = try parseDate(flags["now"]) ?? Date()
+        let issuedAt = try parseDate(flags["issued-at"]) ?? now
+        let expiresAt = try parseDate(flags["expires-at"]) ?? issuedAt.addingTimeInterval(600)
+        guard expiresAt > issuedAt else {
+            throw AdminCLIError.invalidArguments("--expires-at must be later than --issued-at.")
+        }
+
+        let proofID = flags["proof-id"] ?? "ccp_\(sourceScaffoldDomain.replacingOccurrences(of: ".", with: "_"))_\(Int(issuedAt.timeIntervalSince1970))"
+        let paths = resolveVaultPaths(flags: flags)
+        let adminIdentity = try VaporVaultDecoder.identity(forContext: identityContext, paths: paths)
+        let proof = try CrossScaffoldContinuityProofBuilder.buildSignedProof(
+            sourceScaffoldDomain: sourceScaffoldDomain,
+            adminIdentity: adminIdentity,
+            proofID: proofID,
+            sourceEntityID: sourceEntityID,
+            sourceIdentityPublicKey: sourceIdentityPublicKey,
+            sourceIdentityDomain: sourceIdentityDomain,
+            targetScaffoldDomain: targetScaffoldDomain,
+            purpose: purpose,
+            goal: goal,
+            interests: interests,
+            issuedAt: issuedAt,
+            expiresAt: expiresAt
+        )
+        let outputPath = flags["out"] ?? "./cross-scaffold-continuity-proof.json"
+        try emitJSON(proof, outPath: outputPath)
+        let summary: [String: AnyCodable] = [
+            "proof_path": AnyCodable(outputPath),
+            "proof_id": AnyCodable(proof.proof_id),
+            "source_scaffold_domain": AnyCodable(proof.source_scaffold_domain),
+            "source_entity_id": AnyCodable(proof.source_entity_id),
+            "target_scaffold_domain": AnyCodable(proof.target_scaffold_domain),
+            "issued_by": AnyCodable(proof.issued_by)
+        ]
+        try emitJSON(summary, outPath: flags["summary-out"])
+    }
+
+    private static func createAdmissionContract(flags: [String: String]) throws {
+        let targetScaffoldDomain = try requiredFlag("target-scaffold-domain", flags)
+        let targetEntityID = try requiredFlag("target-entity-id", flags)
+        let targetIdentityPublicKey = try requiredFlag("target-identity-public-key", flags)
+        let targetIdentityDomain = try requiredFlag("target-identity-domain", flags)
+        let identityContext = try requiredFlag("identity-context", flags)
+        let continuityProofPath = try requiredFlag("continuity-proof", flags)
+        let admissionRequestPath = try requiredFlag("admission-request", flags)
+
+        let continuityProof = try JSONDecoder().decode(
+            CrossScaffoldEntityContinuityProof.self,
+            from: Data(contentsOf: URL(fileURLWithPath: continuityProofPath))
+        )
+        let admissionRequest = try JSONDecoder().decode(
+            EntityAdmissionRequest.self,
+            from: Data(contentsOf: URL(fileURLWithPath: admissionRequestPath))
+        )
+        guard try continuityProof.verifySignature(), !continuityProof.isExpired(now: try parseDate(flags["now"]) ?? Date()) else {
+            throw AdminCLIError.invalidArguments("Continuity proof is invalid or expired.")
+        }
+        guard try admissionRequest.verifySignature(), !admissionRequest.isExpired(now: try parseDate(flags["now"]) ?? Date()) else {
+            throw AdminCLIError.invalidArguments("Admission request is invalid or expired.")
+        }
+
+        let now = try parseDate(flags["now"]) ?? Date()
+        let issuedAt = try parseDate(flags["issued-at"]) ?? now
+        let expiresAt = try parseDate(flags["expires-at"]) ?? issuedAt.addingTimeInterval(600)
+        guard expiresAt > issuedAt else {
+            throw AdminCLIError.invalidArguments("--expires-at must be later than --issued-at.")
+        }
+
+        let contractID = flags["contract-id"] ?? "eac_\(targetScaffoldDomain.replacingOccurrences(of: ".", with: "_"))_\(Int(issuedAt.timeIntervalSince1970))"
+        let paths = resolveVaultPaths(flags: flags)
+        let adminIdentity = try VaporVaultDecoder.identity(forContext: identityContext, paths: paths)
+        let contract = try EntityAdmissionContractBuilder.buildSignedContract(
+            targetScaffoldDomain: targetScaffoldDomain,
+            adminIdentity: adminIdentity,
+            contractID: contractID,
+            targetEntityID: targetEntityID,
+            targetIdentityPublicKey: targetIdentityPublicKey,
+            targetIdentityDomain: targetIdentityDomain,
+            continuityProof: continuityProof,
+            admissionRequest: admissionRequest,
+            issuedAt: issuedAt,
+            expiresAt: expiresAt
+        )
+        let outputPath = flags["out"] ?? "./entity-admission-contract.json"
+        try emitJSON(contract, outPath: outputPath)
+        let summary: [String: AnyCodable] = [
+            "contract_path": AnyCodable(outputPath),
+            "contract_id": AnyCodable(contract.contract_id),
+            "target_scaffold_domain": AnyCodable(contract.target_scaffold_domain),
+            "target_entity_id": AnyCodable(contract.target_entity_id),
+            "continuity_proof_id": AnyCodable(contract.continuity_proof_id),
+            "issued_by": AnyCodable(contract.issued_by)
+        ]
+        try emitJSON(summary, outPath: flags["summary-out"])
+    }
+
     private static func resolveVaultPaths(flags: [String: String]) -> VaporVaultPaths {
         let vaultRoot = URL(fileURLWithPath: flags["vault-root"] ?? "/app/CellsContainer", isDirectory: true)
         let vaultFileURL = flags["vault-file"].map { URL(fileURLWithPath: $0) }
@@ -297,6 +437,8 @@ struct SproutAdminCLI {
       sprout-admin vapor-vault list-identities [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--out <file>]
       sprout-admin entity-anchor create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> --entity-id <id> --subject-public-key <b64url> --subject-domain <domain> [--accepted-contract-ids <id1,id2>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--added-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin scaffold-trust-root create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
+      sprout-admin continuity-proof create-from-vapor-vault --source-scaffold-domain <domain> --identity-context <ctx> --source-entity-id <id> --source-identity-public-key <b64url> --source-identity-domain <domain> --target-scaffold-domain <domain> --purpose <purpose> --goal <goal> --interests <i1,i2> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--proof-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
+      sprout-admin admission-contract create-from-vapor-vault --target-scaffold-domain <domain> --target-entity-id <id> --target-identity-public-key <b64url> --target-identity-domain <domain> --identity-context <ctx> --continuity-proof <file> --admission-request <file> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--contract-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
     """
 }
 

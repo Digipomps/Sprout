@@ -145,6 +145,7 @@ final class HavenResolverHTTPAdapterTests: XCTestCase {
                 return BootstrapIdentity(domain: payload.domain, identity_public_key: payload.identity_public_key)
             },
             entityEvidenceProvider: { _ in nil },
+            entityAdmissionEvidenceProvider: { _ in nil },
             environmentProbe: { _ in
                 BootstrapEnvironmentReport(discovery_modes: ["offline-catalog", "live-resolver-http"], available_transports: ["https", "wss"])
             },

@@ -2,15 +2,17 @@
 
 Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/Goal`, domain-scoped identities, resolver-enforced contracts/capabilities, and policy-gated update handling.
 
-## Status (2026-03-08)
+## Status (2026-03-11)
 - P0 is implemented: deterministic bootstrap state machine, JCS subset, Ed25519, strict base64url, schemas, OpenAPI, golden vectors and CLI reference flow.
 - P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI signing.
 - Native Linux baseline is now part of the repo scope for `sprout` and `sprout-updater`: Ubuntu 22.04 `x86_64`, no Docker required for build or deployment.
 - Economics baseline is implemented: RAU is the storage unit, IMU and ore are derived views, resolver-enforced pricing contracts exist, rollups aggregate micro-usage, and session profiling can calibrate a session-minute tariff from observed process cost.
+- Cross-scaffold entity continuity baseline is implemented: source continuity proof, target admission request, target admission contract and bootstrap-side admission evidence are now first-class contracts.
 - Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-linux linux-x86_64`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-linux "" /tmp/sprout-dist-linux/SHA256SUMS-linux-x86_64.b64url`.
 - GitHub Actions is configured for self-contained macOS and Ubuntu 22.04 builds.
 - GitHub release `v0.1.1` is published with signed CLI artifacts and checksum manifest.
 - Still OPEN in the release scope of this repo: authoritative HAVEN server-side resolver routes, QR-based cross-device linking UX, iOS production wrapper, notarized macOS release flow, TUF hardening, and Linux WSS transport parity.
+- Still OPEN in the identity model: whether HAVEN should ever model a single global person-level entity across scaffolds; current implementation stays scaffold-local and explicit.
 
 ## Design boundary
 `sprout` is intentionally narrow. It should:
@@ -21,6 +23,14 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 - obtain a signed porthole handoff artifact
 
 It should not be the general-purpose client, billing backend or wallet UI, and it should not mutate itself.
+
+For cross-scaffold onboarding, `sprout` now supports explicit continuity between scaffold-local entities:
+- source scaffold issues `CrossScaffoldEntityContinuityProof`
+- target identity signs `EntityAdmissionRequest`
+- target scaffold issues `EntityAdmissionContract`
+- bootstrap consumes that admission contract as evidence
+
+This is deliberately not a global identity system.
 
 ## Quickstart
 Build and test:
@@ -124,6 +134,23 @@ Anchor-backed bootstrap path:
   --now 2026-02-26T08:01:00Z
 ```
 
+Cross-scaffold continuity path:
+```bash
+.build/debug/sprout admission create-request \
+  --continuity-proof <cross-scaffold-continuity-proof.json> \
+  --domain target.example.haven.local
+
+.build/debug/sprout bootstrap join \
+  --domain target.example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Continue into target scaffold" \
+  --interests haven.core.bootstrap,haven.core.identity \
+  --starter .sprout/starters/target.example.haven.local.json \
+  --catalog <signed-bridge-catalog.json> \
+  --admission-contract <entity-admission-contract.json> \
+  --continuity-proof <cross-scaffold-continuity-proof.json>
+```
+
 Live resolver path:
 ```bash
 SPROUT_ENABLE_LIVE_RESOLVER=1 \
@@ -172,6 +199,7 @@ bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64ur
 
 ## Key docs
 - `docs/entity_bootstrap_and_porthole_access.md`
+- `docs/cross_scaffold_entity_continuity.md`
 - `docs/economics_and_pricing.md`
 - `docs/update_hardening_strategy.md`
 - `docs/linux_deployment.md`

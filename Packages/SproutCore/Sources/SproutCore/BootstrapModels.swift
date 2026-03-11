@@ -125,6 +125,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
     public var starterAuthPayload: StarterAuthPayload?
     public var identity: BootstrapIdentity?
     public var entityLinkEvidence: EntityLinkEvidence?
+    public var entityAdmissionEvidence: EntityAdmissionEvidence?
     public var entityResolution: EntityResolutionDecision?
     public var environmentReport: BootstrapEnvironmentReport?
     public var economics: BootstrapEconomicsContext?
@@ -145,6 +146,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         starterAuthPayload: StarterAuthPayload? = nil,
         identity: BootstrapIdentity? = nil,
         entityLinkEvidence: EntityLinkEvidence? = nil,
+        entityAdmissionEvidence: EntityAdmissionEvidence? = nil,
         entityResolution: EntityResolutionDecision? = nil,
         environmentReport: BootstrapEnvironmentReport? = nil,
         economics: BootstrapEconomicsContext? = nil,
@@ -164,6 +166,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         self.starterAuthPayload = starterAuthPayload
         self.identity = identity
         self.entityLinkEvidence = entityLinkEvidence
+        self.entityAdmissionEvidence = entityAdmissionEvidence
         self.entityResolution = entityResolution
         self.environmentReport = environmentReport
         self.economics = economics
@@ -206,6 +209,7 @@ public enum BootstrapError: Error, Equatable, Sendable {
     case resolverRejected(String)
     case invalidStarterAuthSignature
     case invalidEntityLinkEvidence(String)
+    case invalidEntityAdmissionEvidence(String)
     case invalidEntityInclusionProof(String)
     case expiredStarterAuthPayload
     case entityUnresolved(String)
@@ -240,6 +244,7 @@ public struct BootstrapRunResult: Sendable {
 public struct SproutBootstrapDependencies: Sendable {
     public var identityProvider: @Sendable (BootstrapExecutionContext) async throws -> BootstrapIdentity
     public var entityEvidenceProvider: @Sendable (BootstrapExecutionContext) async throws -> EntityLinkEvidence?
+    public var entityAdmissionEvidenceProvider: @Sendable (BootstrapExecutionContext) async throws -> EntityAdmissionEvidence?
     public var environmentProbe: @Sendable (BootstrapExecutionContext) async throws -> BootstrapEnvironmentReport
     public var bridgeDiscovery: @Sendable (BootstrapExecutionContext) async throws -> [BridgeDescriptor]
     public var scaffoldAdminIdentityProvider: @Sendable (BridgeDescriptor, BootstrapExecutionContext) async throws -> ScaffoldAdminIdentity
@@ -250,6 +255,7 @@ public struct SproutBootstrapDependencies: Sendable {
     public init(
         identityProvider: @escaping @Sendable (BootstrapExecutionContext) async throws -> BootstrapIdentity,
         entityEvidenceProvider: @escaping @Sendable (BootstrapExecutionContext) async throws -> EntityLinkEvidence?,
+        entityAdmissionEvidenceProvider: @escaping @Sendable (BootstrapExecutionContext) async throws -> EntityAdmissionEvidence?,
         environmentProbe: @escaping @Sendable (BootstrapExecutionContext) async throws -> BootstrapEnvironmentReport,
         bridgeDiscovery: @escaping @Sendable (BootstrapExecutionContext) async throws -> [BridgeDescriptor],
         scaffoldAdminIdentityProvider: @escaping @Sendable (BridgeDescriptor, BootstrapExecutionContext) async throws -> ScaffoldAdminIdentity,
@@ -259,6 +265,7 @@ public struct SproutBootstrapDependencies: Sendable {
     ) {
         self.identityProvider = identityProvider
         self.entityEvidenceProvider = entityEvidenceProvider
+        self.entityAdmissionEvidenceProvider = entityAdmissionEvidenceProvider
         self.environmentProbe = environmentProbe
         self.bridgeDiscovery = bridgeDiscovery
         self.scaffoldAdminIdentityProvider = scaffoldAdminIdentityProvider

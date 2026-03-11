@@ -308,7 +308,7 @@ public struct BootstrapPlanner: Sendable {
             if environment.availableCapabilities.contains(.mockResolver) {
                 return BootstrapPlanAction(
                     id: .resolveEntityViaMock,
-                    description: "Use mock entity resolution for controlled bootstrap testing.",
+                    description: "Use mock entity resolution for controlled bootstrap testing or a locally supplied admission contract.",
                     blocking: false
                 )
             }
@@ -336,7 +336,7 @@ public struct BootstrapPlanner: Sendable {
             if environment.availableCapabilities.contains(.mockResolver) {
                 return BootstrapPlanAction(
                     id: .resolveEntityViaMock,
-                    description: "Fallback to mock entity resolution for bootstrap testing.",
+                    description: "Fallback to mock entity resolution for bootstrap testing or a locally supplied admission contract.",
                     blocking: false
                 )
             }

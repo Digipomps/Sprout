@@ -116,6 +116,33 @@ public actor MockResolverAdapter: SproutResolverAdapter {
             }
         }
 
+        if let evidence = request.evidence,
+           evidence.evidence_type == "cross_scaffold_admission_contract" {
+            guard evidence.target_scaffold_domain == request.domain else {
+                return unresolvedDecision(
+                    contractID: evidence.contract_id,
+                    reason: "admission contract target scaffold does not match requested scaffold"
+                )
+            }
+            guard let entityID = evidence.target_entity_id, !entityID.isEmpty else {
+                return unresolvedDecision(
+                    contractID: evidence.contract_id,
+                    reason: "admission contract did not name a target entity"
+                )
+            }
+            guard evidence.linked_public_keys.contains(request.identity_public_key) else {
+                return unresolvedDecision(
+                    contractID: evidence.contract_id,
+                    reason: "admission contract does not bind requested identity"
+                )
+            }
+            return try resolvedDecision(
+                entityID: entityID,
+                request: request,
+                contractID: evidence.contract_id
+            )
+        }
+
         if let entityID = scenario.entityBindings[request.identity_public_key] {
             return try resolvedDecision(
                 entityID: entityID,

@@ -54,6 +54,27 @@ final class SchemaValidationTests: XCTestCase {
         try validate(instance: descriptor, schema: "Schemas/ScaffoldAdminTrustRootDescriptor.schema.json")
     }
 
+    func testGeneratedCrossScaffoldContinuityProofMatchesSchema() throws {
+        let proof = try ResolverFixtureFactory.makeCrossScaffoldContinuityProof()
+        try validate(instance: proof, schema: "Schemas/CrossScaffoldEntityContinuityProof.schema.json")
+    }
+
+    func testGeneratedEntityAdmissionRequestMatchesSchema() throws {
+        let proof = try ResolverFixtureFactory.makeCrossScaffoldContinuityProof()
+        let request = try ResolverFixtureFactory.makeEntityAdmissionRequest(continuityProof: proof)
+        try validate(instance: request, schema: "Schemas/EntityAdmissionRequest.schema.json")
+    }
+
+    func testGeneratedEntityAdmissionContractMatchesSchema() throws {
+        let proof = try ResolverFixtureFactory.makeCrossScaffoldContinuityProof()
+        let request = try ResolverFixtureFactory.makeEntityAdmissionRequest(continuityProof: proof)
+        let contract = try ResolverFixtureFactory.makeEntityAdmissionContract(
+            continuityProof: proof,
+            request: request
+        )
+        try validate(instance: contract, schema: "Schemas/EntityAdmissionContract.schema.json")
+    }
+
     func testGeneratedEntityInclusionProofMatchesSchema() async throws {
         let snapshot = try ResolverFixtureFactory.makeSignedEntityAnchorSnapshot(
             identities: [

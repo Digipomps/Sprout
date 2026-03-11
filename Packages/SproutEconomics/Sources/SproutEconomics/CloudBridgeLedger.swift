@@ -203,7 +203,19 @@ public actor CloudBridgeRollupAggregator {
     }
 
     public func close() -> [CloudBridgeLedgerEntry] {
-        let entries = accumulators.values.map(makeLedgerEntry(from:))
+        let orderedAccumulators = accumulators.values.sorted {
+            if $0.minuteBucket != $1.minuteBucket {
+                return $0.minuteBucket < $1.minuteBucket
+            }
+            if $0.cellID != $1.cellID {
+                return $0.cellID < $1.cellID
+            }
+            if $0.counterpartyID != $1.counterpartyID {
+                return $0.counterpartyID < $1.counterpartyID
+            }
+            return $0.walletID < $1.walletID
+        }
+        let entries = orderedAccumulators.map(makeLedgerEntry(from:))
         accumulators.removeAll()
         return entries.sorted { $0.created_at < $1.created_at }
     }

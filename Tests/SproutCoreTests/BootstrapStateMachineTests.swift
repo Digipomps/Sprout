@@ -31,7 +31,7 @@ final class BootstrapStateMachineTests: XCTestCase {
             )
         )
 
-        XCTAssertEqual(result.finalState, .done)
+        XCTAssertEqual(result.finalState, .done, String(describing: result.error))
         XCTAssertNil(result.error)
         XCTAssertEqual(result.events.last?.to, .done)
         XCTAssertEqual(result.context.entityResolution?.status, .resolved)
@@ -230,6 +230,7 @@ final class BootstrapStateMachineTests: XCTestCase {
                 return BootstrapIdentity(domain: payload.domain, identity_public_key: payload.identity_public_key)
             },
             entityEvidenceProvider: { _ in nil },
+            entityAdmissionEvidenceProvider: { _ in nil },
             environmentProbe: { _ in
                 BootstrapEnvironmentReport(discovery_modes: ["offline-catalog"], available_transports: ["wss"])
             },
@@ -324,6 +325,53 @@ final class BootstrapStateMachineTests: XCTestCase {
         XCTAssertEqual(result.error, .missingScaffoldAdminIdentity)
     }
 
+    func testBootstrapCanUseAdmissionContractEvidence() async throws {
+        let starter = try loadStarterPayload()
+        let continuityProof = try ResolverFixtureFactory.makeCrossScaffoldContinuityProof(
+            sourceIdentityPublicKey: "source_identity_key_fixture",
+            targetScaffoldDomain: starter.domain
+        )
+        let admissionRequest = EntityAdmissionRequest(
+            version: "1.0",
+            request_id: "ear_bootstrap_0001",
+            target_scaffold_domain: starter.domain,
+            target_identity_public_key: starter.identity_public_key,
+            target_identity_domain: starter.domain,
+            continuity_proof_id: continuityProof.proof_id,
+            continuity_proof_sha256_b64url: try continuityProof.payloadHashBase64URL(),
+            source_scaffold_domain: continuityProof.source_scaffold_domain,
+            source_entity_id: continuityProof.source_entity_id,
+            source_identity_public_key: continuityProof.source_identity_public_key,
+            purpose: continuityProof.purpose,
+            goal: continuityProof.goal,
+            interests: continuityProof.interests.sorted(),
+            created_at: "2026-02-26T08:01:00Z",
+            expires_at: "2026-02-26T08:06:00Z",
+            signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "fixture")
+        )
+        let admissionContract = try ResolverFixtureFactory.makeEntityAdmissionContract(
+            continuityProof: continuityProof,
+            request: admissionRequest,
+            targetEntityID: "entity_target_primary"
+        )
+
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [try loadBridgeDescriptor()],
+            resolverScenario: MockResolverScenario(
+                allowedDomains: ["example.haven.local"],
+                requireFreshPayload: false
+            ),
+            entityAdmissionContract: admissionContract,
+            continuityProof: continuityProof
+        )
+
+        XCTAssertEqual(result.finalState, .done)
+        XCTAssertEqual(result.context.entityResolution?.entity_id, "entity_target_primary")
+        XCTAssertEqual(result.context.entityResolution?.evidence_contract_id, admissionContract.contract_id)
+        XCTAssertEqual(result.context.portholeAccessContract?.entity_evidence_contract_id, admissionContract.contract_id)
+    }
+
     private func runWith(
         domain: String = "example.haven.local",
         starter: StarterAuthPayload,
@@ -331,6 +379,8 @@ final class BootstrapStateMachineTests: XCTestCase {
         resolverScenario: MockResolverScenario,
         now: Date? = nil,
         entityLinkContract: EntityLinkContract? = nil,
+        entityAdmissionContract: EntityAdmissionContract? = nil,
+        continuityProof: CrossScaffoldEntityContinuityProof? = nil,
         requestedPortholeKind: PortholeClientKind = .cli,
         trustRootDescriptor: ScaffoldAdminTrustRootDescriptor? = nil,
         resolver: (any SproutResolverAdapter)? = nil
@@ -366,6 +416,16 @@ final class BootstrapStateMachineTests: XCTestCase {
                 return EntityLinkEvidence(
                     evidence_kind: .mutualLinkContract,
                     contract: entityLinkContract,
+                    note: "loaded from test fixture"
+                )
+            },
+            entityAdmissionEvidenceProvider: { _ in
+                guard let entityAdmissionContract else {
+                    return nil
+                }
+                return EntityAdmissionEvidence(
+                    contract: entityAdmissionContract,
+                    continuityProof: continuityProof,
                     note: "loaded from test fixture"
                 )
             },
@@ -419,6 +479,7 @@ final class BootstrapStateMachineTests: XCTestCase {
         let dependencies = SproutBootstrapDependencies(
             identityProvider: { _ in BootstrapIdentity(domain: "example.haven.local", identity_public_key: "pubkey") },
             entityEvidenceProvider: { _ in nil },
+            entityAdmissionEvidenceProvider: { _ in nil },
             environmentProbe: { _ in BootstrapEnvironmentReport(discovery_modes: [], available_transports: []) },
             bridgeDiscovery: { _ in [] },
             scaffoldAdminIdentityProvider: { _, _ in

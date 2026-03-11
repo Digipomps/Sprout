@@ -1,13 +1,13 @@
 # Developer Guide
 
 ## Repository layout
-- `Packages/SproutCore`: bootstrap state machine, entity-link evidence model, porthole consumers, schema validator, update policy.
+- `Packages/SproutCore`: bootstrap state machine, entity-link/admission evidence models, porthole consumers, schema validator, update policy.
 - `Packages/SproutCrypto`: JCS, Ed25519, base64url, hashing.
 - `Packages/SproutStorage`: audit log, local key store, sqlite cache.
 - `Packages/SproutTransport`: channel interfaces + HTTPS/WSS adapters + gRPC/QUIC stubs.
 - `Packages/SproutBridge`: descriptor validation, bridge manager, discovery client/mock server.
-- `Packages/SproutResolverAdapter`: resolver protocol, scaffold admin trust-root descriptor, entity anchor snapshot, inclusion proof, scaffold admin identity, porthole access contract, mock and file-backed resolver adapters.
-- `Packages/SproutAdminSupport`: operator helpers for Vapor vault inspection, signed scaffold trust-root generation and signed entity anchor snapshot generation.
+- `Packages/SproutResolverAdapter`: resolver protocol, scaffold admin trust-root descriptor, cross-scaffold continuity proof, entity admission request/contract, entity anchor snapshot, inclusion proof, scaffold admin identity, porthole access contract, mock and file-backed resolver adapters.
+- `Packages/SproutAdminSupport`: operator helpers for Vapor vault inspection, signed scaffold trust-root generation, signed continuity proof generation and signed entity anchor snapshot/admission contract generation.
 - `Packages/SproutEconomics`: RAU/IMU/ore units, pricing contracts/compiler, cost profiler, rollup ledger helpers, Stripe fee overlay.
 - `Packages/SproutAppSupport`: reusable porthole client session logic and native runtime adapter/fallbacks for app consumers.
 - `Apps/sprout-cli`: reference bootstrap executable.
@@ -47,7 +47,7 @@ Sprout is intentionally narrow. Its implemented responsibility is:
 1. understand runtime and purpose/goal/interests
 2. load or acquire a local domain-scoped identity
 3. load or fetch scaffold-admin trust root and make resolver/bridge trust explicit
-4. present optional entity-link evidence to the resolver
+4. present optional entity-link evidence or target-side admission evidence to the resolver
 5. get an explicit entity resolution decision with signed inclusion proof
 6. obtain a signed `PortholeAccessContract`
 7. hand the contract off to a client-specific consumer
@@ -59,6 +59,10 @@ Sprout is not the main user client or full billing backend. Web, CLI and native 
 - `ScaffoldAdminTrustRootDescriptor`: signed scaffold trust root with resolver keys, bridge-owner keys and default bootstrap URLs
 - `ScaffoldAdminIdentity`: explicit scaffold admin identity derived from a trust-root descriptor or validated bridge metadata
 - `EntityLinkEvidence`: explicit proof material carried into resolver calls
+- `CrossScaffoldEntityContinuityProof`: source-scaffold signed portability proof from one local entity to one target scaffold
+- `EntityAdmissionRequest`: target-identity signed request binding a target identity to one exact continuity proof
+- `EntityAdmissionContract`: target-scaffold signed local admission decision for one target identity and one target local entity
+- `EntityAdmissionEvidence`: bootstrap wrapper for `EntityAdmissionContract` and optional continuity proof
 - `EntityAnchorSnapshot`: signed projection of anchor state
 - `EntityInclusionProof`: resolver-signed proof of membership in a specific entity
 - `EntityResolutionDecision`: explicit resolved vs unresolved entity state
@@ -162,6 +166,26 @@ Bootstrap with file-backed anchor resolver:
   --now 2026-02-26T08:01:00Z
 ```
 
+Create a target-side admission request from a source continuity proof:
+```bash
+.build/debug/sprout admission create-request \
+  --continuity-proof <cross-scaffold-continuity-proof.json> \
+  --domain target.example.haven.local
+```
+
+Bootstrap with target-side admission evidence:
+```bash
+.build/debug/sprout bootstrap join \
+  --domain target.example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Continue into the target scaffold" \
+  --interests haven.core.bootstrap,haven.core.identity \
+  --starter .sprout/starters/target.example.haven.local.json \
+  --catalog <signed-bridge-catalog.json> \
+  --admission-contract <entity-admission-contract.json> \
+  --continuity-proof <cross-scaffold-continuity-proof.json>
+```
+
 Starter auth lookup order for `bootstrap join`:
 - `--starter`
 - `SPROUT_STARTER_AUTH_PATH`
@@ -236,6 +260,34 @@ Generate a signed scaffold-admin trust-root descriptor from a Vapor vault:
   --out /app/CellsContainer/sprout/scaffold-admin-trust-root.json
 ```
 
+Generate a source continuity proof from a Vapor vault:
+```bash
+.build/debug/sprout-admin continuity-proof create-from-vapor-vault \
+  --vault-root /app/CellsContainer \
+  --identity-context Scaffold \
+  --source-scaffold-domain source.example.haven.local \
+  --source-entity-id entity_source_primary \
+  --source-identity-public-key <source-identity-pubkey> \
+  --source-identity-domain source.example.haven.local \
+  --target-scaffold-domain target.example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Continue the same person into target scaffold" \
+  --interests haven.core.bootstrap,haven.core.identity
+```
+
+Generate a target admission contract from a Vapor vault:
+```bash
+.build/debug/sprout-admin admission-contract create-from-vapor-vault \
+  --vault-root /app/CellsContainer \
+  --identity-context Scaffold \
+  --target-scaffold-domain target.example.haven.local \
+  --target-entity-id entity_target_primary \
+  --target-identity-public-key <target-identity-pubkey> \
+  --target-identity-domain target.example.haven.local \
+  --continuity-proof <cross-scaffold-continuity-proof.json> \
+  --admission-request <entity-admission-request.json>
+```
+
 ## Notes on current maturity
 - `EntityAnchorResolverAdapter` is a file-backed P1 bridge, not the final live HAVEN resolver integration.
 - `HavenResolverHTTPAdapter` is implemented and tested, but authoritative HAVEN server-side resolver routes are still external to this repo.
@@ -244,5 +296,7 @@ Generate a signed scaffold-admin trust-root descriptor from a Vapor vault:
 - `--resolved-entity` remains available only for the mock resolver path.
 - `sprout-updater` is intentionally narrow: it plans and verifies installs, but does not turn `sprout` into a self-updating binary.
 - CI is configured for macOS and Ubuntu 22.04 and can attest build provenance and SBOM, but production key management and published trust roots are still environment-dependent.
+- cross-scaffold continuity is now implemented as explicit source proof + target admission, not as a global entity model.
+- a single person-level global entity across scaffolds remains an OPEN design/research question under HAVEN's anti-linkage constraints.
 - Standard GitHub builds are self-contained and do not depend on the sibling `CellProtocol` repo.
 - `sprout-macos` currently ships with a standalone fallback for native contracts. A deeper CellProtocol-native runtime should return only through an explicit, versioned integration path.

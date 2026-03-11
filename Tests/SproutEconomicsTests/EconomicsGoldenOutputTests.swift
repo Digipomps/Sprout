@@ -54,7 +54,10 @@ final class EconomicsGoldenOutputTests: XCTestCase {
         let entries = await aggregator.close()
         let encoded = try JSONEncoder.economicsPretty.encode(entries)
         let expected = try Data(contentsOf: rootURL.appendingPathComponent("TestVectors/cloud_bridge_rollup_entries.expected.json"))
-        XCTAssertEqual(encoded, expected)
+        XCTAssertEqual(
+            String(decoding: encoded, as: UTF8.self),
+            String(decoding: expected, as: UTF8.self)
+        )
     }
 
     func testSessionRateSuggestionMatchesGoldenFile() throws {

@@ -236,19 +236,31 @@ public struct EntityEvidenceSummary: Codable, Equatable, Sendable {
     public var linked_public_keys: [String]
     public var evidence_description: String
     public var evidence_sha256_b64url: String?
+    public var source_scaffold_domain: String?
+    public var source_entity_id: String?
+    public var target_scaffold_domain: String?
+    public var target_entity_id: String?
 
     public init(
         evidence_type: String,
         contract_id: String?,
         linked_public_keys: [String],
         evidence_description: String,
-        evidence_sha256_b64url: String?
+        evidence_sha256_b64url: String?,
+        source_scaffold_domain: String? = nil,
+        source_entity_id: String? = nil,
+        target_scaffold_domain: String? = nil,
+        target_entity_id: String? = nil
     ) {
         self.evidence_type = evidence_type
         self.contract_id = contract_id
         self.linked_public_keys = linked_public_keys
         self.evidence_description = evidence_description
         self.evidence_sha256_b64url = evidence_sha256_b64url
+        self.source_scaffold_domain = source_scaffold_domain
+        self.source_entity_id = source_entity_id
+        self.target_scaffold_domain = target_scaffold_domain
+        self.target_entity_id = target_entity_id
     }
 }
 

@@ -12,6 +12,24 @@ Sprout now does five things explicitly:
 
 It does not try to be the wallet UI or the billing backend. Pricing is explicit contract/policy input to bootstrap and access, not hidden background logic.
 
+## Cross-scaffold continuity
+Sprout now supports an explicit continuity chain between scaffolds without pretending that all scaffolds share one hidden global entity.
+
+The chain is:
+1. source scaffold issues `CrossScaffoldEntityContinuityProof`
+2. target identity signs `EntityAdmissionRequest`
+3. target scaffold issues `EntityAdmissionContract`
+4. `sprout bootstrap join` uses that admission contract as explicit entity evidence
+
+This means:
+- one person may have many identities
+- each scaffold still keeps its own local entities
+- continuity between scaffolds is explicit and signed
+
+What it does not mean:
+- Sprout does not prove a single global person-entity across all scaffolds
+- if you want that, it is a separate research/design question because HAVEN forbids implicit cross-domain linkage
+
 ## Safe startup path (CLI)
 Mock/local path:
 ```bash
@@ -128,10 +146,32 @@ Anchor-backed path:
 Important:
 - `--porthole web|cli|native` chooses the requested handoff type.
 - `--entity-link <file>` provides explicit entity-link evidence.
+- `--admission-contract <file>` provides explicit target-side admission evidence for cross-scaffold continuity.
+- `--continuity-proof <file>` lets Sprout verify that the admission contract matches the source-scaffold continuity proof.
 - `--entity-anchor <file>` enables the file-backed anchor resolver path.
 - `--resolved-entity <id>` is only for the mock resolver and local testing.
 - `--pricing-contract <file>` attaches an explicit CloudBridge tariff contract to the access request.
 - `--deposit-rau <int64>` declares the deposit that the resolver will evaluate against the tariff contract.
+
+Create an admission request from a continuity proof:
+```bash
+.build/debug/sprout admission create-request \
+  --continuity-proof <cross-scaffold-continuity-proof.json> \
+  --domain target.example.haven.local
+```
+
+Bootstrap with an admission contract instead of a mutual link contract:
+```bash
+.build/debug/sprout bootstrap join \
+  --domain target.example.haven.local \
+  --purpose bootstrap.join_scaffold \
+  --goal "Continue into target scaffold" \
+  --interests haven.core.bootstrap,haven.core.identity \
+  --starter .sprout/starters/target.example.haven.local.json \
+  --catalog <signed-bridge-catalog.json> \
+  --admission-contract <entity-admission-contract.json> \
+  --continuity-proof <cross-scaffold-continuity-proof.json>
+```
 
 ## Consume porthole contracts
 Generate a web handoff descriptor:
@@ -234,12 +274,17 @@ Ask the updater if a specific install is allowed:
 .build/debug/sprout verify TestVectors/entity_link_contract.mutual.json
 .build/debug/sprout verify TestVectors/porthole_access_contract.example.json --now 2026-02-26T08:03:00Z
 .build/debug/sprout verify /path/to/scaffold-admin-trust-root.json
+.build/debug/sprout verify /path/to/cross-scaffold-continuity-proof.json
+.build/debug/sprout verify /path/to/entity-admission-request.json
+.build/debug/sprout verify /path/to/entity-admission-contract.json
 ```
 
 ## Trust model
 - Trust only artifacts/contracts signed by authorized keys for your domain.
 - `ScaffoldAdminTrustRootDescriptor` is the explicit root for scaffold bootstrap trust when available.
 - A valid mutual `EntityLinkContract` is not enough on its own to prove entity membership.
+- A source-scaffold continuity proof is not enough on its own to grant target-side access.
+- A target-side admission contract is local to the target scaffold; it does not create a global entity.
 - The resolver must return a valid `EntityInclusionProof` before Sprout continues to porthole access.
 - `PortholeAccessContract` is the handoff boundary. Downstream web/CLI/native clients should use it as the access artifact.
 - Updates are not performed by `sprout`. Use `sprout-updater` and explicit grants in policy.

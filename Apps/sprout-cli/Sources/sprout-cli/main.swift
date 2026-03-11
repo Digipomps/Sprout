@@ -23,6 +23,8 @@ struct SproutCLI {
                 try runBridges(arguments: Array(arguments.dropFirst()))
             case "federation":
                 try await runFederation(arguments: Array(arguments.dropFirst()))
+            case "admission":
+                try await runAdmission(arguments: Array(arguments.dropFirst()))
             case "link":
                 try runLink(arguments: Array(arguments.dropFirst()))
             case "porthole":
@@ -166,6 +168,24 @@ struct SproutCLI {
         let entityLinkContract = try flags["entity-link"].map { path in
             try EntityLinkContractIO.load(from: URL(fileURLWithPath: path))
         }
+        let continuityProof = try flags["continuity-proof"].map { path in
+            try JSONDecoder().decode(
+                CrossScaffoldEntityContinuityProof.self,
+                from: Data(contentsOf: URL(fileURLWithPath: path))
+            )
+        }
+        let entityAdmissionContract = try flags["admission-contract"].map { path in
+            try JSONDecoder().decode(
+                EntityAdmissionContract.self,
+                from: Data(contentsOf: URL(fileURLWithPath: path))
+            )
+        }
+        if continuityProof != nil, entityAdmissionContract == nil {
+            throw CLIError.invalidArguments("--continuity-proof requires --admission-contract during bootstrap join.")
+        }
+        if entityLinkContract != nil, entityAdmissionContract != nil {
+            throw CLIError.invalidArguments("Use either --entity-link or --admission-contract, not both.")
+        }
         let entityAnchorSnapshot = try flags["entity-anchor"].map { path in
             try JSONDecoder().decode(EntityAnchorSnapshot.self, from: Data(contentsOf: URL(fileURLWithPath: path)))
         }
@@ -216,6 +236,16 @@ struct SproutCLI {
                     evidence_kind: .mutualLinkContract,
                     contract: entityLinkContract,
                     note: "loaded from CLI --entity-link"
+                )
+            },
+            entityAdmissionEvidenceProvider: { _ in
+                guard let entityAdmissionContract else {
+                    return nil
+                }
+                return EntityAdmissionEvidence(
+                    contract: entityAdmissionContract,
+                    continuityProof: continuityProof,
+                    note: "loaded from CLI --admission-contract"
                 )
             },
             environmentProbe: { _ in
@@ -307,6 +337,8 @@ struct SproutCLI {
             entity_resolution_status: result.context.entityResolution?.status.rawValue,
             resolved_entity_id: result.context.entityResolution?.entity_id,
             entity_inclusion_proof_id: result.context.entityResolution?.inclusion_proof?.proof_id,
+            entity_admission_contract_id: result.context.entityAdmissionEvidence?.contract.contract_id,
+            continuity_proof_id: result.context.entityAdmissionEvidence?.continuityProof?.proof_id,
             scaffold_trust_root_descriptor_id: result.context.scaffoldTrustRootDescriptor?.descriptor_id,
             scaffold_admin_public_key: result.context.scaffoldAdminIdentity?.admin_public_key,
             porthole_contract_id: result.context.portholeAccessContract?.contract_id,
@@ -362,6 +394,76 @@ struct SproutCLI {
             try emitJSON(records, outPath: flags["out"])
         default:
             throw CLIError.invalidArguments("Expected: federation init|show|list")
+        }
+    }
+
+    private static func runAdmission(arguments: [String]) async throws {
+        guard let subcommand = arguments.first else {
+            throw CLIError.invalidArguments("Expected: admission create-request")
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+
+        switch subcommand {
+        case "create-request":
+            let proofPath = try requiredFlag("continuity-proof", flags)
+            let proof = try JSONDecoder().decode(
+                CrossScaffoldEntityContinuityProof.self,
+                from: Data(contentsOf: URL(fileURLWithPath: proofPath))
+            )
+            let nowDate = try parseNow(flags["now"])
+            guard !proof.isExpired(now: nowDate) else {
+                throw CLIError.invalidArguments("Cross-scaffold continuity proof is expired.")
+            }
+            guard try proof.verifySignature() else {
+                throw CLIError.invalidArguments("Cross-scaffold continuity proof signature is invalid.")
+            }
+
+            let targetDomain = flags["domain"] ?? proof.target_scaffold_domain
+            guard targetDomain == proof.target_scaffold_domain else {
+                throw CLIError.invalidArguments("Admission request domain does not match continuity proof target scaffold.")
+            }
+
+            let createdAt = try parseOptionalNow(flags["created-at"]) ?? nowDate
+            let expiresAt = try parseOptionalNow(flags["expires-at"]) ?? createdAt.addingTimeInterval(300)
+            guard expiresAt > createdAt else {
+                throw CLIError.invalidArguments("--expires-at must be later than --created-at.")
+            }
+
+            let identityRoot = URL(fileURLWithPath: flags["starter-identity-root"] ?? ".sprout/starter-identities")
+            let identityStore = StarterIdentityStore(root: identityRoot)
+            let record = try await identityStore.loadOrCreate(scaffoldDomain: targetDomain)
+            let seedBase64URL = try await identityStore.seedBase64URL(scaffoldDomain: targetDomain)
+            let continuityHash = try proof.payloadHashBase64URL()
+            let requestID = flags["request-id"] ?? "ear_\(Hashing.sha256Base64URL(Data([targetDomain, record.identity_public_key, continuityHash].joined(separator: "|").utf8)).prefix(16))"
+
+            var request = EntityAdmissionRequest(
+                version: "1.0",
+                request_id: requestID,
+                target_scaffold_domain: targetDomain,
+                target_identity_public_key: record.identity_public_key,
+                target_identity_domain: record.scaffold_domain,
+                continuity_proof_id: proof.proof_id,
+                continuity_proof_sha256_b64url: continuityHash,
+                source_scaffold_domain: proof.source_scaffold_domain,
+                source_entity_id: proof.source_entity_id,
+                source_identity_public_key: proof.source_identity_public_key,
+                purpose: proof.purpose,
+                goal: proof.goal,
+                interests: proof.interests.sorted(),
+                created_at: ISO8601DateFormatter().string(from: createdAt),
+                expires_at: ISO8601DateFormatter().string(from: expiresAt),
+                signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
+            )
+            request.signature = ResolverSignatureEnvelope(
+                alg: "Ed25519",
+                sig: try Ed25519.signBase64URL(
+                    data: try request.canonicalPayloadData(),
+                    seedBase64URL: seedBase64URL
+                )
+            )
+            try emitJSON(request, outPath: flags["out"] ?? ".sprout/admission-requests/\(targetDomain).json")
+        default:
+            throw CLIError.invalidArguments("Expected: admission create-request")
         }
     }
 
@@ -466,6 +568,24 @@ struct SproutCLI {
         if let contract = try? JSONDecoder().decode(EntityLinkContract.self, from: data) {
             let valid = try contract.verifyMutualSignatures()
             print(valid ? "EntityLinkContract valid" : "EntityLinkContract invalid")
+            exit(valid ? 0 : 2)
+        }
+
+        if let proof = try? JSONDecoder().decode(CrossScaffoldEntityContinuityProof.self, from: data) {
+            let valid = try proof.verifySignature() && !proof.isExpired(now: nowDate)
+            print(valid ? "CrossScaffoldEntityContinuityProof valid" : "CrossScaffoldEntityContinuityProof invalid (signature or expiry)")
+            exit(valid ? 0 : 2)
+        }
+
+        if let request = try? JSONDecoder().decode(EntityAdmissionRequest.self, from: data) {
+            let valid = try request.verifySignature() && !request.isExpired(now: nowDate)
+            print(valid ? "EntityAdmissionRequest valid" : "EntityAdmissionRequest invalid (signature or expiry)")
+            exit(valid ? 0 : 2)
+        }
+
+        if let contract = try? JSONDecoder().decode(EntityAdmissionContract.self, from: data) {
+            let valid = try contract.verifySignature() && !contract.isExpired(now: nowDate)
+            print(valid ? "EntityAdmissionContract valid" : "EntityAdmissionContract invalid (signature or expiry)")
             exit(valid ? 0 : 2)
         }
 
@@ -945,6 +1065,9 @@ struct SproutCLI {
         if flags["catalog"] != nil {
             capabilities.insert(.offlineBridgeCatalog)
         }
+        if flags["admission-contract"] != nil {
+            capabilities.insert(.mockResolver)
+        }
 
         switch try resolverMode(flags: flags) {
         case .liveHTTP:
@@ -1165,11 +1288,12 @@ struct SproutCLI {
         let text = """
         sprout commands:
           sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
-          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
+          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>|--admission-contract <file> [--continuity-proof <file>]] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
           sprout federation list [--root <dir>] [--out <json>]
+          sprout admission create-request --continuity-proof <proof.json> [--domain <target-domain>] [--starter-identity-root <dir>] [--request-id <id>] [--created-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>]
           sprout link export --file <entity-link.json> [--out <canonical.json>]
           sprout link import --file <entity-link.json>
           sprout porthole web-bootstrap --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
@@ -1222,6 +1346,15 @@ struct SproutCLI {
         }
         return date
     }
+
+    private static func parseOptionalNow(_ value: String?) throws -> Date? {
+        guard let value else { return nil }
+        let formatter = ISO8601DateFormatter()
+        guard let date = formatter.date(from: value) else {
+            throw CLIError.invalidArguments("Invalid ISO8601 date-time.")
+        }
+        return date
+    }
 }
 
 private struct BootstrapCommandOutput: Codable {
@@ -1235,6 +1368,8 @@ private struct BootstrapCommandOutput: Codable {
     var entity_resolution_status: String?
     var resolved_entity_id: String?
     var entity_inclusion_proof_id: String?
+    var entity_admission_contract_id: String?
+    var continuity_proof_id: String?
     var scaffold_trust_root_descriptor_id: String?
     var scaffold_admin_public_key: String?
     var porthole_contract_id: String?

@@ -204,3 +204,12 @@ Required CLI surface:
 - the exact scaffold-owner bootstrap cell/service shape is still open
 - `cli` porthole runtime remains less mature than `web` and `native`
 - staging and dev are the only current remote HAVEN targets that should be wired first
+
+## Follow-up implemented after this plan
+- Cross-scaffold continuity is now modeled explicitly in `docs/cross_scaffold_entity_continuity.md`.
+- The implemented chain is:
+  - source-scaffold `CrossScaffoldEntityContinuityProof`
+  - target-identity `EntityAdmissionRequest`
+  - target-scaffold `EntityAdmissionContract`
+- This is the current answer to cross-scaffold entity extension in Sprout.
+- A single global person-level entity across scaffolds remains `OPEN` and should be treated as a separate research/design task unless it can be made fully explicit and anti-linkage-safe.

@@ -111,6 +111,13 @@
 - Rationale: micro-op writes are too expensive and noisy for billing/audit; aggregation by `(wallet, cell, counterparty, minute)` is the safer baseline.
 - Notes: flush happens on threshold or close; finer-grained audit trails still belong in dedicated audit logs, not the billing ledger.
 
+## 2026-03-11
+
+### D-022: Cross-scaffold continuity must be explicit proof + local admission
+- Status: Specified + Implemented (P1 bridge)
+- Rationale: HAVEN's current constraints allow explicit continuity between scaffold-local entities, but not implicit global linkage.
+- Notes: `CrossScaffoldEntityContinuityProof` is source-side evidence; `EntityAdmissionRequest` binds a target identity to that proof; `EntityAdmissionContract` is the target scaffold's authoritative local acceptance.
+
 ## Open Questions (OPEN)
 
 ### OQ-001: Hosting default
@@ -167,3 +174,8 @@
 - Options: keep Linux to bootstrap/update/verification only / implement Linux WSS / switch Linux transport to another streaming adapter
 - Owner: Networking + Platform
 - Unblock criteria: concrete supported Linux runtime workflows and transport requirements are approved.
+
+### OQ-012: Is a single person-level entity across scaffolds even desirable under HAVEN constraints?
+- Options: keep only scaffold-local entities + explicit continuity / define a user-mediated global person-root / define a portable person-root contract with explicit revocation and anti-linkage controls
+- Owner: Identity + Security + Product
+- Unblock criteria: a coherent model that does not reintroduce implicit cross-domain linkage or hidden surveillance semantics.

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/CrossScaffoldEntityContinuityProof.schema.json",
+  "title": "CrossScaffoldEntityContinuityProof",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "proof_id",
+    "source_scaffold_domain",
+    "source_entity_id",
+    "source_identity_public_key",
+    "source_identity_domain",
+    "target_scaffold_domain",
+    "purpose",
+    "goal",
+    "interests",
+    "issued_at",
+    "expires_at",
+    "issued_by",
+    "signature"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "proof_id": { "type": "string" },
+    "source_scaffold_domain": { "type": "string" },
+    "source_entity_id": { "type": "string" },
+    "source_identity_public_key": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "source_identity_domain": { "type": "string" },
+    "target_scaffold_domain": { "type": "string" },
+    "purpose": { "type": "string" },
+    "goal": { "type": "string" },
+    "interests": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "issued_by": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": { "type": "string", "enum": ["Ed25519"] },
+        "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      }
+    }
+  }
+}
