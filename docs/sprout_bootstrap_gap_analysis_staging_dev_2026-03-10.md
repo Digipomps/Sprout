@@ -16,11 +16,17 @@ What is now proven on `staging.haven.digipomps.org`:
 - Sprout can obtain a signed bridge descriptor from the scaffold
 - the public bridge endpoint published by staging is:
   - `wss://staging.haven.digipomps.org/bridgehead/Porthole/CloudBridge`
+- a real `sprout bootstrap join` run from the staging host reaches `Done` when:
+  - starter intent is fetched live
+  - bridge discovery is fetched live
+  - entity resolution is supplied via mock `--resolved-entity`
+- the same `sprout bootstrap join` flow against the live resolver stops at:
+  - `entityUnresolved("no entity anchor snapshot configured")`
 
 What is still not proven end-to-end:
 
-- authoritative entity resolution on staging
 - a separate published scaffold-admin trust root
+- a live-resolver join that reaches `Done` without mock entity resolution
 - the full `sprout bootstrap join` flow from this local runtime, because public DNS resolution to `staging.haven.digipomps.org` failed in the local execution environment
 
 This shifts the main gap from discovery to resolver authority and post-bootstrap routing.
