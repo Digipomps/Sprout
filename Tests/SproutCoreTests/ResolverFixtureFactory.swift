@@ -5,9 +5,14 @@ import SproutResolverAdapter
 
 enum ResolverFixtureFactory {
     static let resolverSeed = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8"
+    static let bridgeSeed = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA"
 
     static func resolverPublicKey() throws -> String {
         try Ed25519.publicKeyBase64URL(fromSeedBase64URL: resolverSeed)
+    }
+
+    static func bridgeOwnerPublicKey() throws -> String {
+        try Ed25519.publicKeyBase64URL(fromSeedBase64URL: bridgeSeed)
     }
 
     static func makeSignedBridgeDescriptor(
@@ -16,19 +21,50 @@ enum ResolverFixtureFactory {
         scaffoldDomain: String = "example.haven.local",
         capabilities: [String] = ["cap.join", "cap.discover"],
         purposes: [String] = ["bootstrap.join_scaffold"],
-        expiresAt: String = "2026-02-26T09:00:00Z"
+        expiresAt: String = "2026-02-26T09:00:00Z",
+        ownerSeedBase64URL: String = resolverSeed
     ) throws -> BridgeDescriptor {
         var descriptor = BridgeDescriptor(
             descriptor_id: descriptorID,
             bridge_endpoint: bridgeEndpoint,
             scaffold_domain: scaffoldDomain,
-            owner_pubkey: try resolverPublicKey(),
+            owner_pubkey: try Ed25519.publicKeyBase64URL(fromSeedBase64URL: ownerSeedBase64URL),
             capability_requirements: capabilities,
             purpose_constraints: purposes,
             expires_at: expiresAt,
             signature: SignatureEnvelope(alg: "Ed25519", sig: "")
         )
         descriptor.signature = SignatureEnvelope(
+            alg: "Ed25519",
+            sig: try Ed25519.signBase64URL(data: try descriptor.canonicalPayloadData(), seedBase64URL: ownerSeedBase64URL)
+        )
+        return descriptor
+    }
+
+    static func makeScaffoldTrustRootDescriptor(
+        scaffoldDomain: String = "example.haven.local",
+        bridgeOwnerPublicKeys: [String]? = nil,
+        resolverPublicKeys: [String]? = nil,
+        issuedAt: String = "2026-02-26T08:00:00Z",
+        expiresAt: String = "2026-02-26T09:00:00Z"
+    ) throws -> ScaffoldAdminTrustRootDescriptor {
+        let resolvedResolverPublicKeys = try resolverPublicKeys ?? [resolverPublicKey()]
+        let resolvedBridgeOwnerPublicKeys = try bridgeOwnerPublicKeys ?? [bridgeOwnerPublicKey()]
+        var descriptor = ScaffoldAdminTrustRootDescriptor(
+            version: "1.0",
+            descriptor_id: "trd_0001",
+            scaffold_domain: scaffoldDomain,
+            scaffold_admin_public_key: try resolverPublicKey(),
+            resolver_public_keys: resolvedResolverPublicKeys,
+            bridge_owner_public_keys: resolvedBridgeOwnerPublicKeys,
+            starter_bootstrap_url: "https://\(scaffoldDomain)/v1/resolver/starter-auth/intent",
+            bridge_discovery_url: "https://\(scaffoldDomain)/v1/bridges/query",
+            resolver_base_url: "https://\(scaffoldDomain)",
+            issued_at: issuedAt,
+            expires_at: expiresAt,
+            signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
+        )
+        descriptor.signature = ResolverSignatureEnvelope(
             alg: "Ed25519",
             sig: try Ed25519.signBase64URL(data: try descriptor.canonicalPayloadData(), seedBase64URL: resolverSeed)
         )

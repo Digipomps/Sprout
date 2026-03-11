@@ -65,6 +65,7 @@ struct BootstrapPlannerTests {
         let environment = BootstrapPlanningEnvironment(
             runtime: .cliService,
             availableCapabilities: [
+                .scaffoldTrustRootHTTP,
                 .starterBootstrapIntentHTTP,
                 .signedBridgeDiscoveryHTTP,
                 .liveResolverHTTP,
@@ -87,6 +88,36 @@ struct BootstrapPlannerTests {
 
         #expect(plan.actions.contains(where: { $0.id == .requestStarterBootstrapIntent && $0.blocking == false }))
         #expect(plan.readyForFirstConnection)
+    }
+
+    @Test
+    func canFetchScaffoldTrustRootDescriptorWhenLocalDescriptorIsMissing() {
+        let planner = BootstrapPlanner()
+        let environment = BootstrapPlanningEnvironment(
+            runtime: .cliService,
+            availableCapabilities: [
+                .scaffoldTrustRootHTTP,
+                .starterBootstrapIntentHTTP,
+                .signedBridgeDiscoveryHTTP,
+                .liveResolverHTTP,
+                .remoteHostRouting,
+                .portholeAttachment
+            ]
+        )
+
+        let plan = planner.plan(
+            environment: environment,
+            request: BootstrapPlanningRequest(
+                purposeGoal: BootstrapPurposeGoal(
+                    purpose: "bootstrap.join_scaffold",
+                    goal: "Connect to scaffold with a published trust root",
+                    interests: ["haven.core.bootstrap", "haven.core.bridge"]
+                ),
+                requestedPortholeKind: .cli
+            )
+        )
+
+        #expect(plan.actions.contains(where: { $0.id == .fetchScaffoldTrustRootDescriptor && $0.blocking == false }))
     }
 
     @Test

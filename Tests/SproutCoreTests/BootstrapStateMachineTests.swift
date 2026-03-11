@@ -207,7 +207,10 @@ final class BootstrapStateMachineTests: XCTestCase {
 
     func testHappyPathWithEntityAnchorResolverIssuesInclusionProof() async throws {
         let starter = try loadStarterPayload()
-        let descriptor = try ResolverFixtureFactory.makeSignedBridgeDescriptor()
+        let descriptor = try ResolverFixtureFactory.makeSignedBridgeDescriptor(
+            ownerSeedBase64URL: ResolverFixtureFactory.bridgeSeed
+        )
+        let trustRootDescriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor()
         let snapshot = try ResolverFixtureFactory.makeSignedEntityAnchorSnapshot(
             identities: [
                 EntityAnchorIdentityMember(
@@ -233,10 +236,10 @@ final class BootstrapStateMachineTests: XCTestCase {
             bridgeDiscovery: { _ in [descriptor] },
             scaffoldAdminIdentityProvider: { descriptor, _ in
                 ScaffoldAdminIdentity(
-                    scaffold_domain: descriptor.scaffold_domain,
-                    admin_public_key: descriptor.owner_pubkey,
-                    source_descriptor_id: descriptor.descriptor_id,
-                    trust_origin: "bridge_descriptor_signature"
+                    scaffold_domain: trustRootDescriptor.scaffold_domain,
+                    admin_public_key: trustRootDescriptor.scaffold_admin_public_key,
+                    source_descriptor_id: trustRootDescriptor.descriptor_id,
+                    trust_origin: "scaffold_admin_trust_root_descriptor"
                 )
             },
             bridgeConnector: { _, _ in },
@@ -261,7 +264,8 @@ final class BootstrapStateMachineTests: XCTestCase {
                 goal: "Join scaffold and register identity",
                 interests: ["haven.core.bootstrap", "haven.core.bridge"]
             ),
-            starterAuthPayload: starter
+            starterAuthPayload: starter,
+            scaffoldTrustRootDescriptor: trustRootDescriptor
         )
 
         let result = await machine.run(initialContext: context)
@@ -272,6 +276,54 @@ final class BootstrapStateMachineTests: XCTestCase {
         XCTAssertEqual(result.context.entityResolution?.inclusion_proof?.anchor_admin_public_key, snapshot.admin_public_key)
     }
 
+    func testTrustRootAllowsDistinctBridgeOwnerAndScaffoldAdmin() async throws {
+        let starter = try loadStarterPayload()
+        let descriptor = try ResolverFixtureFactory.makeSignedBridgeDescriptor(
+            ownerSeedBase64URL: ResolverFixtureFactory.bridgeSeed
+        )
+        let trustRootDescriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor()
+
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [descriptor],
+            resolverScenario: MockResolverScenario(
+                allowedDomains: ["example.haven.local"],
+                entityBindings: [starter.identity_public_key: "entity_example_primary"],
+                requireFreshPayload: false
+            ),
+            trustRootDescriptor: trustRootDescriptor
+        )
+
+        XCTAssertEqual(result.finalState, .done)
+        XCTAssertEqual(result.context.scaffoldAdminIdentity?.admin_public_key, trustRootDescriptor.scaffold_admin_public_key)
+        XCTAssertEqual(result.context.selectedBridge?.owner_pubkey, descriptor.owner_pubkey)
+        XCTAssertNotEqual(result.context.scaffoldAdminIdentity?.admin_public_key, descriptor.owner_pubkey)
+    }
+
+    func testRejectsBridgeOwnerNotPresentInTrustRootDescriptor() async throws {
+        let starter = try loadStarterPayload()
+        let descriptor = try ResolverFixtureFactory.makeSignedBridgeDescriptor(
+            ownerSeedBase64URL: ResolverFixtureFactory.bridgeSeed
+        )
+        let trustRootDescriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor(
+            bridgeOwnerPublicKeys: [try ResolverFixtureFactory.resolverPublicKey()]
+        )
+
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [descriptor],
+            resolverScenario: MockResolverScenario(
+                allowedDomains: ["example.haven.local"],
+                entityBindings: [starter.identity_public_key: "entity_example_primary"],
+                requireFreshPayload: false
+            ),
+            trustRootDescriptor: trustRootDescriptor
+        )
+
+        XCTAssertEqual(result.finalState, .error)
+        XCTAssertEqual(result.error, .missingScaffoldAdminIdentity)
+    }
+
     private func runWith(
         domain: String = "example.haven.local",
         starter: StarterAuthPayload,
@@ -280,6 +332,7 @@ final class BootstrapStateMachineTests: XCTestCase {
         now: Date? = nil,
         entityLinkContract: EntityLinkContract? = nil,
         requestedPortholeKind: PortholeClientKind = .cli,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor? = nil,
         resolver: (any SproutResolverAdapter)? = nil
     ) async -> BootstrapRunResult {
         let adjustedScenario = MockResolverScenario(
@@ -321,7 +374,15 @@ final class BootstrapStateMachineTests: XCTestCase {
             },
             bridgeDiscovery: { _ in bridgeDescriptors },
             scaffoldAdminIdentityProvider: { descriptor, _ in
-                ScaffoldAdminIdentity(
+                if let trustRootDescriptor {
+                    return ScaffoldAdminIdentity(
+                        scaffold_domain: trustRootDescriptor.scaffold_domain,
+                        admin_public_key: trustRootDescriptor.scaffold_admin_public_key,
+                        source_descriptor_id: trustRootDescriptor.descriptor_id,
+                        trust_origin: "scaffold_admin_trust_root_descriptor"
+                    )
+                }
+                return ScaffoldAdminIdentity(
                     scaffold_domain: descriptor.scaffold_domain,
                     admin_public_key: descriptor.owner_pubkey,
                     source_descriptor_id: descriptor.descriptor_id,
@@ -347,7 +408,8 @@ final class BootstrapStateMachineTests: XCTestCase {
                 goal: "Join scaffold and register identity",
                 interests: ["haven.core.bootstrap", "haven.core.bridge"]
             ),
-            starterAuthPayload: starter
+            starterAuthPayload: starter,
+            scaffoldTrustRootDescriptor: trustRootDescriptor
         )
 
         return await machine.run(initialContext: context)

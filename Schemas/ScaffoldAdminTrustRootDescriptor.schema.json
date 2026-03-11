@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://haven.local/sprout/schemas/ScaffoldAdminTrustRootDescriptor.schema.json",
+  "title": "ScaffoldAdminTrustRootDescriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "descriptor_id",
+    "scaffold_domain",
+    "scaffold_admin_public_key",
+    "resolver_public_keys",
+    "bridge_owner_public_keys",
+    "starter_bootstrap_url",
+    "bridge_discovery_url",
+    "resolver_base_url",
+    "issued_at",
+    "expires_at",
+    "signature"
+  ],
+  "properties": {
+    "version": { "type": "string" },
+    "descriptor_id": { "type": "string" },
+    "scaffold_domain": { "type": "string" },
+    "scaffold_admin_public_key": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" },
+    "resolver_public_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+    },
+    "bridge_owner_public_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+    },
+    "starter_bootstrap_url": { "type": "string", "format": "uri" },
+    "bridge_discovery_url": { "type": "string", "format": "uri" },
+    "resolver_base_url": { "type": "string", "format": "uri" },
+    "issued_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "sig"],
+      "properties": {
+        "alg": { "type": "string", "const": "Ed25519" },
+        "sig": { "type": "string", "pattern": "^[A-Za-z0-9_-]+$" }
+      }
+    }
+  }
+}

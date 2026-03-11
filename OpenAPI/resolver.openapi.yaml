@@ -6,6 +6,16 @@ info:
 servers:
   - url: https://resolver.example.haven.local
 paths:
+  /.well-known/haven-scaffold-admin-trust-root.json:
+    get:
+      summary: Fetch signed scaffold-admin trust-root descriptor
+      responses:
+        '200':
+          description: Signed scaffold-admin trust-root descriptor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScaffoldAdminTrustRootDescriptor'
   /v1/resolver/starter-auth/intent:
     post:
       summary: Issue signed starter bootstrap intent
@@ -110,6 +120,38 @@ components:
       properties:
         alg: { type: string, const: Ed25519 }
         sig: { type: string }
+    ScaffoldAdminTrustRootDescriptor:
+      type: object
+      required:
+        - version
+        - descriptor_id
+        - scaffold_domain
+        - scaffold_admin_public_key
+        - resolver_public_keys
+        - bridge_owner_public_keys
+        - starter_bootstrap_url
+        - bridge_discovery_url
+        - resolver_base_url
+        - issued_at
+        - expires_at
+        - signature
+      properties:
+        version: { type: string }
+        descriptor_id: { type: string }
+        scaffold_domain: { type: string }
+        scaffold_admin_public_key: { type: string }
+        resolver_public_keys:
+          type: array
+          items: { type: string }
+        bridge_owner_public_keys:
+          type: array
+          items: { type: string }
+        starter_bootstrap_url: { type: string, format: uri }
+        bridge_discovery_url: { type: string, format: uri }
+        resolver_base_url: { type: string, format: uri }
+        issued_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        signature: { $ref: '#/components/schemas/ResolverSignatureEnvelope' }
     StarterPurposeInterest:
       type: object
       required: [purpose, interests]

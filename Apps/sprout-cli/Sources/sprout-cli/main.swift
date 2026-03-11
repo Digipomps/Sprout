@@ -61,6 +61,30 @@ struct SproutCLI {
         let nowDate = try parseNow(flags["now"])
         let requestedPortholeKind = try parsePortholeKind(flags["porthole"] ?? "cli")
         let wantsPlanOutput = subcommand == "plan" || flags["plan-only"] == "true"
+        var trustRootSource = try resolveScaffoldTrustRootSource(flags: flags, environment: environment, domain: domain)
+        var trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
+
+        if subcommand == "join",
+           !wantsPlanOutput,
+           trustRootSource == nil,
+           let purposeGoal,
+           purposeGoal.isExplicitlySet {
+            trustRootSource = try await materializeScaffoldTrustRootSource(
+                flags: flags,
+                environment: environment,
+                domain: domain,
+                nowDate: nowDate
+            )
+        }
+
+        if let trustRootSource, subcommand == "join", !wantsPlanOutput {
+            trustRootDescriptor = try loadScaffoldTrustRootDescriptor(
+                source: trustRootSource,
+                expectedDomain: domain,
+                nowDate: nowDate
+            )
+        }
+
         var starterSource = try resolveStarterAuthSource(flags: flags, environment: environment, domain: domain)
 
         if subcommand == "join",
@@ -73,7 +97,8 @@ struct SproutCLI {
                 environment: environment,
                 domain: domain,
                 runtime: runtime,
-                purposeGoal: purposeGoal
+                purposeGoal: purposeGoal,
+                trustRootDescriptor: trustRootDescriptor
             )
         }
 
@@ -83,7 +108,8 @@ struct SproutCLI {
             runtime: runtime,
             purposeGoal: purposeGoal,
             requestedPortholeKind: requestedPortholeKind,
-            starterSource: starterSource
+            starterSource: starterSource,
+            trustRootSource: trustRootSource
         )
 
         if wantsPlanOutput {
@@ -91,6 +117,7 @@ struct SproutCLI {
                 BootstrapPlanOutput(
                     domain: domain,
                     runtime: runtime.rawValue,
+                    scaffold_trust_root_source: trustRootSource,
                     starter_source: starterSource,
                     bootstrap_plan: plan
                 ),
@@ -109,11 +136,13 @@ struct SproutCLI {
                 event_count: 0,
                 resolver_mode: try resolverMode(flags: flags).rawValue,
                 requested_porthole_kind: requestedPortholeKind.rawValue,
+                scaffold_trust_root_source: trustRootSource,
                 starter_source: starterSource,
                 bootstrap_plan: plan,
                 entity_resolution_status: nil,
                 resolved_entity_id: nil,
                 entity_inclusion_proof_id: nil,
+                scaffold_trust_root_descriptor_id: trustRootDescriptor?.descriptor_id,
                 scaffold_admin_public_key: nil,
                 porthole_contract_id: nil,
                 porthole_protocol: nil,
@@ -152,7 +181,11 @@ struct SproutCLI {
 
         let bridgeManager = BridgeManager()
         let catalogPath = flags["catalog"]
-        let discoveryService = try makeBridgeDiscoveryService(flags: flags, domain: domain)
+        let discoveryService = try makeBridgeDiscoveryService(
+            flags: flags,
+            domain: domain,
+            trustRootDescriptor: trustRootDescriptor
+        )
 
         let resolver = try makeResolver(
             flags: flags,
@@ -160,8 +193,10 @@ struct SproutCLI {
             starterPayload: starterPayload,
             entityLinkContract: entityLinkContract,
             entityAnchorSnapshot: entityAnchorSnapshot,
+            trustRootDescriptor: trustRootDescriptor,
             nowDate: nowDate
         )
+        let resolvedTrustRootDescriptor = trustRootDescriptor
 
         let dependencies = SproutBootstrapDependencies(
             identityProvider: { context in
@@ -207,7 +242,15 @@ struct SproutCLI {
                 return descriptors
             },
             scaffoldAdminIdentityProvider: { descriptor, _ in
-                ScaffoldAdminIdentity(
+                if let resolvedTrustRootDescriptor {
+                    return ScaffoldAdminIdentity(
+                        scaffold_domain: resolvedTrustRootDescriptor.scaffold_domain,
+                        admin_public_key: resolvedTrustRootDescriptor.scaffold_admin_public_key,
+                        source_descriptor_id: resolvedTrustRootDescriptor.descriptor_id,
+                        trust_origin: "scaffold_admin_trust_root_descriptor"
+                    )
+                }
+                return ScaffoldAdminIdentity(
                     scaffold_domain: descriptor.scaffold_domain,
                     admin_public_key: descriptor.owner_pubkey,
                     source_descriptor_id: descriptor.descriptor_id,
@@ -248,7 +291,8 @@ struct SproutCLI {
             economics: BootstrapEconomicsContext(
                 declared_deposit_rau: declaredDepositRAU,
                 pricing_contract: pricingContract
-            )
+            ),
+            scaffoldTrustRootDescriptor: trustRootDescriptor
         )
 
         let result = await stateMachine.run(initialContext: context)
@@ -257,11 +301,13 @@ struct SproutCLI {
             event_count: result.events.count,
             resolver_mode: try resolverMode(flags: flags).rawValue,
             requested_porthole_kind: requestedPortholeKind.rawValue,
+            scaffold_trust_root_source: trustRootSource,
             starter_source: starterSource,
             bootstrap_plan: plan,
             entity_resolution_status: result.context.entityResolution?.status.rawValue,
             resolved_entity_id: result.context.entityResolution?.entity_id,
             entity_inclusion_proof_id: result.context.entityResolution?.inclusion_proof?.proof_id,
+            scaffold_trust_root_descriptor_id: result.context.scaffoldTrustRootDescriptor?.descriptor_id,
             scaffold_admin_public_key: result.context.scaffoldAdminIdentity?.admin_public_key,
             porthole_contract_id: result.context.portholeAccessContract?.contract_id,
             porthole_protocol: result.context.portholeAccessContract?.porthole_protocol.rawValue,
@@ -382,6 +428,23 @@ struct SproutCLI {
             let valid = try starter.verifySignature() && !starter.isExpired(now: nowDate)
             print(valid ? "StarterAuthPayload valid" : "StarterAuthPayload invalid (signature or expiry)")
             exit(valid ? 0 : 2)
+        }
+
+        if let trustRoot = try? JSONDecoder().decode(ScaffoldAdminTrustRootDescriptor.self, from: data) {
+            do {
+                try ScaffoldAdminTrustRootDescriptorValidator().validate(
+                    descriptor: trustRoot,
+                    context: ScaffoldAdminTrustRootDescriptorValidationContext(
+                        expectedDomain: trustRoot.scaffold_domain,
+                        now: nowDate
+                    )
+                )
+                print("ScaffoldAdminTrustRootDescriptor valid")
+                exit(0)
+            } catch {
+                print("ScaffoldAdminTrustRootDescriptor invalid: \(error)")
+                exit(2)
+            }
         }
 
         if let bridge = try? JSONDecoder().decode(BridgeDescriptor.self, from: data) {
@@ -549,15 +612,20 @@ struct SproutCLI {
         starterPayload: StarterAuthPayload,
         entityLinkContract: EntityLinkContract?,
         entityAnchorSnapshot: EntityAnchorSnapshot?,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?,
         nowDate: Date
     ) throws -> any SproutResolverAdapter {
         let mode = try resolverMode(flags: flags)
         if mode == .liveHTTP {
             let environment = ProcessInfo.processInfo.environment
-            let resolverBaseURL = try requiredResolverBaseURL(flags: flags, environment: environment)
-            let trustedResolverKeys = parseSetFlag(
-                flags["trusted-resolver-key"] ?? environment["SPROUT_RESOLVER_TRUSTED_KEYS"]
+            let resolverBaseURL = try requiredResolverBaseURL(
+                flags: flags,
+                environment: environment,
+                trustRootDescriptor: trustRootDescriptor
             )
+            let trustedResolverKeys = Set(parseSetFlag(
+                flags["trusted-resolver-key"] ?? environment["SPROUT_RESOLVER_TRUSTED_KEYS"]
+            )).union(trustRootDescriptor?.resolver_public_keys ?? [])
             let bearerToken = flags["resolver-bearer"] ?? environment["SPROUT_RESOLVER_BEARER_TOKEN"]
             let pathPrefix = flags["resolver-path-prefix"] ?? environment["SPROUT_RESOLVER_PATH_PREFIX"] ?? "/v1/resolver"
 
@@ -607,10 +675,16 @@ struct SproutCLI {
 
     private static func makeBridgeDiscoveryService(
         flags: [String: String],
-        domain: String
+        domain: String,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
     ) throws -> any BridgeDiscoveryService {
         let environment = ProcessInfo.processInfo.environment
-        let endpoint = try resolveDiscoveryEndpoint(flags: flags, environment: environment, domain: domain)
+        let endpoint = try resolveDiscoveryEndpoint(
+            flags: flags,
+            environment: environment,
+            domain: domain,
+            trustRootDescriptor: trustRootDescriptor
+        )
         return BridgeDiscoveryHTTPClient(endpoint: endpoint)
     }
 
@@ -620,9 +694,6 @@ struct SproutCLI {
         let hasResolverBaseURL = flags["resolver-base-url"] != nil || environment["SPROUT_RESOLVER_BASE_URL"] != nil
 
         if liveFlag {
-            guard hasResolverBaseURL else {
-                throw CLIError.invalidArguments("Live resolver requires --resolver-base-url or SPROUT_RESOLVER_BASE_URL.")
-            }
             return .liveHTTP
         }
         if hasResolverBaseURL {
@@ -634,10 +705,35 @@ struct SproutCLI {
         return .mock
     }
 
-    private static func requiredResolverBaseURL(flags: [String: String], environment: [String: String]) throws -> URL {
-        let raw = flags["resolver-base-url"] ?? environment["SPROUT_RESOLVER_BASE_URL"] ?? ""
+    private static func requiredResolverBaseURL(
+        flags: [String: String],
+        environment: [String: String],
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
+    ) throws -> URL {
+        let raw = flags["resolver-base-url"]
+            ?? environment["SPROUT_RESOLVER_BASE_URL"]
+            ?? trustRootDescriptor?.resolver_base_url
+            ?? ""
         guard let url = URL(string: raw), !raw.isEmpty else {
             throw CLIError.invalidArguments("Invalid resolver base URL.")
+        }
+        return url
+    }
+
+    private static func resolveScaffoldTrustRootEndpoint(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String
+    ) throws -> URL {
+        if let raw = flags["trust-root-url"] ?? environment["SPROUT_TRUST_ROOT_URL"], !raw.isEmpty {
+            guard let url = URL(string: raw) else {
+                throw CLIError.invalidArguments("Invalid scaffold trust root URL.")
+            }
+            return url
+        }
+
+        guard let url = URL(string: "https://\(domain)/.well-known/haven-scaffold-admin-trust-root.json") else {
+            throw CLIError.invalidArguments("Invalid scaffold trust root URL derived from scaffold domain.")
         }
         return url
     }
@@ -645,11 +741,19 @@ struct SproutCLI {
     private static func resolveDiscoveryEndpoint(
         flags: [String: String],
         environment: [String: String],
-        domain: String
+        domain: String,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
     ) throws -> URL {
         if let raw = flags["discovery-url"] ?? environment["SPROUT_DISCOVERY_URL"], !raw.isEmpty {
             guard let url = URL(string: raw) else {
                 throw CLIError.invalidArguments("Invalid discovery URL.")
+            }
+            return url
+        }
+
+        if let raw = trustRootDescriptor?.bridge_discovery_url, !raw.isEmpty {
+            guard let url = URL(string: raw) else {
+                throw CLIError.invalidArguments("Invalid discovery URL from scaffold trust root descriptor.")
             }
             return url
         }
@@ -678,11 +782,19 @@ struct SproutCLI {
     private static func resolveStarterBootstrapEndpoint(
         flags: [String: String],
         environment: [String: String],
-        domain: String
+        domain: String,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
     ) throws -> URL {
         if let raw = flags["starter-bootstrap-url"] ?? environment["SPROUT_STARTER_BOOTSTRAP_URL"], !raw.isEmpty {
             guard let url = URL(string: raw) else {
                 throw CLIError.invalidArguments("Invalid starter bootstrap URL.")
+            }
+            return url
+        }
+
+        if let raw = trustRootDescriptor?.starter_bootstrap_url, !raw.isEmpty {
+            guard let url = URL(string: raw) else {
+                throw CLIError.invalidArguments("Invalid starter bootstrap URL from scaffold trust root descriptor.")
             }
             return url
         }
@@ -739,6 +851,31 @@ struct SproutCLI {
         return BootstrapPurposeGoal(purpose: purpose, goal: goal, interests: interests)
     }
 
+    private static func resolveScaffoldTrustRootSource(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String
+    ) throws -> TrustRootSource? {
+        if let path = flags["trust-root"], !path.isEmpty {
+            return try validateTrustRootSource(path: path, origin: "flag")
+        }
+
+        if let path = environment["SPROUT_TRUST_ROOT_PATH"], !path.isEmpty {
+            return try validateTrustRootSource(path: path, origin: "environment")
+        }
+
+        let candidates = [
+            TrustRootSource(origin: "domain-cache", path: ".sprout/trust-roots/\(domain).json"),
+            TrustRootSource(origin: "default-cache", path: ".sprout/scaffold_admin_trust_root.json")
+        ]
+
+        for candidate in candidates where FileManager.default.fileExists(atPath: candidate.path) {
+            return candidate
+        }
+
+        return nil
+    }
+
     private static func resolveStarterAuthSource(
         flags: [String: String],
         environment: [String: String],
@@ -773,13 +910,21 @@ struct SproutCLI {
         return StarterAuthSource(origin: origin, path: path)
     }
 
+    private static func validateTrustRootSource(path: String, origin: String) throws -> TrustRootSource {
+        guard FileManager.default.fileExists(atPath: path) else {
+            throw CLIError.invalidArguments("Scaffold trust root descriptor not found at \(path).")
+        }
+        return TrustRootSource(origin: origin, path: path)
+    }
+
     private static func makeBootstrapPlan(
         flags: [String: String],
         environment: [String: String],
         runtime: SproutRuntimeProfile,
         purposeGoal: BootstrapPurposeGoal?,
         requestedPortholeKind: PortholeClientKind,
-        starterSource: StarterAuthSource?
+        starterSource: StarterAuthSource?,
+        trustRootSource: TrustRootSource?
     ) throws -> BootstrapPlan {
         var capabilities: Set<BootstrapPlanningCapability> = [
             .remoteHostRouting,
@@ -787,10 +932,14 @@ struct SproutCLI {
             .signedBridgeDiscoveryHTTP
         ]
 
+        if trustRootSource != nil {
+            capabilities.insert(.localScaffoldTrustRootDescriptor)
+        }
         if starterSource != nil {
             capabilities.insert(.localStarterAuthPayload)
         }
         if purposeGoal?.isExplicitlySet == true {
+            capabilities.insert(.scaffoldTrustRootHTTP)
             capabilities.insert(.starterBootstrapIntentHTTP)
         }
         if flags["catalog"] != nil {
@@ -843,9 +992,15 @@ struct SproutCLI {
         environment: [String: String],
         domain: String,
         runtime: SproutRuntimeProfile,
-        purposeGoal: BootstrapPurposeGoal
+        purposeGoal: BootstrapPurposeGoal,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
     ) async throws -> StarterAuthSource {
-        let endpoint = try resolveStarterBootstrapEndpoint(flags: flags, environment: environment, domain: domain)
+        let endpoint = try resolveStarterBootstrapEndpoint(
+            flags: flags,
+            environment: environment,
+            domain: domain,
+            trustRootDescriptor: trustRootDescriptor
+        )
         let client = try StarterBootstrapHTTPClient(endpoint: endpoint)
         let intent = try await client.issueIntent(
             StarterBootstrapIntentRequest(
@@ -856,6 +1011,9 @@ struct SproutCLI {
                 runtime: runtime.rawValue
             )
         )
+        if let trustRootDescriptor, !trustRootDescriptor.trustsResolver(intent.issued_by) {
+            throw CLIError.invalidArguments("Starter bootstrap intent issuer is not trusted by the scaffold trust root descriptor.")
+        }
 
         let identityRoot = URL(fileURLWithPath: flags["starter-identity-root"] ?? ".sprout/starter-identities")
         let identityStore = StarterIdentityStore(root: identityRoot)
@@ -893,6 +1051,47 @@ struct SproutCLI {
         try JSONEncoder.pretty.encode(payload).write(to: outputURL, options: [.atomic])
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: outputURL.path)
         return StarterAuthSource(origin: "bootstrap-intent", path: outputURL.path)
+    }
+
+    private static func loadScaffoldTrustRootDescriptor(
+        source: TrustRootSource,
+        expectedDomain: String,
+        nowDate: Date
+    ) throws -> ScaffoldAdminTrustRootDescriptor {
+        let descriptor = try JSONDecoder().decode(
+            ScaffoldAdminTrustRootDescriptor.self,
+            from: Data(contentsOf: source.url)
+        )
+        try ScaffoldAdminTrustRootDescriptorValidator().validate(
+            descriptor: descriptor,
+            context: ScaffoldAdminTrustRootDescriptorValidationContext(
+                expectedDomain: expectedDomain,
+                now: nowDate
+            )
+        )
+        return descriptor
+    }
+
+    private static func materializeScaffoldTrustRootSource(
+        flags: [String: String],
+        environment: [String: String],
+        domain: String,
+        nowDate: Date
+    ) async throws -> TrustRootSource {
+        let endpoint = try resolveScaffoldTrustRootEndpoint(flags: flags, environment: environment, domain: domain)
+        let client = try ScaffoldTrustRootHTTPClient(endpoint: endpoint, now: { nowDate })
+        let descriptor = try await client.fetch(expectedDomain: domain)
+
+        let outputPath = flags["trust-root-out"] ?? ".sprout/trust-roots/\(domain).json"
+        let outputURL = URL(fileURLWithPath: outputPath)
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try JSONEncoder.pretty.encode(descriptor).write(to: outputURL, options: [.atomic])
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: outputURL.path)
+        return TrustRootSource(origin: "well-known-trust-root", path: outputURL.path)
     }
 
     private static func parseSetFlag(_ rawValue: String?) -> [String] {
@@ -965,8 +1164,8 @@ struct SproutCLI {
     private static func printUsage() {
         let text = """
         sprout commands:
-          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
-          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
+          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
+          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
@@ -983,6 +1182,13 @@ struct SproutCLI {
           sprout economics suggest-rate --records <session-records.json> [--rau-per-thread-minute <int64>] [--rau-per-gib-minute <int64>] [--rau-per-cpu-second <int64>] [--rau-per-message <int64>] [--rau-per-audit-event <int64>] [--target-margin-bps <int64>] [--out <json>]
           sprout update --policy <policy.json> --artifact <name> --hash <sha256_b64url> --version <semver> --channel <stable|beta> --trigger <pubkey-or-contract> [--auto]
 
+        scaffold trust root lookup and acquisition order for bootstrap:
+          1. --trust-root <file>
+          2. SPROUT_TRUST_ROOT_PATH
+          3. .sprout/trust-roots/<domain>.json
+          4. .sprout/scaffold_admin_trust_root.json
+          5. scaffold trust-root descriptor from .well-known when purpose/goal/interests are explicit
+
         starter auth lookup and acquisition order for bootstrap:
           1. --starter <file>
           2. SPROUT_STARTER_AUTH_PATH
@@ -996,8 +1202,14 @@ struct SproutCLI {
         starter bootstrap intent endpoint resolution order:
           1. --starter-bootstrap-url
           2. SPROUT_STARTER_BOOTSTRAP_URL
-          3. resolver origin + /v1/resolver/starter-auth/intent
-          4. https://<domain>/v1/resolver/starter-auth/intent
+          3. trust root descriptor starter_bootstrap_url
+          4. resolver origin + /v1/resolver/starter-auth/intent
+          5. https://<domain>/v1/resolver/starter-auth/intent
+
+        scaffold trust root endpoint resolution order:
+          1. --trust-root-url
+          2. SPROUT_TRUST_ROOT_URL
+          3. https://<domain>/.well-known/haven-scaffold-admin-trust-root.json
         """
         print(text)
     }
@@ -1017,11 +1229,13 @@ private struct BootstrapCommandOutput: Codable {
     var event_count: Int
     var resolver_mode: String
     var requested_porthole_kind: String
+    var scaffold_trust_root_source: TrustRootSource?
     var starter_source: StarterAuthSource?
     var bootstrap_plan: BootstrapPlan?
     var entity_resolution_status: String?
     var resolved_entity_id: String?
     var entity_inclusion_proof_id: String?
+    var scaffold_trust_root_descriptor_id: String?
     var scaffold_admin_public_key: String?
     var porthole_contract_id: String?
     var porthole_protocol: String?
@@ -1040,8 +1254,18 @@ private struct UnitConversionOutput: Codable {
 private struct BootstrapPlanOutput: Codable {
     var domain: String
     var runtime: String
+    var scaffold_trust_root_source: TrustRootSource?
     var starter_source: StarterAuthSource?
     var bootstrap_plan: BootstrapPlan
+}
+
+private struct TrustRootSource: Codable {
+    var origin: String
+    var path: String
+
+    var url: URL {
+        URL(fileURLWithPath: path)
+    }
 }
 
 private struct StarterAuthSource: Codable {

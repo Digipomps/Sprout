@@ -34,6 +34,8 @@ struct SproutAdminCLI {
             try runVaporVault(arguments: Array(arguments.dropFirst()))
         case "entity-anchor":
             try runEntityAnchor(arguments: Array(arguments.dropFirst()))
+        case "scaffold-trust-root":
+            try runScaffoldTrustRoot(arguments: Array(arguments.dropFirst()))
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -73,6 +75,19 @@ struct SproutAdminCLI {
         switch subcommand {
         case "create-from-vapor-vault":
             try createEntityAnchorSnapshot(flags: flags)
+        default:
+            throw AdminCLIError.invalidArguments(usage)
+        }
+    }
+
+    private static func runScaffoldTrustRoot(arguments: [String]) throws {
+        guard let subcommand = arguments.first else {
+            throw AdminCLIError.invalidArguments(usage)
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+        switch subcommand {
+        case "create-from-vapor-vault":
+            try createScaffoldTrustRootDescriptor(flags: flags)
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -126,6 +141,70 @@ struct SproutAdminCLI {
             "admin_public_key": snapshot.admin_public_key,
             "entity_id": entityID,
             "subject_public_key": subjectPublicKey
+        ]
+        try emitJSON(summary, outPath: flags["summary-out"])
+    }
+
+    private static func createScaffoldTrustRootDescriptor(flags: [String: String]) throws {
+        let scaffoldDomain = try requiredFlag("scaffold-domain", flags)
+        let identityContext = try requiredFlag("identity-context", flags)
+        let now = try parseDate(flags["now"]) ?? Date()
+        let issuedAt = try parseDate(flags["issued-at"]) ?? now
+        let expiresAt = try parseDate(flags["expires-at"]) ?? issuedAt.addingTimeInterval(86_400 * 30)
+        guard expiresAt > issuedAt else {
+            throw AdminCLIError.invalidArguments("--expires-at must be later than --issued-at.")
+        }
+
+        let descriptorID = flags["descriptor-id"] ?? "trd_\(scaffoldDomain.replacingOccurrences(of: ".", with: "_"))_\(Int(issuedAt.timeIntervalSince1970))"
+        let paths = resolveVaultPaths(flags: flags)
+        let adminIdentity = try VaporVaultDecoder.identity(forContext: identityContext, paths: paths)
+        let defaultPublicKey = adminIdentity.publicKeyBase64URL
+
+        let resolverPublicKeys = parseCSV(flags["resolver-public-keys"]).isEmpty
+            ? [defaultPublicKey]
+            : parseCSV(flags["resolver-public-keys"])
+        let bridgeOwnerPublicKeys = parseCSV(flags["bridge-owner-public-keys"]).isEmpty
+            ? [defaultPublicKey]
+            : parseCSV(flags["bridge-owner-public-keys"])
+
+        let defaultResolverBaseURL = URL(string: "https://\(scaffoldDomain)")!
+        let resolverBaseURL = try parseURL(flags["resolver-base-url"]) ?? defaultResolverBaseURL
+        let starterBootstrapURL = try parseURL(flags["starter-bootstrap-url"])
+            ?? resolverBaseURL
+                .appendingPathComponent("v1")
+                .appendingPathComponent("resolver")
+                .appendingPathComponent("starter-auth")
+                .appendingPathComponent("intent")
+        let bridgeDiscoveryURL = try parseURL(flags["bridge-discovery-url"])
+            ?? resolverBaseURL
+                .appendingPathComponent("v1")
+                .appendingPathComponent("bridges")
+                .appendingPathComponent("query")
+
+        let descriptor = try ScaffoldTrustRootDescriptorBuilder.buildSignedDescriptor(
+            scaffoldDomain: scaffoldDomain,
+            adminIdentity: adminIdentity,
+            descriptorID: descriptorID,
+            issuedAt: issuedAt,
+            expiresAt: expiresAt,
+            resolverPublicKeys: resolverPublicKeys,
+            bridgeOwnerPublicKeys: bridgeOwnerPublicKeys,
+            starterBootstrapURL: starterBootstrapURL,
+            bridgeDiscoveryURL: bridgeDiscoveryURL,
+            resolverBaseURL: resolverBaseURL
+        )
+        let outputPath = flags["out"] ?? "./scaffold-admin-trust-root.json"
+        try emitJSON(descriptor, outPath: outputPath)
+        let summary: [String: AnyCodable] = [
+            "descriptor_path": AnyCodable(outputPath),
+            "descriptor_id": AnyCodable(descriptor.descriptor_id),
+            "scaffold_domain": AnyCodable(descriptor.scaffold_domain),
+            "scaffold_admin_public_key": AnyCodable(descriptor.scaffold_admin_public_key),
+            "resolver_public_keys": AnyCodable(descriptor.resolver_public_keys),
+            "bridge_owner_public_keys": AnyCodable(descriptor.bridge_owner_public_keys),
+            "resolver_base_url": AnyCodable(descriptor.resolver_base_url),
+            "starter_bootstrap_url": AnyCodable(descriptor.starter_bootstrap_url),
+            "bridge_discovery_url": AnyCodable(descriptor.bridge_discovery_url)
         ]
         try emitJSON(summary, outPath: flags["summary-out"])
     }
@@ -185,6 +264,14 @@ struct SproutAdminCLI {
         return date
     }
 
+    private static func parseURL(_ raw: String?) throws -> URL? {
+        guard let raw, !raw.isEmpty else { return nil }
+        guard let url = URL(string: raw) else {
+            throw AdminCLIError.invalidArguments("Invalid URL: \(raw)")
+        }
+        return url
+    }
+
     private static func iso8601(_ date: Date) -> String {
         ISO8601DateFormatter().string(from: date)
     }
@@ -209,5 +296,18 @@ struct SproutAdminCLI {
     Usage:
       sprout-admin vapor-vault list-identities [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--out <file>]
       sprout-admin entity-anchor create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> --entity-id <id> --subject-public-key <b64url> --subject-domain <domain> [--accepted-contract-ids <id1,id2>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--added-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
+      sprout-admin scaffold-trust-root create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
     """
+}
+
+private struct AnyCodable: Encodable {
+    private let value: any Encodable
+
+    init(_ value: any Encodable) {
+        self.value = value
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try value.encode(to: encoder)
+    }
 }

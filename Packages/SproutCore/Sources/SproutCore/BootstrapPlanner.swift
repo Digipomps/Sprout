@@ -2,6 +2,8 @@ import Foundation
 import SproutResolverAdapter
 
 public enum BootstrapPlanningCapability: String, Codable, CaseIterable, Hashable, Sendable {
+    case localScaffoldTrustRootDescriptor = "local_scaffold_trust_root_descriptor"
+    case scaffoldTrustRootHTTP = "scaffold_trust_root_http"
     case localStarterAuthPayload = "local_starter_auth_payload"
     case starterBootstrapIntentHTTP = "starter_bootstrap_intent_http"
     case offlineBridgeCatalog = "offline_bridge_catalog"
@@ -60,6 +62,9 @@ public struct BootstrapPlanningRequest: Codable, Equatable, Sendable {
 
 public enum BootstrapPlanActionID: String, Codable, Sendable {
     case validateExplicitPurposeGoal = "validate-explicit-purpose-goal"
+    case loadScaffoldTrustRootDescriptor = "load-scaffold-trust-root-descriptor"
+    case fetchScaffoldTrustRootDescriptor = "fetch-scaffold-trust-root-descriptor"
+    case missingScaffoldTrustRootDescriptor = "missing-scaffold-trust-root-descriptor"
     case loadStarterAuthPayload = "load-starter-auth-payload"
     case requestStarterBootstrapIntent = "request-starter-bootstrap-intent"
     case manualStarterBootstrap = "manual-starter-bootstrap"
@@ -120,6 +125,7 @@ public struct BootstrapPlanner: Sendable {
         var missingCapabilities = Set<BootstrapPlanningCapability>()
 
         actions.append(validatePurposeGoal(request.purposeGoal))
+        actions.append(scaffoldTrustRootAction(environment: environment, missingCapabilities: &missingCapabilities))
         actions.append(starterBootstrapAction(environment: environment, missingCapabilities: &missingCapabilities))
         actions.append(discoveryAction(environment: environment, request: request, missingCapabilities: &missingCapabilities))
         actions.append(entityResolutionAction(environment: environment, request: request, missingCapabilities: &missingCapabilities))
@@ -131,6 +137,34 @@ public struct BootstrapPlanner: Sendable {
             requestedPortholeKind: request.requestedPortholeKind,
             actions: actions,
             missingCapabilities: missingCapabilities
+        )
+    }
+
+    private func scaffoldTrustRootAction(
+        environment: BootstrapPlanningEnvironment,
+        missingCapabilities: inout Set<BootstrapPlanningCapability>
+    ) -> BootstrapPlanAction {
+        if environment.availableCapabilities.contains(.localScaffoldTrustRootDescriptor) {
+            return BootstrapPlanAction(
+                id: .loadScaffoldTrustRootDescriptor,
+                description: "Load the local scaffold-admin trust-root descriptor before bootstrap.",
+                blocking: false
+            )
+        }
+
+        if environment.availableCapabilities.contains(.scaffoldTrustRootHTTP) {
+            return BootstrapPlanAction(
+                id: .fetchScaffoldTrustRootDescriptor,
+                description: "Fetch the scaffold-admin trust-root descriptor from the scaffold's well-known endpoint.",
+                blocking: false
+            )
+        }
+
+        missingCapabilities.formUnion([.localScaffoldTrustRootDescriptor, .scaffoldTrustRootHTTP])
+        return BootstrapPlanAction(
+            id: .missingScaffoldTrustRootDescriptor,
+            description: "No explicit scaffold-admin trust-root descriptor is available. Legacy bootstrap can continue, but trust is reduced.",
+            blocking: false
         )
     }
 

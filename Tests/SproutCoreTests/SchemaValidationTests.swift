@@ -49,6 +49,11 @@ final class SchemaValidationTests: XCTestCase {
         try validate(instance: snapshot, schema: "Schemas/EntityAnchorSnapshot.schema.json")
     }
 
+    func testGeneratedScaffoldTrustRootDescriptorMatchesSchema() throws {
+        let descriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor()
+        try validate(instance: descriptor, schema: "Schemas/ScaffoldAdminTrustRootDescriptor.schema.json")
+    }
+
     func testGeneratedEntityInclusionProofMatchesSchema() async throws {
         let snapshot = try ResolverFixtureFactory.makeSignedEntityAnchorSnapshot(
             identities: [

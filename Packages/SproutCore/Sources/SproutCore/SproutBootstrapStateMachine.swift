@@ -78,11 +78,17 @@ public actor SproutBootstrapStateMachine {
             }
             guard
                 scaffoldAdminIdentity.scaffold_domain == context.domain,
-                !scaffoldAdminIdentity.admin_public_key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                scaffoldAdminIdentity.admin_public_key == selectedBridge.owner_pubkey
+                !scaffoldAdminIdentity.admin_public_key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             else {
                 throw BootstrapError.missingScaffoldAdminIdentity
             }
+            try validateScaffoldTrust(
+                selectedBridge: selectedBridge,
+                scaffoldAdminIdentity: scaffoldAdminIdentity,
+                trustRootDescriptor: context.scaffoldTrustRootDescriptor,
+                domain: context.domain,
+                now: now()
+            )
 
             try await transition(to: .establishBridge, detail: "establish bridge transport")
             try ensureExplicitPurposeGoal(context)
@@ -294,7 +300,7 @@ public actor SproutBootstrapStateMachine {
             throw BootstrapError.invalidPortholeAccessContract("contract identity_public_key does not match request")
         }
         guard contract.scaffold_admin_public_key == request.scaffold_admin_public_key else {
-            throw BootstrapError.invalidPortholeAccessContract("contract scaffold admin key does not match bridge trust root")
+            throw BootstrapError.invalidPortholeAccessContract("contract scaffold admin key does not match requested scaffold admin identity")
         }
         guard contract.bridge_descriptor_id == request.bridge_descriptor_id else {
             throw BootstrapError.invalidPortholeAccessContract("contract bridge_descriptor_id does not match selected bridge")
@@ -395,6 +401,32 @@ public actor SproutBootstrapStateMachine {
         }
         guard proof.evidence_contract_id == evidenceContractID else {
             throw BootstrapError.invalidEntityInclusionProof("entity inclusion proof evidence contract id does not match request context")
+        }
+    }
+
+    private func validateScaffoldTrust(
+        selectedBridge: BridgeDescriptor,
+        scaffoldAdminIdentity: ScaffoldAdminIdentity,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?,
+        domain: String,
+        now: Date
+    ) throws {
+        if let trustRootDescriptor {
+            try ScaffoldAdminTrustRootDescriptorValidator().validate(
+                descriptor: trustRootDescriptor,
+                context: ScaffoldAdminTrustRootDescriptorValidationContext(expectedDomain: domain, now: now)
+            )
+            guard scaffoldAdminIdentity.admin_public_key == trustRootDescriptor.scaffold_admin_public_key else {
+                throw BootstrapError.missingScaffoldAdminIdentity
+            }
+            guard trustRootDescriptor.trustsBridgeOwner(selectedBridge.owner_pubkey) else {
+                throw BootstrapError.missingScaffoldAdminIdentity
+            }
+            return
+        }
+
+        guard scaffoldAdminIdentity.admin_public_key == selectedBridge.owner_pubkey else {
+            throw BootstrapError.missingScaffoldAdminIdentity
         }
     }
 

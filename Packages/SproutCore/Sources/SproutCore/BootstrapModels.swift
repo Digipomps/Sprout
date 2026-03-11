@@ -130,6 +130,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
     public var economics: BootstrapEconomicsContext?
     public var discoveredBridges: [BridgeDescriptor]
     public var selectedBridge: BridgeDescriptor?
+    public var scaffoldTrustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
     public var scaffoldAdminIdentity: ScaffoldAdminIdentity?
     public var registrationResult: ResolverRegistrationResult?
     public var capabilityDecision: CapabilityDecision?
@@ -149,6 +150,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         economics: BootstrapEconomicsContext? = nil,
         discoveredBridges: [BridgeDescriptor] = [],
         selectedBridge: BridgeDescriptor? = nil,
+        scaffoldTrustRootDescriptor: ScaffoldAdminTrustRootDescriptor? = nil,
         scaffoldAdminIdentity: ScaffoldAdminIdentity? = nil,
         registrationResult: ResolverRegistrationResult? = nil,
         capabilityDecision: CapabilityDecision? = nil,
@@ -167,6 +169,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         self.economics = economics
         self.discoveredBridges = discoveredBridges
         self.selectedBridge = selectedBridge
+        self.scaffoldTrustRootDescriptor = scaffoldTrustRootDescriptor
         self.scaffoldAdminIdentity = scaffoldAdminIdentity
         self.registrationResult = registrationResult
         self.capabilityDecision = capabilityDecision

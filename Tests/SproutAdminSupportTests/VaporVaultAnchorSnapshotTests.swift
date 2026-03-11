@@ -79,6 +79,34 @@ final class VaporVaultAnchorSnapshotTests: XCTestCase {
         XCTAssertEqual(loadedIdentity.uuid, "admin-uuid")
     }
 
+    func testBuildSignedScaffoldTrustRootDescriptorVerifies() throws {
+        let seed = Ed25519.generateSeed()
+        let keyPair = try Ed25519KeyPair(seed: seed)
+        let admin = VaporVaultIdentityRecord(
+            uuid: "admin-uuid",
+            displayName: "Admin",
+            identityContext: "Scaffold",
+            publicKey: keyPair.publicKeyData,
+            privateKey: seed
+        )
+
+        let descriptor = try ScaffoldTrustRootDescriptorBuilder.buildSignedDescriptor(
+            scaffoldDomain: "staging.haven.digipomps.org",
+            adminIdentity: admin,
+            descriptorID: "trd_0001",
+            issuedAt: Date(timeIntervalSince1970: 1_762_700_000),
+            expiresAt: Date(timeIntervalSince1970: 1_765_292_000),
+            resolverPublicKeys: [Base64URL.encode(keyPair.publicKeyData)],
+            bridgeOwnerPublicKeys: ["bridge_owner_key"],
+            starterBootstrapURL: URL(string: "https://staging.haven.digipomps.org/v1/resolver/starter-auth/intent")!,
+            bridgeDiscoveryURL: URL(string: "https://staging.haven.digipomps.org/v1/bridges/query")!,
+            resolverBaseURL: URL(string: "https://staging.haven.digipomps.org")!
+        )
+
+        XCTAssertEqual(descriptor.scaffold_admin_public_key, Base64URL.encode(keyPair.publicKeyData))
+        XCTAssertTrue(try descriptor.verifySignature())
+    }
+
     private func encryptVault(identities: [VaporVaultIdentityRecord], masterKeyData: Data) throws -> Data {
         let plaintext = try JSONEncoder().encode(identities)
         let key = HKDF<SHA256>.deriveKey(
