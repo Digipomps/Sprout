@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import SproutCrypto
 
 public struct EntityLinkRevocation: Codable, Equatable, Sendable {
@@ -69,17 +70,10 @@ public struct EntityLinkContract: Codable, Equatable, Sendable {
 
         var verifiedKeys = Set<String>()
         for signature in signatures {
-            guard signature.alg == "Ed25519" else {
-                return false
-            }
             guard requiredKeys.contains(signature.by_pubkey) else {
                 return false
             }
-            let valid = Ed25519.verifyBase64URL(
-                data: canonical,
-                signatureBase64URL: signature.sig,
-                publicKeyBase64URL: signature.by_pubkey
-            )
+            let valid = verifySignature(signature, canonical: canonical)
             guard valid else {
                 return false
             }
@@ -87,6 +81,29 @@ public struct EntityLinkContract: Codable, Equatable, Sendable {
         }
 
         return verifiedKeys == requiredKeys
+    }
+
+    private func verifySignature(_ signature: EntityLinkSignature, canonical: Data) -> Bool {
+        switch signature.alg.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "ed25519":
+            return Ed25519.verifyBase64URL(
+                data: canonical,
+                signatureBase64URL: signature.sig,
+                publicKeyBase64URL: signature.by_pubkey
+            )
+        case "p256-es256", "es256":
+            do {
+                let publicKeyData = try Base64URL.decode(signature.by_pubkey)
+                let signatureData = try Base64URL.decode(signature.sig)
+                let publicKey = try P256.Signing.PublicKey(x963Representation: publicKeyData)
+                let ecdsaSignature = try P256.Signing.ECDSASignature(derRepresentation: signatureData)
+                return publicKey.isValidSignature(ecdsaSignature, for: canonical)
+            } catch {
+                return false
+            }
+        default:
+            return false
+        }
     }
 }
 

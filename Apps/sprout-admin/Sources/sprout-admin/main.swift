@@ -1,5 +1,6 @@
 import Foundation
 import SproutAdminSupport
+import SproutCore
 import SproutResolverAdapter
 
 enum AdminCLIError: Error, CustomStringConvertible {
@@ -79,6 +80,8 @@ struct SproutAdminCLI {
         switch subcommand {
         case "create-from-vapor-vault":
             try createEntityAnchorSnapshot(flags: flags)
+        case "accept-entity-link":
+            try acceptEntityLinkIntoAnchorSnapshot(flags: flags)
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -171,6 +174,58 @@ struct SproutAdminCLI {
             "admin_public_key": snapshot.admin_public_key,
             "entity_id": entityID,
             "subject_public_key": subjectPublicKey
+        ]
+        try emitJSON(summary, outPath: flags["summary-out"])
+    }
+
+    private static func acceptEntityLinkIntoAnchorSnapshot(flags: [String: String]) throws {
+        let snapshotPath = try requiredFlag("snapshot", flags)
+        let entityLinkPath = try requiredFlag("entity-link", flags)
+        let identityContext = try requiredFlag("identity-context", flags)
+        let paths = resolveVaultPaths(flags: flags)
+        let adminIdentity = try VaporVaultDecoder.identity(forContext: identityContext, paths: paths)
+
+        let snapshotURL = URL(fileURLWithPath: snapshotPath)
+        let entityLinkURL = URL(fileURLWithPath: entityLinkPath)
+        let snapshot = try JSONDecoder().decode(EntityAnchorSnapshot.self, from: Data(contentsOf: snapshotURL))
+        let entityLink = try EntityLinkContractIO.load(from: entityLinkURL)
+
+        let now = try parseDate(flags["now"]) ?? Date()
+        let issuedAt = try parseDate(flags["issued-at"]) ?? now
+        let preservedExpiry = ISO8601DateFormatter().date(from: snapshot.expires_at)
+        let expiresAt = try parseDate(flags["expires-at"]) ?? preservedExpiry ?? issuedAt.addingTimeInterval(86_400 * 30)
+        guard expiresAt > issuedAt else {
+            throw AdminCLIError.invalidArguments("--expires-at must be later than --issued-at.")
+        }
+
+        let updatedSnapshot = try EntityAnchorSnapshotUpdater.acceptingEntityLink(
+            snapshot: snapshot,
+            entityLink: entityLink,
+            adminIdentity: adminIdentity,
+            snapshotID: flags["snapshot-id"],
+            issuedAt: issuedAt,
+            expiresAt: expiresAt,
+            entityID: flags["entity-id"],
+            anchoredIdentityPublicKey: flags["anchored-public-key"],
+            anchoredIdentityDomain: flags["anchored-domain"]
+        )
+
+        let outputPath = flags["out"] ?? "./entity-anchor-snapshot.updated.json"
+        try emitJSON(updatedSnapshot, outPath: outputPath)
+        let linkedPublicKeys = [entityLink.pubkey_a, entityLink.pubkey_b].sorted()
+        let entityRecord = try requiredEntityRecord(
+            snapshot: updatedSnapshot,
+            contractID: entityLink.contract_id,
+            linkedPublicKeys: linkedPublicKeys,
+            requestedEntityID: flags["entity-id"]
+        )
+        let summary: [String: AnyCodable] = [
+            "snapshot_path": AnyCodable(outputPath),
+            "snapshot_id": AnyCodable(updatedSnapshot.snapshot_id),
+            "scaffold_domain": AnyCodable(updatedSnapshot.scaffold_domain),
+            "entity_id": AnyCodable(entityRecord.entity_id),
+            "accepted_contract_id": AnyCodable(entityLink.contract_id),
+            "linked_public_keys": AnyCodable(linkedPublicKeys)
         ]
         try emitJSON(summary, outPath: flags["summary-out"])
     }
@@ -432,10 +487,32 @@ struct SproutAdminCLI {
         }
     }
 
+    private static func requiredEntityRecord(
+        snapshot: EntityAnchorSnapshot,
+        contractID: String,
+        linkedPublicKeys: [String],
+        requestedEntityID: String?
+    ) throws -> EntityAnchorEntityRecord {
+        if let requestedEntityID,
+           let record = snapshot.entities.first(where: { $0.entity_id == requestedEntityID }) {
+            return record
+        }
+
+        if let record = snapshot.entities.first(where: { record in
+            record.accepted_entity_link_contract_ids.contains(contractID) &&
+                !Set(record.identities.map(\.identity_public_key)).intersection(linkedPublicKeys).isEmpty
+        }) {
+            return record
+        }
+
+        throw AdminCLIError.invalidArguments("Updated snapshot does not contain an entity record accepting contract \(contractID).")
+    }
+
     private static let usage = """
     Usage:
       sprout-admin vapor-vault list-identities [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--out <file>]
       sprout-admin entity-anchor create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> --entity-id <id> --subject-public-key <b64url> --subject-domain <domain> [--accepted-contract-ids <id1,id2>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--added-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
+      sprout-admin entity-anchor accept-entity-link --snapshot <snapshot.json> --entity-link <entity-link.json> --identity-context <ctx> [--entity-id <id> | --anchored-public-key <b64url> [--anchored-domain <domain>]] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin scaffold-trust-root create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin continuity-proof create-from-vapor-vault --source-scaffold-domain <domain> --identity-context <ctx> --source-entity-id <id> --source-identity-public-key <b64url> --source-identity-domain <domain> --target-scaffold-domain <domain> --purpose <purpose> --goal <goal> --interests <i1,i2> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--proof-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin admission-contract create-from-vapor-vault --target-scaffold-domain <domain> --target-entity-id <id> --target-identity-public-key <b64url> --target-identity-domain <domain> --identity-context <ctx> --continuity-proof <file> --admission-request <file> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--contract-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]

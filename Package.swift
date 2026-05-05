@@ -50,6 +50,7 @@ var targets: [Target] = [
             dependencies: [
                 "SproutCrypto",
                 "SproutResolverAdapter",
+                "SproutCore",
                 .product(name: "Crypto", package: "swift-crypto")
             ],
             path: "Packages/SproutAdminSupport/Sources/SproutAdminSupport"
@@ -153,6 +154,7 @@ var targets: [Target] = [
             dependencies: [
                 "SproutAdminSupport",
                 "SproutCrypto",
+                "SproutCore",
                 "SproutResolverAdapter"
             ],
             path: "Tests/SproutAdminSupportTests"

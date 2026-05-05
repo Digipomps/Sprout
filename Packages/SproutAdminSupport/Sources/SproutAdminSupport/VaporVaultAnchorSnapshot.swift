@@ -4,6 +4,7 @@ import CryptoKit
 #else
 import Crypto
 #endif
+import SproutCore
 import SproutCrypto
 import SproutResolverAdapter
 
@@ -165,5 +166,149 @@ public enum EntityAnchorSnapshotBuilder {
             )
         )
         return snapshot
+    }
+}
+
+public enum EntityAnchorSnapshotUpdateError: Error, LocalizedError {
+    case invalidSnapshotSignature
+    case invalidEntityLinkSignature
+    case scaffoldDomainMismatch(expected: String, actual: String)
+    case entityIDNotFound(String)
+    case anchoredIdentityNotFound(String)
+    case anchoredIdentityDoesNotMatchEntityLink(String)
+    case ambiguousAnchoredIdentity([String])
+    case adminIdentityMismatch(expected: String, actual: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidSnapshotSignature:
+            return "Existing entity anchor snapshot signature did not verify."
+        case .invalidEntityLinkSignature:
+            return "Entity-link contract mutual signatures did not verify."
+        case .scaffoldDomainMismatch(let expected, let actual):
+            return "Entity-link scaffold domain mismatch. Expected \(expected), got \(actual)."
+        case .entityIDNotFound(let entityID):
+            return "Entity \(entityID) was not found in the existing entity anchor snapshot."
+        case .anchoredIdentityNotFound(let publicKey):
+            return "Anchored identity \(publicKey) was not found in the existing entity anchor snapshot."
+        case .anchoredIdentityDoesNotMatchEntityLink(let publicKey):
+            return "Anchored identity \(publicKey) is not part of the supplied entity-link contract."
+        case .ambiguousAnchoredIdentity(let entityIDs):
+            return "More than one entity anchor record matches the supplied entity-link contract: \(entityIDs.joined(separator: ", "))."
+        case .adminIdentityMismatch(let expected, let actual):
+            return "Admin identity public key mismatch. Expected \(expected), got \(actual)."
+        }
+    }
+}
+
+public enum EntityAnchorSnapshotUpdater {
+    public static func acceptingEntityLink(
+        snapshot: EntityAnchorSnapshot,
+        entityLink: EntityLinkContract,
+        adminIdentity: VaporVaultIdentityRecord,
+        snapshotID: String? = nil,
+        issuedAt: Date,
+        expiresAt: Date,
+        entityID: String? = nil,
+        anchoredIdentityPublicKey: String? = nil,
+        anchoredIdentityDomain: String? = nil
+    ) throws -> EntityAnchorSnapshot {
+        guard try snapshot.verifySignature() else {
+            throw EntityAnchorSnapshotUpdateError.invalidSnapshotSignature
+        }
+        guard try entityLink.verifyMutualSignatures() else {
+            throw EntityAnchorSnapshotUpdateError.invalidEntityLinkSignature
+        }
+        guard entityLink.domain_a == snapshot.scaffold_domain,
+              entityLink.domain_b == snapshot.scaffold_domain else {
+            throw EntityAnchorSnapshotUpdateError.scaffoldDomainMismatch(
+                expected: snapshot.scaffold_domain,
+                actual: "\(entityLink.domain_a),\(entityLink.domain_b)"
+            )
+        }
+
+        let adminPublicKey = Base64URL.encode(adminIdentity.publicKey)
+        guard snapshot.admin_public_key == adminPublicKey else {
+            throw EntityAnchorSnapshotUpdateError.adminIdentityMismatch(
+                expected: snapshot.admin_public_key,
+                actual: adminPublicKey
+            )
+        }
+
+        let targetEntityIndex = try resolveEntityIndex(
+            in: snapshot,
+            entityLink: entityLink,
+            entityID: entityID,
+            anchoredIdentityPublicKey: anchoredIdentityPublicKey,
+            anchoredIdentityDomain: anchoredIdentityDomain
+        )
+        var entities = snapshot.entities
+        var record = entities[targetEntityIndex]
+        let acceptedIDs = Set(record.accepted_entity_link_contract_ids + [entityLink.contract_id])
+        record.accepted_entity_link_contract_ids = acceptedIDs.sorted()
+        entities[targetEntityIndex] = record
+
+        let nextSnapshotID = snapshotID ?? "\(snapshot.snapshot_id)-entity-link-\(entityLink.contract_id)"
+        return try EntityAnchorSnapshotBuilder.buildSignedSnapshot(
+            scaffoldDomain: snapshot.scaffold_domain,
+            adminIdentity: adminIdentity,
+            snapshotID: nextSnapshotID,
+            issuedAt: issuedAt,
+            expiresAt: expiresAt,
+            entities: entities
+        )
+    }
+
+    private static func resolveEntityIndex(
+        in snapshot: EntityAnchorSnapshot,
+        entityLink: EntityLinkContract,
+        entityID: String?,
+        anchoredIdentityPublicKey: String?,
+        anchoredIdentityDomain: String?
+    ) throws -> Int {
+        if let entityID, let index = snapshot.entities.firstIndex(where: { $0.entity_id == entityID }) {
+            if let anchoredIdentityPublicKey {
+                guard snapshot.entities[index].containsIdentity(
+                    anchoredIdentityPublicKey,
+                    domain: anchoredIdentityDomain ?? snapshot.scaffold_domain
+                ) else {
+                    throw EntityAnchorSnapshotUpdateError.anchoredIdentityNotFound(anchoredIdentityPublicKey)
+                }
+                guard [entityLink.pubkey_a, entityLink.pubkey_b].contains(anchoredIdentityPublicKey) else {
+                    throw EntityAnchorSnapshotUpdateError.anchoredIdentityDoesNotMatchEntityLink(anchoredIdentityPublicKey)
+                }
+            }
+            return index
+        }
+        if let entityID {
+            throw EntityAnchorSnapshotUpdateError.entityIDNotFound(entityID)
+        }
+
+        if let anchoredIdentityPublicKey {
+            guard let index = snapshot.entities.firstIndex(where: {
+                $0.containsIdentity(anchoredIdentityPublicKey, domain: anchoredIdentityDomain ?? snapshot.scaffold_domain)
+            }) else {
+                throw EntityAnchorSnapshotUpdateError.anchoredIdentityNotFound(anchoredIdentityPublicKey)
+            }
+            guard [entityLink.pubkey_a, entityLink.pubkey_b].contains(anchoredIdentityPublicKey) else {
+                throw EntityAnchorSnapshotUpdateError.anchoredIdentityDoesNotMatchEntityLink(anchoredIdentityPublicKey)
+            }
+            return index
+        }
+
+        let linkedKeys = Set([entityLink.pubkey_a, entityLink.pubkey_b])
+        let matchingIndices = snapshot.entities.enumerated().compactMap { index, record -> Int? in
+            let anchoredKeys = Set(record.identities.map(\.identity_public_key))
+            return anchoredKeys.intersection(linkedKeys).isEmpty ? nil : index
+        }
+        guard let first = matchingIndices.first else {
+            throw EntityAnchorSnapshotUpdateError.anchoredIdentityNotFound(entityLink.contract_id)
+        }
+        guard matchingIndices.count == 1 else {
+            throw EntityAnchorSnapshotUpdateError.ambiguousAnchoredIdentity(
+                matchingIndices.map { snapshot.entities[$0].entity_id }
+            )
+        }
+        return first
     }
 }
