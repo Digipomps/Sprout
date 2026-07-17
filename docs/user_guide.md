@@ -10,6 +10,8 @@ Sprout now does five things explicitly:
 4. verifies a resolver-signed entity inclusion proof
 5. obtains a signed `PortholeAccessContract` for web, CLI or native access
 
+For runtimes that own a scaffold, Sprout can also initialize and inspect a local scaffold-owner identity. That identity is separate from starter/user identities and federation-contact identities.
+
 It does not try to be the wallet UI or the billing backend. Pricing is explicit contract/policy input to bootstrap and access, not hidden background logic.
 
 ## Cross-scaffold continuity
@@ -31,6 +33,43 @@ What it does not mean:
 - if you want that, it is a separate research/design question because HAVEN forbids implicit cross-domain linkage
 
 ## Safe startup path (CLI)
+Initialize a local scaffold-owner identity when this executable is responsible for a scaffold:
+```bash
+.build/debug/sprout owner init \
+  --domain local.haven.test \
+  --display-name "Local owner"
+
+.build/debug/sprout owner show --domain local.haven.test
+
+.build/debug/sprout owner trust-root --domain local.haven.test
+```
+
+The owner identity uses `identity_context = Scaffold` and is stored under `.sprout/scaffold-owners/<domain>` by default. `owner trust-root` signs a `ScaffoldAdminTrustRootDescriptor` from that owner key and writes `.sprout/trust-roots/<domain>.json` unless `--out` is set. It does not by itself admit the identity into an Entity; Entity membership still requires anchor/admission/resolver evidence.
+
+## Discover scaffold executables
+Scaffolds can publish a signed executable catalog at:
+
+- `https://<domain>/.well-known/haven-executable-catalog.json`
+- `https://<domain>/v1/software/catalog`
+
+Fetch and verify it against the scaffold trust root:
+```bash
+.build/debug/sprout software fetch \
+  --domain staging.haven.digipomps.org \
+  --trust-root .sprout/trust-roots/staging.haven.digipomps.org.json
+```
+
+Select a CellScaffold artifact for a Linux host:
+```bash
+.build/debug/sprout software select \
+  --catalog .sprout/software-catalogs/staging.haven.digipomps.org.json \
+  --kind cellscaffold \
+  --platform linux-x86_64 \
+  --channel stable
+```
+
+The catalog tells Sprout where the compiled and signed artifact is, which hash to expect, and which signing/provenance evidence exists. Sprout does not install it by itself.
+
 Mock/local path:
 ```bash
 .build/debug/sprout bootstrap plan \

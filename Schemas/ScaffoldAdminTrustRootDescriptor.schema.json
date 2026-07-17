@@ -36,6 +36,7 @@
     "starter_bootstrap_url": { "type": "string", "format": "uri" },
     "bridge_discovery_url": { "type": "string", "format": "uri" },
     "resolver_base_url": { "type": "string", "format": "uri" },
+    "software_catalog_url": { "type": "string", "format": "uri" },
     "issued_at": { "type": "string", "format": "date-time" },
     "expires_at": { "type": "string", "format": "date-time" },
     "signature": {

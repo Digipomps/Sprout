@@ -21,6 +21,10 @@ struct SproutCLI {
                 try await runBootstrap(arguments: Array(arguments.dropFirst()))
             case "bridges":
                 try runBridges(arguments: Array(arguments.dropFirst()))
+            case "owner":
+                try await runOwner(arguments: Array(arguments.dropFirst()))
+            case "software":
+                try await runSoftware(arguments: Array(arguments.dropFirst()))
             case "federation":
                 try await runFederation(arguments: Array(arguments.dropFirst()))
             case "admission":
@@ -369,6 +373,183 @@ struct SproutCLI {
         }
     }
 
+    private static func runOwner(arguments: [String]) async throws {
+        guard let subcommand = arguments.first else {
+            throw CLIError.invalidArguments("Expected: owner init|show|list|trust-root")
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+        let storeRoot = URL(fileURLWithPath: flags["root"] ?? ".sprout/scaffold-owners")
+        let store = ScaffoldOwnerIdentityStore(root: storeRoot)
+
+        switch subcommand {
+        case "init":
+            let record = try await store.initialize(
+                scaffoldDomain: try requiredFlag("domain", flags),
+                displayName: flags["display-name"],
+                note: flags["note"],
+                overwrite: flags["overwrite"] == "true"
+            )
+            try emitJSON(record, outPath: flags["out"])
+        case "show":
+            let record = try await store.load(scaffoldDomain: try requiredFlag("domain", flags))
+            try emitJSON(record, outPath: flags["out"])
+        case "list":
+            let records = try await store.list()
+            try emitJSON(records, outPath: flags["out"])
+        case "trust-root":
+            let descriptor = try await makeOwnerTrustRootDescriptor(flags: flags, store: store)
+            try emitJSON(descriptor, outPath: flags["out"] ?? ".sprout/trust-roots/\(descriptor.scaffold_domain).json")
+        default:
+            throw CLIError.invalidArguments("Expected: owner init|show|list|trust-root")
+        }
+    }
+
+    private static func makeOwnerTrustRootDescriptor(
+        flags: [String: String],
+        store: ScaffoldOwnerIdentityStore
+    ) async throws -> ScaffoldAdminTrustRootDescriptor {
+        let domain = try requiredFlag("domain", flags)
+        let owner = try await store.load(scaffoldDomain: domain)
+        let ownerSeed = try await store.seedBase64URL(scaffoldDomain: domain)
+        let nowDate = try parseNow(flags["now"])
+        let issuedAt = try parseOptionalNow(flags["issued-at"]) ?? nowDate
+        let expiresAt = try parseOptionalNow(flags["expires-at"]) ?? issuedAt.addingTimeInterval(86_400 * 30)
+        guard expiresAt > issuedAt else {
+            throw CLIError.invalidArguments("--expires-at must be later than --issued-at.")
+        }
+
+        let resolverPublicKeys = parseSetFlag(flags["resolver-public-keys"])
+        let bridgeOwnerPublicKeys = parseSetFlag(flags["bridge-owner-public-keys"])
+        let resolverBaseURL = try parseURLFlag(flags["resolver-base-url"], name: "resolver-base-url")
+            ?? URL(string: "https://\(domain)")!
+        let starterBootstrapURL = try parseURLFlag(flags["starter-bootstrap-url"], name: "starter-bootstrap-url")
+            ?? resolverBaseURL
+                .appendingPathComponent("v1")
+                .appendingPathComponent("resolver")
+                .appendingPathComponent("starter-auth")
+                .appendingPathComponent("intent")
+        let bridgeDiscoveryURL = try parseURLFlag(flags["bridge-discovery-url"], name: "bridge-discovery-url")
+            ?? resolverBaseURL
+                .appendingPathComponent("v1")
+                .appendingPathComponent("bridges")
+                .appendingPathComponent("query")
+        let softwareCatalogURL = try parseURLFlag(flags["software-catalog-url"], name: "software-catalog-url")
+            ?? resolverBaseURL
+                .appendingPathComponent(".well-known")
+                .appendingPathComponent("haven-executable-catalog.json")
+
+        let formatter = ISO8601DateFormatter()
+        var descriptor = ScaffoldAdminTrustRootDescriptor(
+            version: "1.0",
+            descriptor_id: flags["descriptor-id"] ?? "trd_\(domain.replacingOccurrences(of: ".", with: "_"))_\(Int(issuedAt.timeIntervalSince1970))",
+            scaffold_domain: owner.scaffold_domain,
+            scaffold_admin_public_key: owner.identity_public_key,
+            resolver_public_keys: resolverPublicKeys.isEmpty ? [owner.identity_public_key] : resolverPublicKeys,
+            bridge_owner_public_keys: bridgeOwnerPublicKeys.isEmpty ? [owner.identity_public_key] : bridgeOwnerPublicKeys,
+            starter_bootstrap_url: starterBootstrapURL.absoluteString,
+            bridge_discovery_url: bridgeDiscoveryURL.absoluteString,
+            resolver_base_url: resolverBaseURL.absoluteString,
+            software_catalog_url: softwareCatalogURL.absoluteString,
+            issued_at: formatter.string(from: issuedAt),
+            expires_at: formatter.string(from: expiresAt),
+            signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
+        )
+        descriptor.signature = ResolverSignatureEnvelope(
+            alg: "Ed25519",
+            sig: try Ed25519.signBase64URL(
+                data: try descriptor.canonicalPayloadData(),
+                seedBase64URL: ownerSeed
+            )
+        )
+        return descriptor
+    }
+
+    private static func runSoftware(arguments: [String]) async throws {
+        guard let subcommand = arguments.first else {
+            throw CLIError.invalidArguments("Expected: software fetch|verify|select|sign-catalog")
+        }
+        let flags = try parseFlags(Array(arguments.dropFirst()))
+        let nowDate = try parseNow(flags["now"])
+
+        switch subcommand {
+        case "fetch":
+            let domain = try requiredFlag("domain", flags)
+            let trustRoot = try flags["trust-root"].map { path in
+                try loadScaffoldTrustRootDescriptor(
+                    source: TrustRootSource(origin: "flag", path: path),
+                    expectedDomain: domain,
+                    nowDate: nowDate
+                )
+            }
+            let endpoint = try resolveExecutableCatalogEndpoint(
+                flags: flags,
+                domain: domain,
+                trustRootDescriptor: trustRoot
+            )
+            let trustedPublishers = trustedSoftwareCatalogPublisherKeys(
+                flags: flags,
+                trustRootDescriptor: trustRoot
+            )
+            let client = ScaffoldExecutableCatalogHTTPClient(endpoint: endpoint, now: { nowDate })
+            let catalog = try await client.fetch(
+                expectedDomain: domain,
+                trustedPublisherPublicKeys: trustedPublishers
+            )
+            try emitJSON(catalog, outPath: flags["out"] ?? ".sprout/software-catalogs/\(domain).json")
+        case "verify":
+            _ = try loadAndValidateExecutableCatalog(flags: flags, nowDate: nowDate)
+            print("ScaffoldExecutableCatalog valid")
+        case "select":
+            let catalog = try loadAndValidateExecutableCatalog(flags: flags, nowDate: nowDate)
+            let kind = try requiredFlag("kind", flags)
+            let platform = try requiredFlag("platform", flags)
+            let channel = flags["channel"] ?? "stable"
+            guard let artifact = catalog.selectArtifact(
+                kind: kind,
+                platform: platform,
+                channel: channel,
+                name: flags["name"]
+            ) else {
+                throw CLIError.invalidArguments("No matching artifact in executable catalog.")
+            }
+            try emitJSON(artifact, outPath: flags["out"])
+        case "sign-catalog":
+            let domain = try requiredFlag("domain", flags)
+            let unsignedPath = try requiredFlag("unsigned", flags)
+            let storeRoot = URL(fileURLWithPath: flags["root"] ?? ".sprout/scaffold-owners")
+            let store = ScaffoldOwnerIdentityStore(root: storeRoot)
+            let owner = try await store.load(scaffoldDomain: domain)
+            let ownerSeed = try await store.seedBase64URL(scaffoldDomain: domain)
+            var catalog = try JSONDecoder().decode(
+                ScaffoldExecutableCatalog.self,
+                from: Data(contentsOf: URL(fileURLWithPath: unsignedPath))
+            )
+            guard catalog.scaffold_domain == owner.scaffold_domain else {
+                throw CLIError.invalidArguments("Executable catalog scaffold_domain does not match owner domain.")
+            }
+            catalog.issued_by = owner.identity_public_key
+            catalog.signature = ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
+            catalog.signature = ResolverSignatureEnvelope(
+                alg: "Ed25519",
+                sig: try Ed25519.signBase64URL(
+                    data: try catalog.canonicalPayloadData(),
+                    seedBase64URL: ownerSeed
+                )
+            )
+            try ScaffoldExecutableCatalogValidator().validate(
+                catalog: catalog,
+                context: ScaffoldExecutableCatalogValidationContext(
+                    expectedDomain: owner.scaffold_domain,
+                    trustedPublisherPublicKeys: [owner.identity_public_key],
+                    now: nowDate
+                )
+            )
+            try emitJSON(catalog, outPath: flags["out"] ?? ".sprout/software-catalogs/\(domain).json")
+        default:
+            throw CLIError.invalidArguments("Expected: software fetch|verify|select|sign-catalog")
+        }
+    }
+
     private static func runFederation(arguments: [String]) async throws {
         guard let subcommand = arguments.first else {
             throw CLIError.invalidArguments("Expected: federation init|show|list")
@@ -545,6 +726,23 @@ struct SproutCLI {
                 exit(0)
             } catch {
                 print("ScaffoldAdminTrustRootDescriptor invalid: \(error)")
+                exit(2)
+            }
+        }
+
+        if let catalog = try? JSONDecoder().decode(ScaffoldExecutableCatalog.self, from: data) {
+            do {
+                try ScaffoldExecutableCatalogValidator().validate(
+                    catalog: catalog,
+                    context: ScaffoldExecutableCatalogValidationContext(
+                        expectedDomain: catalog.scaffold_domain,
+                        now: nowDate
+                    )
+                )
+                print("ScaffoldExecutableCatalog valid")
+                exit(0)
+            } catch {
+                print("ScaffoldExecutableCatalog invalid: \(error)")
                 exit(2)
             }
         }
@@ -1195,6 +1393,66 @@ struct SproutCLI {
         return descriptor
     }
 
+    private static func loadAndValidateExecutableCatalog(
+        flags: [String: String],
+        nowDate: Date
+    ) throws -> ScaffoldExecutableCatalog {
+        let catalogPath = try requiredFlag("catalog", flags)
+        let catalog = try JSONDecoder().decode(
+            ScaffoldExecutableCatalog.self,
+            from: Data(contentsOf: URL(fileURLWithPath: catalogPath))
+        )
+        let domain = flags["domain"] ?? catalog.scaffold_domain
+        let trustRoot = try flags["trust-root"].map { path in
+            try loadScaffoldTrustRootDescriptor(
+                source: TrustRootSource(origin: "flag", path: path),
+                expectedDomain: domain,
+                nowDate: nowDate
+            )
+        }
+        try ScaffoldExecutableCatalogValidator().validate(
+            catalog: catalog,
+            context: ScaffoldExecutableCatalogValidationContext(
+                expectedDomain: domain,
+                trustedPublisherPublicKeys: trustedSoftwareCatalogPublisherKeys(
+                    flags: flags,
+                    trustRootDescriptor: trustRoot
+                ),
+                now: nowDate
+            )
+        )
+        return catalog
+    }
+
+    private static func resolveExecutableCatalogEndpoint(
+        flags: [String: String],
+        domain: String,
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
+    ) throws -> URL {
+        if let catalogURL = try parseURLFlag(flags["catalog-url"], name: "catalog-url") {
+            return catalogURL
+        }
+        if let softwareCatalogURL = trustRootDescriptor?.software_catalog_url,
+           let url = URL(string: softwareCatalogURL) {
+            return url
+        }
+        return ScaffoldExecutableCatalogHTTPClient.defaultEndpoint(scaffoldDomain: domain)
+    }
+
+    private static func trustedSoftwareCatalogPublisherKeys(
+        flags: [String: String],
+        trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
+    ) -> [String] {
+        let explicit = parseSetFlag(flags["trusted-publisher-keys"])
+        if !explicit.isEmpty {
+            return explicit
+        }
+        if let trustRootDescriptor {
+            return [trustRootDescriptor.scaffold_admin_public_key]
+        }
+        return []
+    }
+
     private static func materializeScaffoldTrustRootSource(
         flags: [String: String],
         environment: [String: String],
@@ -1290,6 +1548,14 @@ struct SproutCLI {
           sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
           sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>|--admission-contract <file> [--continuity-proof <file>]] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
+          sprout owner init --domain <local-scaffold-domain> [--display-name <name>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
+          sprout owner show --domain <local-scaffold-domain> [--root <dir>] [--out <json>]
+          sprout owner list [--root <dir>] [--out <json>]
+          sprout owner trust-root --domain <local-scaffold-domain> [--root <dir>] [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--software-catalog-url <https://domain/.well-known/haven-executable-catalog.json>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <json>]
+          sprout software fetch --domain <d> [--trust-root <file>] [--catalog-url <https://domain/.well-known/haven-executable-catalog.json>] [--trusted-publisher-keys <k1,k2>] [--now <ISO8601>] [--out <json>]
+          sprout software verify --catalog <file> [--domain <d>] [--trust-root <file>] [--trusted-publisher-keys <k1,k2>] [--now <ISO8601>]
+          sprout software select --catalog <file> --kind <cellscaffold|sprout|scaffold-bundle> --platform <linux-x86_64|macos-arm64> [--channel <stable|beta>] [--name <artifact-name>] [--domain <d>] [--trust-root <file>] [--trusted-publisher-keys <k1,k2>] [--now <ISO8601>] [--out <json>]
+          sprout software sign-catalog --domain <local-scaffold-domain> --unsigned <catalog.json> [--root <dir>] [--now <ISO8601>] [--out <json>]
           sprout federation init --remote-domain <domain> [--local-domain <domain>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout federation show --remote-domain <domain> [--root <dir>] [--out <json>]
           sprout federation list [--root <dir>] [--out <json>]
@@ -1334,6 +1600,11 @@ struct SproutCLI {
           1. --trust-root-url
           2. SPROUT_TRUST_ROOT_URL
           3. https://<domain>/.well-known/haven-scaffold-admin-trust-root.json
+
+        executable catalog endpoint resolution order:
+          1. --catalog-url
+          2. trust root descriptor software_catalog_url
+          3. https://<domain>/.well-known/haven-executable-catalog.json
         """
         print(text)
     }
@@ -1354,6 +1625,14 @@ struct SproutCLI {
             throw CLIError.invalidArguments("Invalid ISO8601 date-time.")
         }
         return date
+    }
+
+    private static func parseURLFlag(_ value: String?, name: String) throws -> URL? {
+        guard let value, !value.isEmpty else { return nil }
+        guard let url = URL(string: value) else {
+            throw CLIError.invalidArguments("Invalid --\(name) value.")
+        }
+        return url
     }
 }
 

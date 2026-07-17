@@ -34,6 +34,7 @@ The descriptor is:
   - `starter_bootstrap_url`
   - `bridge_discovery_url`
   - `resolver_base_url`
+  - optional `software_catalog_url`
 
 ## Generator
 
@@ -74,6 +75,7 @@ When present, the trust root is used to:
 - validate that the chosen bridge owner key is trusted
 - derive `ScaffoldAdminIdentity` without reusing bridge-owner identity
 - derive default resolver/discovery/starter-intent URLs
+- derive the default signed executable catalog URL for software/scaffold discovery
 
 ## Verified on staging
 

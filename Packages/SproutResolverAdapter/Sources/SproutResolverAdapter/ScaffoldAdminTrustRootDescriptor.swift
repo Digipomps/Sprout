@@ -32,6 +32,7 @@ public struct ScaffoldAdminTrustRootDescriptor: Codable, Equatable, Sendable {
     public var starter_bootstrap_url: String
     public var bridge_discovery_url: String
     public var resolver_base_url: String
+    public var software_catalog_url: String?
     public var issued_at: String
     public var expires_at: String
     public var signature: ResolverSignatureEnvelope
@@ -46,6 +47,7 @@ public struct ScaffoldAdminTrustRootDescriptor: Codable, Equatable, Sendable {
         starter_bootstrap_url: String,
         bridge_discovery_url: String,
         resolver_base_url: String,
+        software_catalog_url: String? = nil,
         issued_at: String,
         expires_at: String,
         signature: ResolverSignatureEnvelope
@@ -59,6 +61,7 @@ public struct ScaffoldAdminTrustRootDescriptor: Codable, Equatable, Sendable {
         self.starter_bootstrap_url = starter_bootstrap_url
         self.bridge_discovery_url = bridge_discovery_url
         self.resolver_base_url = resolver_base_url
+        self.software_catalog_url = software_catalog_url
         self.issued_at = issued_at
         self.expires_at = expires_at
         self.signature = signature
@@ -122,6 +125,9 @@ public struct ScaffoldAdminTrustRootDescriptorValidator: Sendable {
         try validateURLString(descriptor.starter_bootstrap_url)
         try validateURLString(descriptor.bridge_discovery_url)
         try validateURLString(descriptor.resolver_base_url)
+        if let softwareCatalogURL = descriptor.software_catalog_url {
+            try validateURLString(softwareCatalogURL)
+        }
         guard !descriptor.isExpired(now: context.now) else {
             throw ScaffoldAdminTrustRootDescriptorValidationError.expired
         }

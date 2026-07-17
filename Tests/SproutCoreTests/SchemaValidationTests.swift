@@ -54,6 +54,11 @@ final class SchemaValidationTests: XCTestCase {
         try validate(instance: descriptor, schema: "Schemas/ScaffoldAdminTrustRootDescriptor.schema.json")
     }
 
+    func testGeneratedScaffoldExecutableCatalogMatchesSchema() throws {
+        let catalog = try ResolverFixtureFactory.makeScaffoldExecutableCatalog()
+        try validate(instance: catalog, schema: "Schemas/ScaffoldExecutableCatalog.schema.json")
+    }
+
     func testGeneratedCrossScaffoldContinuityProofMatchesSchema() throws {
         let proof = try ResolverFixtureFactory.makeCrossScaffoldContinuityProof()
         try validate(instance: proof, schema: "Schemas/CrossScaffoldEntityContinuityProof.schema.json")

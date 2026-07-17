@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 import SproutCrypto
 
 public struct EntityLinkRevocation: Codable, Equatable, Sendable {
@@ -92,15 +91,11 @@ public struct EntityLinkContract: Codable, Equatable, Sendable {
                 publicKeyBase64URL: signature.by_pubkey
             )
         case "p256-es256", "es256":
-            do {
-                let publicKeyData = try Base64URL.decode(signature.by_pubkey)
-                let signatureData = try Base64URL.decode(signature.sig)
-                let publicKey = try P256.Signing.PublicKey(x963Representation: publicKeyData)
-                let ecdsaSignature = try P256.Signing.ECDSASignature(derRepresentation: signatureData)
-                return publicKey.isValidSignature(ecdsaSignature, for: canonical)
-            } catch {
-                return false
-            }
+            return P256ES256.verifyBase64URL(
+                data: canonical,
+                derSignatureBase64URL: signature.sig,
+                x963PublicKeyBase64URL: signature.by_pubkey
+            )
         default:
             return false
         }

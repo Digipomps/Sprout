@@ -56,7 +56,9 @@ Sprout is not the main user client or full billing backend. Web, CLI and native 
 
 ## First-class artifacts in code
 - `BootstrapIdentity`: identity only, no embedded `entity_id`
+- `ScaffoldOwnerIdentityRecord`: local scaffold-owner identity record with `identity_context = Scaffold`, stored separately from starter and federation-contact identities
 - `ScaffoldAdminTrustRootDescriptor`: signed scaffold trust root with resolver keys, bridge-owner keys and default bootstrap URLs
+- `ScaffoldExecutableCatalog`: signed scaffold software catalog with compiled artifact URLs, hashes and signing/provenance evidence
 - `ScaffoldAdminIdentity`: explicit scaffold admin identity derived from a trust-root descriptor or validated bridge metadata
 - `EntityLinkEvidence`: explicit proof material carried into resolver calls
 - `CrossScaffoldEntityContinuityProof`: source-scaffold signed portability proof from one local entity to one target scaffold
@@ -85,6 +87,7 @@ Sprout is not the main user client or full billing backend. Web, CLI and native 
 - RAU is the only persisted accounting unit; IMU and ore are derived views.
 - `sprout` never mutates installed binaries; update behavior is separated into `sprout-updater`.
 - when present, `ScaffoldAdminTrustRootDescriptor` is the first trust input; bridge-owner equality is only a legacy fallback.
+- executable catalogs are discovery metadata only; installation remains operator/updater controlled after artifact verification.
 
 ## Economics model
 - `RAU` is the int64 source of truth in ledger, wallet and pricing enforcement.
@@ -132,6 +135,19 @@ Suggest a session-minute tariff from measured records:
 ```
 
 ## CLI reference flows
+Initialize or inspect a local scaffold-owner identity:
+```bash
+.build/debug/sprout owner init \
+  --domain local.haven.test \
+  --display-name "Local owner"
+
+.build/debug/sprout owner show --domain local.haven.test
+.build/debug/sprout owner list
+.build/debug/sprout owner trust-root --domain local.haven.test
+```
+
+This creates or reuses an Ed25519 owner key under `.sprout/scaffold-owners/<domain>`. `owner trust-root` signs a local `ScaffoldAdminTrustRootDescriptor` and writes it to `.sprout/trust-roots/<domain>.json` by default. It is an owner/admin bootstrap artifact, not a shortcut to Entity membership.
+
 Inspect the bootstrap plan before making network calls:
 ```bash
 .build/debug/sprout bootstrap plan \
@@ -219,6 +235,24 @@ Consume porthole contracts:
 ```bash
 .build/debug/sprout porthole web-bootstrap --contract <porthole-access-contract.json>
 .build/debug/sprout porthole native-spec --contract <porthole-access-contract.json>
+```
+
+Sign and consume executable catalogs:
+```bash
+.build/debug/sprout software sign-catalog \
+  --domain local.haven.test \
+  --unsigned unsigned-executable-catalog.json \
+  --out signed-executable-catalog.json
+
+.build/debug/sprout software fetch \
+  --domain staging.haven.digipomps.org \
+  --trust-root .sprout/trust-roots/staging.haven.digipomps.org.json
+
+.build/debug/sprout software select \
+  --catalog .sprout/software-catalogs/staging.haven.digipomps.org.json \
+  --kind cellscaffold \
+  --platform linux-x86_64 \
+  --channel stable
 ```
 
 Build a release bundle:

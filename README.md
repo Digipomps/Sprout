@@ -8,6 +8,8 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 - Native Linux baseline is now part of the repo scope for `sprout` and `sprout-updater`: Ubuntu 22.04 `x86_64`, no Docker required for build or deployment.
 - Economics baseline is implemented: RAU is the storage unit, IMU and ore are derived views, resolver-enforced pricing contracts exist, rollups aggregate micro-usage, and session profiling can calibrate a session-minute tariff from observed process cost.
 - Cross-scaffold entity continuity baseline is implemented: source continuity proof, target admission request, target admission contract and bootstrap-side admission evidence are now first-class contracts.
+- Scaffold-owner identity bootstrap now exists in `sprout`: `owner init/show/list` creates and inspects a local domain-scoped owner identity with `identity_context = Scaffold`, separate from starter/user and federation-contact identities.
+- Executable distribution discovery now has a signed `ScaffoldExecutableCatalog`: scaffolds can publish compiled/signed scaffold artifacts such as CellScaffold, and `sprout` can fetch, verify and select an artifact without installing it.
 - Locally verified on 2026-03-08: `swift build --product sprout`, `swift build --product sprout-updater`, `swift build --product sprout-macos`, `swift test`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-verify`, `bash Scripts/build_release_bundle.sh /tmp/sprout-dist-linux linux-x86_64`, `bash Scripts/verify_release_bundle.sh /tmp/sprout-dist-linux "" /tmp/sprout-dist-linux/SHA256SUMS-linux-x86_64.b64url`.
 - GitHub Actions is configured for self-contained macOS and Ubuntu 22.04 builds.
 - GitHub release `v0.1.1` is published with signed CLI artifacts and checksum manifest.
@@ -17,6 +19,7 @@ Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/
 ## Design boundary
 `sprout` is intentionally narrow. It should:
 - understand runtime context
+- acquire or load a local scaffold-owner identity when this runtime owns a scaffold
 - acquire or load a domain-scoped identity
 - make scaffold admin trust explicit
 - resolve the identity into an entity or stop explicitly
@@ -54,6 +57,35 @@ Verify signed fixtures:
 .build/debug/sprout verify TestVectors/bridge_descriptor.signed.json
 .build/debug/sprout verify TestVectors/entity_link_contract.mutual.json
 .build/debug/sprout verify TestVectors/porthole_access_contract.example.json --now 2026-02-26T08:03:00Z
+```
+
+Initialize or inspect a local scaffold-owner identity:
+```bash
+.build/debug/sprout owner init \
+  --domain local.haven.test \
+  --display-name "Local owner"
+
+.build/debug/sprout owner show --domain local.haven.test
+
+.build/debug/sprout owner trust-root --domain local.haven.test
+```
+
+Sign, verify and select a scaffold executable catalog:
+```bash
+.build/debug/sprout software sign-catalog \
+  --domain local.haven.test \
+  --unsigned unsigned-executable-catalog.json \
+  --out signed-executable-catalog.json
+
+.build/debug/sprout software verify \
+  --catalog signed-executable-catalog.json \
+  --trust-root .sprout/trust-roots/local.haven.test.json
+
+.build/debug/sprout software select \
+  --catalog signed-executable-catalog.json \
+  --kind cellscaffold \
+  --platform linux-x86_64 \
+  --channel stable
 ```
 
 Mock bootstrap path:
@@ -202,6 +234,7 @@ bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64ur
 - `docs/cross_scaffold_entity_continuity.md`
 - `docs/economics_and_pricing.md`
 - `docs/update_hardening_strategy.md`
+- `docs/executable_catalog_distribution.md`
 - `docs/linux_deployment.md`
 - `docs/developer_guide.md`
 - `docs/user_guide.md`

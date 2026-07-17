@@ -206,6 +206,22 @@ Required CLI surface:
 - staging and dev are the only current remote HAVEN targets that should be wired first
 
 ## Follow-up implemented after this plan
+- Sprout now has a local scaffold-owner identity store and CLI surface:
+  - `sprout owner init --domain <local-scaffold-domain>`
+  - `sprout owner show --domain <local-scaffold-domain>`
+  - `sprout owner list`
+  - `sprout owner trust-root --domain <local-scaffold-domain>`
+- The owner identity is stored separately from starter/user identities and federation-contact identities.
+- The owner record uses `identity_context = Scaffold` to align with current CellScaffold/VaporVault expectations, while the storage path remains domain-scoped.
+- The local owner key can sign a `ScaffoldAdminTrustRootDescriptor`; this gives Sprout a concrete owner/admin trust artifact without requiring a VaporVault export for first local bootstrap.
+- Sprout now has a signed executable catalog contract:
+  - `ScaffoldExecutableCatalog`
+  - `sprout software fetch`
+  - `sprout software verify`
+  - `sprout software select`
+  - `sprout software sign-catalog`
+- The scaffold trust root can now include `software_catalog_url`, so Sprout can discover where a HAVEN-hosted scaffold publishes compiled/signed software artifacts.
+- CellScaffold now has an executable-catalog publication surface for `/.well-known/haven-executable-catalog.json` and `/v1/software/catalog` when artifact download, hash and signing evidence are configured.
 - Cross-scaffold continuity is now modeled explicitly in `docs/cross_scaffold_entity_continuity.md`.
 - The implemented chain is:
   - source-scaffold `CrossScaffoldEntityContinuityProof`

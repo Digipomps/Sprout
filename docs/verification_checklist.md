@@ -14,6 +14,11 @@ Status per 2026-03-11:
 - `sprout verify` verifiserer descriptoren
 - `sprout bootstrap join` på staging fungerer uten eksplisitt `--trust-root` og uten eksplisitt `--resolver-base-url` når starter-identiteten allerede er ankeret
 
+Status per 2026-05-31:
+- `ScaffoldExecutableCatalog` schema/validator/HTTP-klient og CLI er implementert i `sprout`.
+- `sprout software sign-catalog`, `verify`, `select` og trust-root-pinning er røykverifisert lokalt.
+- `CellScaffold` har kildekode for `cell:///SoftwareDistribution`, `/.well-known/haven-executable-catalog.json` og `/v1/software/catalog`; `swift build --product Run` passerer, mens `swift test --filter SproutExecutableCatalogRoutesTests` blokkeres av en eksisterende compile-feil i `Sources/UserSimulationScaffoldCore/BridgeDriver.swift`.
+
 ## Correctness og interop
 - [ ] Alle JSON schemas validerer eksempelobjekter (JSON Schema 2020-12).
 - [ ] `CloudBridgePricingContract` schema + eksempelinstans validerer.
@@ -50,6 +55,8 @@ Status per 2026-03-11:
 - [ ] Reproducible build-prosedyre dokumentert og kan kjøres av tredjepart; target: bit-for-bit for CLI.
 - [ ] Release bundle bygger både `sprout` og `sprout-updater`, genererer checksum manifest og kan verifiseres lokalt.
 - [ ] Native Linux release bundle er dokumentert med plattform-suffikserte artefakter og operator-styrt installasjon.
+- [ ] Terminal-first nedlasting og første kjøring av signert `sprout` er testet for macOS laptop og Linux staging, inkludert owner Identity-binding og Entity evidence for beskyttet software/scaffold-tilgang.
+- [ ] HAVEN-hosted scaffolds publiserer `ScaffoldExecutableCatalog` med signert metadata, artifact-hash og signing/provenance evidence.
 - [ ] Signerte artefakter: minst én av (cosign keyless, GPG) er aktiv i CI, med dokumentert verifikasjon.
 - [ ] Provenance/attestation generert (SLSA-minimum + in-toto statement), og bundet til artefakt, eller eksplisitt deaktivert med dokumentert plattformbegrunnelse.
 - [ ] Update behavior er policy-gated via UpdateGrantPolicy (default deny), og tester verifiserer at updater aldri overskrider eksplisitte grants.

@@ -72,6 +72,56 @@ enum ResolverFixtureFactory {
         return descriptor
     }
 
+    static func makeScaffoldExecutableCatalog(
+        scaffoldDomain: String = "example.haven.local",
+        issuedAt: String = "2026-02-26T08:00:00Z",
+        expiresAt: String = "2026-02-26T09:00:00Z",
+        issuerSeedBase64URL: String = resolverSeed,
+        artifacts: [ScaffoldExecutableArtifact]? = nil
+    ) throws -> ScaffoldExecutableCatalog {
+        let publisherPublicKey = try Ed25519.publicKeyBase64URL(fromSeedBase64URL: issuerSeedBase64URL)
+        let resolvedArtifacts = artifacts ?? [
+            ScaffoldExecutableArtifact(
+                artifact_id: "artifact_cellscaffold_linux_0001",
+                name: "cellscaffold-linux-x86_64",
+                kind: "cellscaffold",
+                platform: "linux-x86_64",
+                semver: "0.1.0",
+                channel: "stable",
+                download_url: "https://\(scaffoldDomain)/downloads/cellscaffold-linux-x86_64",
+                sha256_b64url: Hashing.sha256Base64URL(Data("cellscaffold-linux-x86_64".utf8)),
+                size_bytes: 12_345,
+                release_manifest_url: "https://\(scaffoldDomain)/downloads/release-manifest-linux-x86_64.json",
+                checksum_url: "https://\(scaffoldDomain)/downloads/SHA256SUMS-linux-x86_64.b64url",
+                sbom_url: "https://\(scaffoldDomain)/downloads/cellscaffold-linux-x86_64.spdx.json",
+                provenance_url: "https://\(scaffoldDomain)/downloads/cellscaffold-linux-x86_64.intoto.jsonl",
+                signing: [
+                    ScaffoldExecutableSigning(
+                        type: "cosign-keyless",
+                        url: "https://\(scaffoldDomain)/downloads/cellscaffold-linux-x86_64.sig",
+                        certificate_url: "https://\(scaffoldDomain)/downloads/cellscaffold-linux-x86_64.pem",
+                        identity: "https://github.com/Digipomps/CellScaffold/.github/workflows/release.yml"
+                    )
+                ]
+            )
+        ]
+        var catalog = ScaffoldExecutableCatalog(
+            version: "1.0",
+            catalog_id: "sec_0001",
+            scaffold_domain: scaffoldDomain,
+            issued_at: issuedAt,
+            expires_at: expiresAt,
+            issued_by: publisherPublicKey,
+            artifacts: resolvedArtifacts,
+            signature: ResolverSignatureEnvelope(alg: "Ed25519", sig: "")
+        )
+        catalog.signature = ResolverSignatureEnvelope(
+            alg: "Ed25519",
+            sig: try Ed25519.signBase64URL(data: try catalog.canonicalPayloadData(), seedBase64URL: issuerSeedBase64URL)
+        )
+        return catalog
+    }
+
     static func makeSignedEntityAnchorSnapshot(
         entityID: String = "entity_anchor_primary",
         identities: [EntityAnchorIdentityMember],

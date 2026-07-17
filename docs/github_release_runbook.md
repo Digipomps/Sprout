@@ -55,6 +55,12 @@ Or verify a platform-suffixed bundle explicitly:
 bash Scripts/verify_release_bundle.sh dist "" dist/SHA256SUMS-linux-x86_64.b64url
 ```
 
+For the terminal-first download and owner-binding smoke path, use
+`docs/signed_sprout_executable_first_run.md`. That runbook covers the macOS
+laptop test, Linux staging test, first-run scaffold owner identity, JSON or
+Binding-assisted owner Identity binding, Bonjour/DNS-SD discovery, and Entity
+evidence required for protected scaffold software or connection access.
+
 ## Current repository note
 GitHub remote and `gh` authentication are configured for this workspace. The remaining platform caveats are:
 - GitHub attestations must stay disabled unless the billing plan/repository support changes.
