@@ -66,6 +66,7 @@ struct SproutCLI {
         let purposeGoal = parseBootstrapPurposeGoal(flags)
         let nowDate = try parseNow(flags["now"])
         let requestedPortholeKind = try parsePortholeKind(flags["porthole"] ?? "cli")
+        let requestedCapabilities = parseSetFlag(flags["requested-capabilities"])
         let wantsPlanOutput = subcommand == "plan" || flags["plan-only"] == "true"
         var trustRootSource = try resolveScaffoldTrustRootSource(flags: flags, environment: environment, domain: domain)
         var trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
@@ -320,6 +321,7 @@ struct SproutCLI {
             runtime: runtime,
             domain: domain,
             requestedPortholeKind: requestedPortholeKind,
+            requestedCapabilities: requestedCapabilities,
             purposeGoal: purposeGoal,
             starterAuthPayload: starterPayload,
             economics: BootstrapEconomicsContext(
@@ -1545,8 +1547,8 @@ struct SproutCLI {
     private static func printUsage() {
         let text = """
         sprout commands:
-          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
-          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>|--admission-contract <file> [--continuity-proof <file>]] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
+          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--requested-capabilities <cap1,cap2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
+          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--requested-capabilities <cap1,cap2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>|--admission-contract <file> [--continuity-proof <file>]] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout owner init --domain <local-scaffold-domain> [--display-name <name>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout owner show --domain <local-scaffold-domain> [--root <dir>] [--out <json>]

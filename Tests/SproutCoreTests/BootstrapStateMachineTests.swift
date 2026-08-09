@@ -121,6 +121,24 @@ final class BootstrapStateMachineTests: XCTestCase {
         XCTAssertEqual(result.error, .capabilityDenied(["cap.join"]))
     }
 
+    func testExplicitRequestedCapabilityIsForwardedBeyondBridgeDescriptor() async throws {
+        let starter = try loadStarterPayload()
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [try loadBridgeDescriptor()],
+            resolverScenario: MockResolverScenario(
+                allowedDomains: ["example.haven.local"],
+                entityBindings: [starter.identity_public_key: "entity_example_primary"],
+                requireFreshPayload: false
+            ),
+            requestedCapabilities: ["cap.local_model.generate"]
+        )
+
+        XCTAssertEqual(result.finalState, .done, String(describing: result.error))
+        XCTAssertTrue(result.context.capabilityDecision?.granted.contains("cap.local_model.generate") == true)
+        XCTAssertTrue(result.context.portholeAccessContract?.capability_grants.contains("cap.local_model.generate") == true)
+    }
+
     func testNegativeEntityUnresolved() async throws {
         let starter = try loadStarterPayload()
 
@@ -382,6 +400,7 @@ final class BootstrapStateMachineTests: XCTestCase {
         entityAdmissionContract: EntityAdmissionContract? = nil,
         continuityProof: CrossScaffoldEntityContinuityProof? = nil,
         requestedPortholeKind: PortholeClientKind = .cli,
+        requestedCapabilities: [String] = [],
         trustRootDescriptor: ScaffoldAdminTrustRootDescriptor? = nil,
         resolver: (any SproutResolverAdapter)? = nil
     ) async -> BootstrapRunResult {
@@ -463,6 +482,7 @@ final class BootstrapStateMachineTests: XCTestCase {
             runtime: .cliService,
             domain: domain,
             requestedPortholeKind: requestedPortholeKind,
+            requestedCapabilities: requestedCapabilities,
             purposeGoal: BootstrapPurposeGoal(
                 purpose: "bootstrap.join_scaffold",
                 goal: "Join scaffold and register identity",

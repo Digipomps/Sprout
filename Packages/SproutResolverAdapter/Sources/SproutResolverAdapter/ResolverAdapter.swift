@@ -178,12 +178,23 @@ public struct CapabilityRequest: Codable, Equatable, Sendable {
     public var domain: String
     public var purpose: String
     public var required_capabilities: [String]
+    public var entity_id: String?
+    public var entity_inclusion_proof: EntityInclusionProof?
 
-    public init(identity_public_key: String, domain: String, purpose: String, required_capabilities: [String]) {
+    public init(
+        identity_public_key: String,
+        domain: String,
+        purpose: String,
+        required_capabilities: [String],
+        entity_id: String? = nil,
+        entity_inclusion_proof: EntityInclusionProof? = nil
+    ) {
         self.identity_public_key = identity_public_key
         self.domain = domain
         self.purpose = purpose
         self.required_capabilities = required_capabilities
+        self.entity_id = entity_id
+        self.entity_inclusion_proof = entity_inclusion_proof
     }
 }
 
@@ -559,6 +570,7 @@ public struct PortholeAccessRequest: Codable, Equatable, Sendable {
     public var interests: [String]
     public var capability_grants: [String]
     public var entity_evidence_contract_id: String?
+    public var entity_inclusion_proof: EntityInclusionProof?
     public var declared_deposit_rau: Int64?
     public var pricing_contract: CloudBridgePricingContract?
 
@@ -576,6 +588,7 @@ public struct PortholeAccessRequest: Codable, Equatable, Sendable {
         interests: [String],
         capability_grants: [String],
         entity_evidence_contract_id: String?,
+        entity_inclusion_proof: EntityInclusionProof? = nil,
         declared_deposit_rau: Int64? = nil,
         pricing_contract: CloudBridgePricingContract? = nil
     ) {
@@ -592,6 +605,7 @@ public struct PortholeAccessRequest: Codable, Equatable, Sendable {
         self.interests = interests
         self.capability_grants = capability_grants
         self.entity_evidence_contract_id = entity_evidence_contract_id
+        self.entity_inclusion_proof = entity_inclusion_proof
         self.declared_deposit_rau = declared_deposit_rau
         self.pricing_contract = pricing_contract
     }
