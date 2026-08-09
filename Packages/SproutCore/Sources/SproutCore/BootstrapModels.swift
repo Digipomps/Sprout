@@ -121,6 +121,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
     public var runtime: SproutRuntimeProfile
     public var domain: String
     public var requestedPortholeKind: PortholeClientKind
+    public var requestedCapabilities: [String]
     public var purposeGoal: BootstrapPurposeGoal?
     public var starterAuthPayload: StarterAuthPayload?
     public var identity: BootstrapIdentity?
@@ -142,6 +143,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         runtime: SproutRuntimeProfile,
         domain: String,
         requestedPortholeKind: PortholeClientKind = .cli,
+        requestedCapabilities: [String] = [],
         purposeGoal: BootstrapPurposeGoal? = nil,
         starterAuthPayload: StarterAuthPayload? = nil,
         identity: BootstrapIdentity? = nil,
@@ -162,6 +164,7 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         self.runtime = runtime
         self.domain = domain
         self.requestedPortholeKind = requestedPortholeKind
+        self.requestedCapabilities = Array(Set(requestedCapabilities)).sorted()
         self.purposeGoal = purposeGoal
         self.starterAuthPayload = starterAuthPayload
         self.identity = identity
