@@ -180,7 +180,10 @@ let package = Package(
     ],
     products: products,
     dependencies: [
-        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.15.1")
+        .package(
+            url: "https://github.com/apple/swift-crypto.git",
+            "3.15.1"..<"5.0.0"
+        )
     ],
     targets: targets
 )

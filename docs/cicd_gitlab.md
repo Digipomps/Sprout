@@ -18,7 +18,7 @@ build_macos:
 
 build_linux:
   stage: build
-  image: swift:6.0-jammy
+  image: swift:6.1-jammy
   script:
     - swift build --product sprout
     - swift build --product sprout-updater
@@ -31,7 +31,7 @@ test_macos:
 
 test_linux:
   stage: test
-  image: swift:6.0-jammy
+  image: swift:6.1-jammy
   script:
     - swift test
 
@@ -43,7 +43,7 @@ artifact_macos:
 
 artifact_linux:
   stage: artifact
-  image: swift:6.0-jammy
+  image: swift:6.1-jammy
   script:
     - bash Scripts/build_release_bundle.sh dist linux-x86_64
 
