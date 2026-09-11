@@ -17,6 +17,13 @@ struct SproutCLI {
 
         do {
             switch arguments[0] {
+            case "entity":
+                guard arguments.dropFirst().first == "connect" else {
+                    throw CLIError.invalidArguments("Expected: entity connect [--place app|haven|staging]")
+                }
+                try PersonEntityCommands.connect(Array(arguments.dropFirst(2)))
+            case "nearby":
+                try PersonEntityCommands.nearby(Array(arguments.dropFirst()))
             case "bootstrap":
                 try await runBootstrap(arguments: Array(arguments.dropFirst()))
             case "bridges":
@@ -1562,6 +1569,9 @@ struct SproutCLI {
           sprout admission create-request --continuity-proof <proof.json> [--domain <target-domain>] [--starter-identity-root <dir>] [--request-id <id>] [--created-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>]
           sprout link export --file <entity-link.json> [--out <canonical.json>]
           sprout link import --file <entity-link.json>
+          sprout entity connect [--place app|haven|staging]
+          sprout nearby browse [--seconds 1…120]
+          sprout nearby inspect|advertise --offer-file <file>
           sprout porthole web-bootstrap --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
           sprout porthole native-spec --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
           sprout verify <file> [--now <ISO8601>]
