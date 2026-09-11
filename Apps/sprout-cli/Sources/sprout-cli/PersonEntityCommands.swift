@@ -1,4 +1,7 @@
 import Foundation
+#if os(macOS)
+import Darwin
+#endif
 
 /// Entry points for the human's entity. Scaffold owner keys and bootstrap
 /// contracts are intentionally not read, signed or promoted by these commands.
@@ -31,8 +34,8 @@ enum PersonEntityCommands {
     static func nearby(_ arguments: [String]) throws {
         #if os(macOS)
         // Installed next to sprout; an explicit local override supports candidate tests.
-        let helper = ProcessInfo.processInfo.environment["SPROUT_NEARBY_HELPER"].map { URL(fileURLWithPath: $0).standardizedFileURL }
-            ?? URL(fileURLWithPath: CommandLine.arguments[0]).standardizedFileURL.deletingLastPathComponent().appendingPathComponent("haven-nearby")
+        let helper = try ProcessInfo.processInfo.environment["SPROUT_NEARBY_HELPER"].map { URL(fileURLWithPath: $0).standardizedFileURL }
+            ?? installedCompanionURL()
         guard FileManager.default.isExecutableFile(atPath: helper.path) else { throw Failure.helperNotInstalled }
         guard let verb = arguments.first, ["browse", "inspect", "advertise", "--help"].contains(verb) else { throw Failure.invalidArguments }
         let process = Process()
@@ -47,4 +50,19 @@ enum PersonEntityCommands {
         throw Failure.helperNotInstalled
         #endif
     }
+
+    #if os(macOS)
+    private static func installedCompanionURL() throws -> URL {
+        // argv[0] can be just "sprout" when invoked through PATH. Ask dyld for
+        // the running image, then follow launch symlinks to its installation.
+        var capacity: UInt32 = 0
+        _NSGetExecutablePath(nil, &capacity)
+        guard capacity > 0, capacity <= 65_536 else { throw Failure.helperNotInstalled }
+        var path = [CChar](repeating: 0, count: Int(capacity))
+        guard _NSGetExecutablePath(&path, &capacity) == 0 else { throw Failure.helperNotInstalled }
+        let executable = String(decoding: path.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        return URL(fileURLWithPath: executable).resolvingSymlinksInPath()
+            .deletingLastPathComponent().appendingPathComponent("haven-nearby")
+    }
+    #endif
 }

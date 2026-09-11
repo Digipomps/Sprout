@@ -44,6 +44,9 @@ jobs:
       - name: Test
         run: swift test
 
+      - name: Verify installed nearby companion lookup
+        run: python3 Scripts/test_nearby_companion.py .build/debug/sprout
+
       - name: Build release bundle
         run: bash Scripts/build_release_bundle.sh dist "$SPROUT_RELEASE_SUFFIX"
 
