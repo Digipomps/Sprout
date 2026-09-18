@@ -163,7 +163,12 @@ public actor SproutBootstrapStateMachine {
                 identity_public_key: identity.identity_public_key,
                 domain: context.domain,
                 purpose: purposeGoal.purpose,
-                required_capabilities: selectedBridge.capability_requirements
+                required_capabilities: Array(
+                    Set(selectedBridge.capability_requirements)
+                        .union(context.requestedCapabilities)
+                ).sorted(),
+                entity_id: context.entityResolution?.entity_id,
+                entity_inclusion_proof: context.entityResolution?.inclusion_proof
             )
             let capabilities = try await dependencies.resolver.requestCapabilities(capabilityRequest)
             context.capabilityDecision = capabilities
@@ -202,6 +207,7 @@ public actor SproutBootstrapStateMachine {
                 interests: purposeGoal.interests,
                 capability_grants: capabilities.granted,
                 entity_evidence_contract_id: evidenceContractID,
+                entity_inclusion_proof: resolution.inclusion_proof,
                 declared_deposit_rau: context.economics?.declared_deposit_rau,
                 pricing_contract: context.economics?.pricing_contract
             )

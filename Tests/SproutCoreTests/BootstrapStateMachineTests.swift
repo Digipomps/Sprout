@@ -121,6 +121,24 @@ final class BootstrapStateMachineTests: XCTestCase {
         XCTAssertEqual(result.error, .capabilityDenied(["cap.join"]))
     }
 
+    func testExplicitRequestedCapabilityIsForwardedBeyondBridgeDescriptor() async throws {
+        let starter = try loadStarterPayload()
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [try loadBridgeDescriptor()],
+            resolverScenario: MockResolverScenario(
+                allowedDomains: ["example.haven.local"],
+                entityBindings: [starter.identity_public_key: "entity_example_primary"],
+                requireFreshPayload: false
+            ),
+            requestedCapabilities: ["cap.local_model.generate"]
+        )
+
+        XCTAssertEqual(result.finalState, .done, String(describing: result.error))
+        XCTAssertTrue(result.context.capabilityDecision?.granted.contains("cap.local_model.generate") == true)
+        XCTAssertTrue(result.context.portholeAccessContract?.capability_grants.contains("cap.local_model.generate") == true)
+    }
+
     func testNegativeEntityUnresolved() async throws {
         let starter = try loadStarterPayload()
 
@@ -135,6 +153,69 @@ final class BootstrapStateMachineTests: XCTestCase {
 
         XCTAssertEqual(result.finalState, .error)
         XCTAssertEqual(result.error, .entityUnresolved("no explicit entity binding found for identity"))
+    }
+
+    func testVerifiedEntityProofIsForwardedUnchangedToBothAuthorizationRequests() async throws {
+        let starter = try loadStarterPayload()
+        let nowDate = fixedNow
+        let scenario = MockResolverScenario(
+            allowedDomains: ["example.haven.local"],
+            entityBindings: [starter.identity_public_key: "entity_example_primary"],
+            requireFreshPayload: false
+        )
+        let resolver = ProofRecordingResolver(
+            base: MockResolverAdapter(scenario: scenario, now: { nowDate })
+        )
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [try loadBridgeDescriptor()],
+            resolverScenario: scenario,
+            requestedCapabilities: ["cap.local_model.generate"],
+            resolver: resolver
+        )
+        XCTAssertEqual(result.finalState, .done, String(describing: result.error))
+        let proof = try XCTUnwrap(result.context.entityResolution?.inclusion_proof)
+        let recordedCapability = await resolver.capabilityRequest
+        let recordedAccess = await resolver.accessRequest
+        let capability = try XCTUnwrap(recordedCapability)
+        let access = try XCTUnwrap(recordedAccess)
+        XCTAssertEqual(capability.entity_id, proof.entity_id)
+        XCTAssertEqual(capability.entity_inclusion_proof, proof)
+        XCTAssertEqual(access.entity_inclusion_proof, proof)
+        XCTAssertEqual(capability.identity_public_key, starter.identity_public_key)
+        XCTAssertEqual(capability.domain, starter.domain)
+        // The HTTP adapter encodes these DTOs; the proof must survive that wire boundary.
+        XCTAssertEqual(
+            try JSONDecoder().decode(CapabilityRequest.self, from: JSONEncoder().encode(capability)),
+            capability
+        )
+        XCTAssertEqual(
+            try JSONDecoder().decode(PortholeAccessRequest.self, from: JSONEncoder().encode(access)),
+            access
+        )
+        // Full persisted state, including signed artifacts, survives the new decoder.
+        XCTAssertEqual(
+            try JSONDecoder().decode(BootstrapExecutionContext.self, from: JSONEncoder().encode(result.context)),
+            result.context
+        )
+    }
+
+    func testExplicitRequestedCapabilityCanBeDeniedByResolver() async throws {
+        let starter = try loadStarterPayload()
+        let result = await runWith(
+            starter: starter,
+            bridgeDescriptors: [try loadBridgeDescriptor()],
+            resolverScenario: MockResolverScenario(
+                allowedDomains: ["example.haven.local"],
+                deniedCapabilities: ["cap.local_model.generate"],
+                entityBindings: [starter.identity_public_key: "entity_example_primary"],
+                requireFreshPayload: false
+            ),
+            requestedCapabilities: ["cap.local_model.generate"]
+        )
+        XCTAssertEqual(result.finalState, .error)
+        XCTAssertEqual(result.error, .capabilityDenied(["cap.local_model.generate"]))
+        XCTAssertNil(result.context.portholeAccessContract)
     }
 
     func testNegativeInvalidEntityLinkEvidence() async throws {
@@ -184,6 +265,10 @@ final class BootstrapStateMachineTests: XCTestCase {
 
         XCTAssertEqual(result.finalState, .error)
         XCTAssertEqual(result.error, .invalidEntityInclusionProof("entity inclusion proof signature is invalid"))
+        let capabilityCalls = await resolver.capabilityRequestCount
+        let accessCalls = await resolver.accessRequestCount
+        XCTAssertEqual(capabilityCalls, 0, "Unverified proof must never reach capability issuance")
+        XCTAssertEqual(accessCalls, 0, "Unverified proof must never reach Porthole issuance")
     }
 
     func testCanIssueWebPortholeContract() async throws {
@@ -382,6 +467,7 @@ final class BootstrapStateMachineTests: XCTestCase {
         entityAdmissionContract: EntityAdmissionContract? = nil,
         continuityProof: CrossScaffoldEntityContinuityProof? = nil,
         requestedPortholeKind: PortholeClientKind = .cli,
+        requestedCapabilities: [String] = [],
         trustRootDescriptor: ScaffoldAdminTrustRootDescriptor? = nil,
         resolver: (any SproutResolverAdapter)? = nil
     ) async -> BootstrapRunResult {
@@ -463,6 +549,7 @@ final class BootstrapStateMachineTests: XCTestCase {
             runtime: .cliService,
             domain: domain,
             requestedPortholeKind: requestedPortholeKind,
+            requestedCapabilities: requestedCapabilities,
             purposeGoal: BootstrapPurposeGoal(
                 purpose: "bootstrap.join_scaffold",
                 goal: "Join scaffold and register identity",
@@ -521,6 +608,8 @@ final class BootstrapStateMachineTests: XCTestCase {
 
 private actor TamperedInclusionProofResolver: SproutResolverAdapter {
     private let base: any SproutResolverAdapter
+    private(set) var capabilityRequestCount = 0
+    private(set) var accessRequestCount = 0
 
     init(base: any SproutResolverAdapter) {
         self.base = base
@@ -531,7 +620,8 @@ private actor TamperedInclusionProofResolver: SproutResolverAdapter {
     }
 
     func requestCapabilities(_ request: CapabilityRequest) async throws -> CapabilityDecision {
-        try await base.requestCapabilities(request)
+        capabilityRequestCount += 1
+        return try await base.requestCapabilities(request)
     }
 
     func resolveEntity(_ request: EntityResolutionRequest) async throws -> EntityResolutionDecision {
@@ -548,6 +638,37 @@ private actor TamperedInclusionProofResolver: SproutResolverAdapter {
     }
 
     func issuePortholeAccessContract(_ request: PortholeAccessRequest) async throws -> PortholeAccessDecision {
-        try await base.issuePortholeAccessContract(request)
+        accessRequestCount += 1
+        return try await base.issuePortholeAccessContract(request)
+    }
+}
+
+private actor ProofRecordingResolver: SproutResolverAdapter {
+    private let base: any SproutResolverAdapter
+    private(set) var capabilityRequest: CapabilityRequest?
+    private(set) var accessRequest: PortholeAccessRequest?
+
+    init(base: any SproutResolverAdapter) { self.base = base }
+
+    func registerStarterAuth(payload: StarterAuthPayload) async throws -> ResolverRegistrationResult {
+        try await base.registerStarterAuth(payload: payload)
+    }
+
+    func resolveEntity(_ request: EntityResolutionRequest) async throws -> EntityResolutionDecision {
+        try await base.resolveEntity(request)
+    }
+
+    func requestCapabilities(_ request: CapabilityRequest) async throws -> CapabilityDecision {
+        capabilityRequest = request
+        return try await base.requestCapabilities(request)
+    }
+
+    func performMembershipChecks(identityPublicKey: String, domain: String) async throws -> MembershipDecision {
+        try await base.performMembershipChecks(identityPublicKey: identityPublicKey, domain: domain)
+    }
+
+    func issuePortholeAccessContract(_ request: PortholeAccessRequest) async throws -> PortholeAccessDecision {
+        accessRequest = request
+        return try await base.issuePortholeAccessContract(request)
     }
 }

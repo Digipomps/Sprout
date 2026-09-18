@@ -8,3 +8,9 @@ haven_docs_for_chatgpt_*.zip
 haven_docs_plus_prompt_sources_*.zip
 **/.DS_Store
 **/xcuserdata/
+implementation/entity-correspondence/CellProtocol/
+implementation/entity-correspondence/HavenAgentD/
+implementation/entity-correspondence/*.log
+
+# Exact upstream source checked out by release CI.
+.release-dependencies/

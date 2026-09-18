@@ -10,13 +10,34 @@ import SproutStorage
 struct SproutCLI {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
-        guard !arguments.isEmpty else {
-            printUsage()
-            exit(1)
-        }
-
         do {
+            guard !arguments.isEmpty else {
+                try await runOnboarding(arguments: [])
+                return
+            }
             switch arguments[0] {
+            case "entity":
+                guard arguments.dropFirst().first == "connect" else {
+                    throw CLIError.invalidArguments("Expected: entity connect [--place app|haven|staging]")
+                }
+                try PersonEntityCommands.connect(Array(arguments.dropFirst(2)))
+            case "nearby":
+                try PersonEntityCommands.nearby(Array(arguments.dropFirst()))
+            case "doctor":
+                guard arguments.count == 1 || arguments == ["doctor", "--json"] else {
+                    throw CLIError.invalidArguments("Expected: doctor [--json]")
+                }
+                let report = try SproutDoctor.inspect()
+                if arguments.count == 2 {
+                    print(String(decoding: try JSONEncoder.pretty.encode(report), as: UTF8.self))
+                } else {
+                    print("Sprout: \(report.platform)/\(report.architecture), \(report.cRuntime). Crypto self-test: \(report.cryptography).")
+                    print("No network contact or stored identities inspected. Channel readiness is not verified.")
+                }
+            case "onboard", "chat":
+                try await runOnboarding(arguments: Array(arguments.dropFirst()))
+            case "--help", "-h", "help":
+                printUsage()
             case "bootstrap":
                 try await runBootstrap(arguments: Array(arguments.dropFirst()))
             case "bridges":
@@ -66,6 +87,7 @@ struct SproutCLI {
         let purposeGoal = parseBootstrapPurposeGoal(flags)
         let nowDate = try parseNow(flags["now"])
         let requestedPortholeKind = try parsePortholeKind(flags["porthole"] ?? "cli")
+        let requestedCapabilities = parseSetFlag(flags["requested-capabilities"])
         let wantsPlanOutput = subcommand == "plan" || flags["plan-only"] == "true"
         var trustRootSource = try resolveScaffoldTrustRootSource(flags: flags, environment: environment, domain: domain)
         var trustRootDescriptor: ScaffoldAdminTrustRootDescriptor?
@@ -320,6 +342,7 @@ struct SproutCLI {
             runtime: runtime,
             domain: domain,
             requestedPortholeKind: requestedPortholeKind,
+            requestedCapabilities: requestedCapabilities,
             purposeGoal: purposeGoal,
             starterAuthPayload: starterPayload,
             economics: BootstrapEconomicsContext(
@@ -1543,10 +1566,12 @@ struct SproutCLI {
     }
 
     private static func printUsage() {
+        print("Start sprout uten argumenter for en gjenopptakbar terminaldialog. Se sprout onboard --help.")
+        print("sprout doctor [--json] kontrollerer runtime og kryptografi lokalt, uten aa lese identiteter eller kontakte nettverket.")
         let text = """
         sprout commands:
-          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
-          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>|--admission-contract <file> [--continuity-proof <file>]] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
+          sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--requested-capabilities <cap1,cap2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]
+          sprout bootstrap join --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--requested-capabilities <cap1,cap2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--trust-root-url <https://domain/.well-known/haven-scaffold-admin-trust-root.json>] [--trust-root-out <file>] [--starter <file>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--starter-identity-root <dir>] [--starter-out <file>] [--catalog <file>] [--discovery-url <https://domain/v1/bridges/query>] [--entity-link <file>|--admission-contract <file> [--continuity-proof <file>]] [--entity-anchor <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--trusted-resolver-key <pubkey1,pubkey2>] [--resolver-bearer <token>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--audit <file>] [--state-out <file>] [--plan-only] [--plan-out <json>] [--now <ISO8601>]
           sprout bridges list --catalog <file>
           sprout owner init --domain <local-scaffold-domain> [--display-name <name>] [--note <text>] [--root <dir>] [--overwrite] [--out <json>]
           sprout owner show --domain <local-scaffold-domain> [--root <dir>] [--out <json>]
@@ -1562,6 +1587,9 @@ struct SproutCLI {
           sprout admission create-request --continuity-proof <proof.json> [--domain <target-domain>] [--starter-identity-root <dir>] [--request-id <id>] [--created-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>]
           sprout link export --file <entity-link.json> [--out <canonical.json>]
           sprout link import --file <entity-link.json>
+          sprout entity connect [--place app|haven|staging]
+          sprout nearby browse [--seconds 1…120]
+          sprout nearby inspect|advertise --offer-file <file>
           sprout porthole web-bootstrap --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
           sprout porthole native-spec --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]
           sprout verify <file> [--now <ISO8601>]

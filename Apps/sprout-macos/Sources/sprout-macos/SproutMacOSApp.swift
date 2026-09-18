@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 struct SproutMacOSApp: App {
     @StateObject private var viewModel = PortholeClientViewModel()
     @State private var showingImporter = false
+    @State private var personLinkMessage: String?
 
     var body: some Scene {
         WindowGroup {
@@ -13,6 +14,15 @@ struct SproutMacOSApp: App {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Sprout macOS")
                         .font(.largeTitle)
+                    Button("Utvid min entitet …") {
+                        let opened = NSWorkspace.shared.open(URL(string: "haven://link-devices")!)
+                        personLinkMessage = opened
+                            ? "Fortsett i HAVEN og bekreft hvilke av dine entiteter som skal kobles."
+                            : "Installer HAVEN-appen for å finne eller skanne en invitasjon."
+                    }
+                    if let personLinkMessage {
+                        Text(personLinkMessage).font(.caption).foregroundStyle(.secondary)
+                    }
                     Text("Import a signed porthole contract and consume it as a macOS web/native handoff client.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)

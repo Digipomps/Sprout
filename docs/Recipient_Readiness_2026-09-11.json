@@ -1,0 +1,91 @@
+{
+  "schema": "sprout.recipient-readiness.v1",
+  "observed_at": "2026-09-11T17:31:56Z",
+  "decision": "not_ready_for_recipient",
+  "source_revision": "473d6998bf5417c6355de053fe806ebdf91383e6",
+  "source_worktree": "dirty_uncommitted_including_preexisting_user_changes",
+  "status_sharing": "user_authorized_and_performed",
+  "native_tests": {
+    "platform": "macos-arm64",
+    "xctest_passed": 128,
+    "swift_testing_passed": 6,
+    "log": ".build/recipient-hardening-tests-final.log"
+  },
+  "process_smoke": {
+    "passed": true,
+    "log": ".build/recipient-terminal-smoke.log"
+  },
+  "release_guards": {
+    "passed": true,
+    "log": ".build/recipient-release-guards.log",
+    "sigstore_crypto_tested": false
+  },
+  "linux": {
+    "target": "x86_64-swift-linux-musl",
+    "compiler": "swift-6.2.4-RELEASE",
+    "compiled": true,
+    "platform_checked": true,
+    "debug_information_removed_from_delivery_copies": true,
+    "native_executed": false,
+    "signed": false,
+    "published": false,
+    "log": ".build/recipient-linux-bundle-final.log",
+    "integrity_log": ".build/recipient-bundle-integrity-final.log",
+    "artifacts": [
+      {
+        "path": "dist/recipient-candidate-20260911-final/SHA256SUMS-linux-x86_64.b64url",
+        "size_bytes": 293,
+        "sha256": "3e4ff2f8590945fbbc7aafe13e673815b52aeb7894a9a7cfc0bb4ae8b8ad8b7e"
+      },
+      {
+        "path": "dist/recipient-candidate-20260911-final/release-manifest-linux-x86_64.json",
+        "size_bytes": 537,
+        "sha256": "8643ad9e6146f21f59509f81244cd1b66fd99bdb8944a22565e313fa4b0d7414"
+      },
+      {
+        "path": "dist/recipient-candidate-20260911-final/sprout-linux-x86_64",
+        "size_bytes": 80660424,
+        "sha256": "5de379c949eac1be1d1d6a7be9f2ebe9b4674a8ce4eae663b8c676013ed0de3c"
+      },
+      {
+        "path": "dist/recipient-candidate-20260911-final/sprout-linux-x86_64.spdx.json",
+        "size_bytes": 5070,
+        "sha256": "c2d30f124fef143cab7f5f5cdf51eda875477ec31750c0e1c86f8bc5006a7ccf"
+      },
+      {
+        "path": "dist/recipient-candidate-20260911-final/sprout-updater-linux-x86_64",
+        "size_bytes": 80261288,
+        "sha256": "61d2919c239b6f00d6e2bb2efe6ecdad2b0803a8af72b980cf9ce1fa9581d968"
+      }
+    ]
+  },
+  "dependency_lock_sha256": "d369a0be03e7609b4123a8ae832ec545ba9edd176fb8392c23f9a5faabb8ac3d",
+  "dependencies": [
+    {
+      "name": "swift-asn1",
+      "version": "1.5.1",
+      "revision": "810496cf121e525d660cd0ea89a758740476b85f"
+    },
+    {
+      "name": "swift-crypto",
+      "version": "3.15.1",
+      "revision": "95ba0316a9b733e92bb6b071255ff46263bbe7dc"
+    }
+  ],
+  "staging": {
+    "public_health_ok": true,
+    "person_enrollment_tested": false,
+    "trust_root_expires_at": "2026-09-07T19:58:50Z",
+    "trust_root_state": "expired",
+    "mutations_performed": false
+  },
+  "delivery_gates": [
+    "fileless_terminal_person_enrollment_server_and_UX_contract",
+    "integrated_entity_owned_correspondence_read_and_write",
+    "operator_authorized_staging_descriptor_renewal",
+    "native_linux_two_person_approval_message_and_attachment_test",
+    "reviewed_integrated_source_tag_and_verified_release_signature"
+  ],
+  "bit_for_bit_reproducibility_proven": false,
+  "full_transitive_sbom": false
+}

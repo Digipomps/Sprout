@@ -1,0 +1,2092 @@
+{
+  "archive": "/Users/kjetil/Build/Digipomps/HAVEN/sprout/haven_docs_plus_prompt_sources_2026-02-23.zip",
+  "sha256": "12efb15c38f930fba4453dccaa972408dbb9d0426f2ca4dd788391e3abc84f9d",
+  "archive_bytes": 403961,
+  "files": 231,
+  "status_counts": {
+    "missing": 22,
+    "unchanged": 130,
+    "changed": 79
+  },
+  "by_repo": {
+    "Binding": {
+      "missing": 21,
+      "unchanged": 22,
+      "changed": 4
+    },
+    "CellProtocol": {
+      "unchanged": 19,
+      "changed": 21
+    },
+    "CellProtocolDocuments": {
+      "changed": 18
+    },
+    "CellScaffold": {
+      "unchanged": 30,
+      "changed": 26
+    },
+    "DiMyDocuments": {
+      "unchanged": 36,
+      "changed": 1
+    },
+    "DiMyMicropayments": {
+      "changed": 8,
+      "unchanged": 20
+    },
+    "DiMyMint": {
+      "unchanged": 1
+    },
+    "HAVEN_MVP": {
+      "changed": 1
+    },
+    "sprout": {
+      "unchanged": 1
+    },
+    "test": {
+      "unchanged": 1
+    },
+    "tmp": {
+      "missing": 1
+    }
+  },
+  "duplicate_groups": [
+    [
+      "../Binding/CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "../CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "../CellScaffold/CellProtocolDocuments/Book/01_CellProtocol_Core.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "../CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "../CellScaffold/CellProtocolDocuments/Book/02_Cell_Interfaces.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/03_Identity_Model.md",
+      "../CellProtocolDocuments/Book/03_Identity_Model.md",
+      "../CellScaffold/CellProtocolDocuments/Book/03_Identity_Model.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "../CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "../CellScaffold/CellProtocolDocuments/Book/04_Agreements_Contracts.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "../CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "../CellScaffold/CellProtocolDocuments/Book/05_Flows_Lifecycle.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/06_CellResolver.md",
+      "../CellProtocolDocuments/Book/06_CellResolver.md",
+      "../CellScaffold/CellProtocolDocuments/Book/06_CellResolver.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "../CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "../CellScaffold/CellProtocolDocuments/Book/07_Scaffold_Runtime.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "../CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "../CellScaffold/CellProtocolDocuments/Book/08_Bridging_Transport.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "../CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "../CellScaffold/CellProtocolDocuments/Book/09_Purpose_Interests.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/10_Quickstart.md",
+      "../CellProtocolDocuments/Book/10_Quickstart.md",
+      "../CellScaffold/CellProtocolDocuments/Book/10_Quickstart.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "../CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "../CellScaffold/CellProtocolDocuments/Book/12_Skeleton_Spec.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "../CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "../CellScaffold/CellProtocolDocuments/Book/13_Agent_Instructions.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "../CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "../CellScaffold/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Book/Book_Extras.md",
+      "../CellProtocolDocuments/Book/Book_Extras.md",
+      "../CellScaffold/CellProtocolDocuments/Book/Book_Extras.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Gap_Analysis.md",
+      "../CellProtocolDocuments/Gap_Analysis.md",
+      "../CellScaffold/CellProtocolDocuments/Gap_Analysis.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Prompts/CoreContext.md",
+      "../CellScaffold/CellProtocolDocuments/Prompts/CoreContext.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Prompts/SystemPrompt-Codex.md",
+      "../CellScaffold/CellProtocolDocuments/Prompts/SystemPrompt-Codex.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Prompts/SystemPrompt-Xcode53.md",
+      "../CellScaffold/CellProtocolDocuments/Prompts/SystemPrompt-Xcode53.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "../CellScaffold/CellProtocolDocuments/Prompts/SystemPrompts.md"
+    ],
+    [
+      "../Binding/CellProtocolDocuments/README-CellProtocol.md",
+      "../CellScaffold/CellProtocolDocuments/README-CellProtocol.md"
+    ],
+    [
+      "../Binding/Documentation/CONTRIBUTING.md",
+      "../CellScaffold/Documentation/CONTRIBUTING.md",
+      "../CellScaffold/Prompts/CONTRIBUTING.md"
+    ],
+    [
+      "../Binding/Documentation/TestData/Perspective/cellscaffold_match_request_with_local_targets.json",
+      "../CellScaffold/Documentation/TestData/Perspective/cellscaffold_match_request_with_local_targets.json"
+    ],
+    [
+      "../CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "../CellScaffold/CellProtocolDocuments/Book/11_Developer_Guide_Cell.md"
+    ],
+    [
+      "../CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.json",
+      "../CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.wss.json"
+    ]
+  ],
+  "files_detail": [
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "status": "missing",
+      "archive_sha256": "ce5eebe5359f3585a3ccc0afc466b3891c208e6db1ee3b56bf4c8555d952cba7",
+      "current_sha256": null,
+      "archive_bytes": 5193
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "status": "missing",
+      "archive_sha256": "43f4bc1b133965c81b25851aa1c5fa0fd17b4a4cde5757c5cf91977737418d89",
+      "current_sha256": null,
+      "archive_bytes": 2290
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/03_Identity_Model.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/03_Identity_Model.md",
+      "status": "missing",
+      "archive_sha256": "41e756a69fa218729d7e4d1c25469fe54f74c129892e1a3544b6cca7e20c1d35",
+      "current_sha256": null,
+      "archive_bytes": 2999
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "status": "missing",
+      "archive_sha256": "b0da32f48871d0ebbb34379aa7ecf76819dd55b7fad8db59d14ced0d47cacf57",
+      "current_sha256": null,
+      "archive_bytes": 3143
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "status": "missing",
+      "archive_sha256": "9315b0adb573379a95f20000446479bb2958260226740209289713741a61489f",
+      "current_sha256": null,
+      "archive_bytes": 2732
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/06_CellResolver.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/06_CellResolver.md",
+      "status": "missing",
+      "archive_sha256": "5b613949db0f204e7d8af0202692920fb67122927488a8e7dc3f2f4840aa29ee",
+      "current_sha256": null,
+      "archive_bytes": 5193
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "status": "missing",
+      "archive_sha256": "fb60cce3c5313e5a5a3df5dfeac88fa821e9176bc006ba42d34f4867ae1fef9f",
+      "current_sha256": null,
+      "archive_bytes": 3856
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "status": "missing",
+      "archive_sha256": "a3d55a1ab5d4f82ac120aad5875f9b1801aa033d9eb4576135bbcdec9fe2f55d",
+      "current_sha256": null,
+      "archive_bytes": 4523
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "status": "missing",
+      "archive_sha256": "ecdbf0aa67d8c152852e646b7c1de348fe436195e5eb3283da323c64a1d25968",
+      "current_sha256": null,
+      "archive_bytes": 3468
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/10_Quickstart.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/10_Quickstart.md",
+      "status": "missing",
+      "archive_sha256": "5310794f34e508c356da9c4c6ba1591b049ad7d52bd70f914d3182c732c319ac",
+      "current_sha256": null,
+      "archive_bytes": 5530
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "status": "missing",
+      "archive_sha256": "327e404803b304dd84128871f50a13a3c89280ff1d23f468c9907830b3f222f3",
+      "current_sha256": null,
+      "archive_bytes": 5347
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "status": "missing",
+      "archive_sha256": "2832545bf8e31d7bde46d125f20c303791c80c83cfbde24d137d3544cb1a0a5f",
+      "current_sha256": null,
+      "archive_bytes": 6901
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "status": "missing",
+      "archive_sha256": "b99d441eebddd26a33020193bb9ccc263c62dd48bef93a2a875e1850a6aa7fab",
+      "current_sha256": null,
+      "archive_bytes": 5158
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "status": "missing",
+      "archive_sha256": "b4bb7865bf90d43ea9a10fa1c8647981fa83bd285357b488d2e3d0790a94a0c1",
+      "current_sha256": null,
+      "archive_bytes": 5789
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Book/Book_Extras.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Book/Book_Extras.md",
+      "status": "missing",
+      "archive_sha256": "c4cbb5393ecd8767b987b928825b5896904d2585f748753c1e4f08c601993110",
+      "current_sha256": null,
+      "archive_bytes": 4960
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Gap_Analysis.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Gap_Analysis.md",
+      "status": "missing",
+      "archive_sha256": "587addcdac1c7c7b1d675ebea213b4f0f6ed9d17a86923682acc701fe8a60aae",
+      "current_sha256": null,
+      "archive_bytes": 3745
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Prompts/CoreContext.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Prompts/CoreContext.md",
+      "status": "missing",
+      "archive_sha256": "f43d491149e9da276da3b2d684419ae324b66d2cf693676511062de82023d430",
+      "current_sha256": null,
+      "archive_bytes": 2190
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Prompts/SystemPrompt-Codex.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Prompts/SystemPrompt-Codex.md",
+      "status": "missing",
+      "archive_sha256": "3bc77c47029a49a29f1f30b329293aa2b359fc9e5ace49281304b01e1ba4095e",
+      "current_sha256": null,
+      "archive_bytes": 462
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Prompts/SystemPrompt-Xcode53.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Prompts/SystemPrompt-Xcode53.md",
+      "status": "missing",
+      "archive_sha256": "84a1b99849cd75b72b99c9eff9bb4a2216919da8b6c7d0cdf77adb8d92d44d89",
+      "current_sha256": null,
+      "archive_bytes": 522
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "status": "missing",
+      "archive_sha256": "f9f1d0b14fe7925511bb4fca4d098c595dd042e99360db5972f6143c935080fb",
+      "current_sha256": null,
+      "archive_bytes": 612
+    },
+    {
+      "archive_path": "../Binding/CellProtocolDocuments/README-CellProtocol.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/CellProtocolDocuments/README-CellProtocol.md",
+      "status": "missing",
+      "archive_sha256": "e1592eedc6fc04a6fe95b5ac8929de61e0afd4643139e33e6b418e70a09db3ac",
+      "current_sha256": null,
+      "archive_bytes": 2205
+    },
+    {
+      "archive_path": "../Binding/Documentation/AppleIntelligence_Workflow.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/AppleIntelligence_Workflow.md",
+      "status": "unchanged",
+      "archive_sha256": "02ec28db9376efefd8e020cfdd113bdffb0ac3373806d931d5ece84400ef6b5d",
+      "current_sha256": "02ec28db9376efefd8e020cfdd113bdffb0ac3373806d931d5ece84400ef6b5d",
+      "archive_bytes": 2590
+    },
+    {
+      "archive_path": "../Binding/Documentation/CONTRIBUTING.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/CONTRIBUTING.md",
+      "status": "unchanged",
+      "archive_sha256": "a459886848d964787d49b8e3154a0854facb6fe6fe5ecb49f6e84324bec6c7a3",
+      "current_sha256": "a459886848d964787d49b8e3154a0854facb6fe6fe5ecb49f6e84324bec6c7a3",
+      "archive_bytes": 1244
+    },
+    {
+      "archive_path": "../Binding/Documentation/HowTo_CreateCell.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/HowTo_CreateCell.md",
+      "status": "unchanged",
+      "archive_sha256": "df217756a517ad6c49181d9e6d38ce835f168260c70e29f94ebd15a0e0e79ab1",
+      "current_sha256": "df217756a517ad6c49181d9e6d38ce835f168260c70e29f94ebd15a0e0e79ab1",
+      "archive_bytes": 10942
+    },
+    {
+      "archive_path": "../Binding/Documentation/PerspectiveCell_WeightedMatching_Proposal.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/PerspectiveCell_WeightedMatching_Proposal.md",
+      "status": "unchanged",
+      "archive_sha256": "35a5f5c3c9b18b0bfc48794716e64e051e269cf7db38f99b2ca4f5e136b08590",
+      "current_sha256": "35a5f5c3c9b18b0bfc48794716e64e051e269cf7db38f99b2ca4f5e136b08590",
+      "archive_bytes": 812
+    },
+    {
+      "archive_path": "../Binding/Documentation/Perspective_Signal_Network_Implementation.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/Perspective_Signal_Network_Implementation.md",
+      "status": "unchanged",
+      "archive_sha256": "8ddefb0f56d2d4e56f12dc42f813c089786664daf162b4b9b12337969884182d",
+      "current_sha256": "8ddefb0f56d2d4e56f12dc42f813c089786664daf162b4b9b12337969884182d",
+      "archive_bytes": 837
+    },
+    {
+      "archive_path": "../Binding/Documentation/Porthole-and-skeleton.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/Porthole-and-skeleton.md",
+      "status": "changed",
+      "archive_sha256": "bc0a12607c738d63506320da351aed98ddf0523d110f168e6ce0706611fbb041",
+      "current_sha256": "a3d9bc2e9a55dfd6d4842bd4500398a1d20740a165e7991c2b16939c8b750a88",
+      "archive_bytes": 2409
+    },
+    {
+      "archive_path": "../Binding/Documentation/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/README.md",
+      "status": "changed",
+      "archive_sha256": "65161a79e39b67d406f51b88608c74058d58af5afdcf60c371d7cdde07c48c67",
+      "current_sha256": "50afb2cbd8e341207b95ba0638c9ac99ca710d235c3341381b5647b464778d75",
+      "archive_bytes": 6384
+    },
+    {
+      "archive_path": "../Binding/Documentation/SkeletonEditor.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/SkeletonEditor.md",
+      "status": "unchanged",
+      "archive_sha256": "2e30cd62930c5201bff874ef30704d69413b8d6a18560af54e7c0e6e97f8f643",
+      "current_sha256": "2e30cd62930c5201bff874ef30704d69413b8d6a18560af54e7c0e6e97f8f643",
+      "archive_bytes": 2571
+    },
+    {
+      "archive_path": "../Binding/Documentation/SkeletonElements_Detailed.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/SkeletonElements_Detailed.md",
+      "status": "unchanged",
+      "archive_sha256": "48d04d42d055b6b8865fbb3d981b2fff7d5304acb4fae503f14a3dda4c016836",
+      "current_sha256": "48d04d42d055b6b8865fbb3d981b2fff7d5304acb4fae503f14a3dda4c016836",
+      "archive_bytes": 2720
+    },
+    {
+      "archive_path": "../Binding/Documentation/SkeletonModifiers.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/SkeletonModifiers.md",
+      "status": "unchanged",
+      "archive_sha256": "9a0013e0f0c5b9d84957cd2ba71eb1715be0cc08dc31d33e476b38bf7397a259",
+      "current_sha256": "9a0013e0f0c5b9d84957cd2ba71eb1715be0cc08dc31d33e476b38bf7397a259",
+      "archive_bytes": 6256
+    },
+    {
+      "archive_path": "../Binding/Documentation/TestData/Perspective/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/TestData/Perspective/README.md",
+      "status": "unchanged",
+      "archive_sha256": "577e3efad14a37e0339a3d4956de575c3790a096feb853ac9cdf564010c93e57",
+      "current_sha256": "577e3efad14a37e0339a3d4956de575c3790a096feb853ac9cdf564010c93e57",
+      "archive_bytes": 1795
+    },
+    {
+      "archive_path": "../Binding/Documentation/TestData/Perspective/cellscaffold_match_request_with_local_targets.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/TestData/Perspective/cellscaffold_match_request_with_local_targets.json",
+      "status": "unchanged",
+      "archive_sha256": "36b3da5a01fbfffb5a3203aea5e782bc3a94aac5a227328208c3f9af708acbf4",
+      "current_sha256": "36b3da5a01fbfffb5a3203aea5e782bc3a94aac5a227328208c3f9af708acbf4",
+      "archive_bytes": 4730
+    },
+    {
+      "archive_path": "../Binding/Documentation/TestData/Perspective/local_activePurposes_query.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/TestData/Perspective/local_activePurposes_query.json",
+      "status": "unchanged",
+      "archive_sha256": "ead4215c4edf992a5e976643fcf85fde98bebecce35a6ca7a01e23cc82f902f1",
+      "current_sha256": "ead4215c4edf992a5e976643fcf85fde98bebecce35a6ca7a01e23cc82f902f1",
+      "archive_bytes": 101
+    },
+    {
+      "archive_path": "../Binding/Documentation/TestData/Perspective/local_perspective_dataset.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Documentation/TestData/Perspective/local_perspective_dataset.json",
+      "status": "unchanged",
+      "archive_sha256": "edabf6c7fb6187954d9042f1eb84383905afcefd20a3d8e828123fd04c90d135",
+      "current_sha256": "edabf6c7fb6187954d9042f1eb84383905afcefd20a3d8e828123fd04c90d135",
+      "archive_bytes": 3105
+    },
+    {
+      "archive_path": "../Binding/Prompts/AgreementTemplateEditorPlan.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/AgreementTemplateEditorPlan.md",
+      "status": "unchanged",
+      "archive_sha256": "fbc49377eac6dcc7393996bedfeec7ca1f99fae56c376e8b57353d4848fcf0e3",
+      "current_sha256": "fbc49377eac6dcc7393996bedfeec7ca1f99fae56c376e8b57353d4848fcf0e3",
+      "archive_bytes": 4273
+    },
+    {
+      "archive_path": "../Binding/Prompts/AppleIntelligenceCell.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/AppleIntelligenceCell.md",
+      "status": "changed",
+      "archive_sha256": "f98cc23d927825e3718b7b0ed28e4742bd996ef05f2ef4b59d1134d6367029f8",
+      "current_sha256": "7ef4d3e9dc398af164b87ddd2bb00f694fa3f1b5f0e7fc4d70f80af253b247b3",
+      "archive_bytes": 1852
+    },
+    {
+      "archive_path": "../Binding/Prompts/Architecture.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/Architecture.md",
+      "status": "unchanged",
+      "archive_sha256": "a26600dae73355dfd157eddbdd7df2246ae95c5fe8cc149b4d6dc62ddb27aad5",
+      "current_sha256": "a26600dae73355dfd157eddbdd7df2246ae95c5fe8cc149b4d6dc62ddb27aad5",
+      "archive_bytes": 6274
+    },
+    {
+      "archive_path": "../Binding/Prompts/CONTRIBUTING.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/CONTRIBUTING.md",
+      "status": "unchanged",
+      "archive_sha256": "61110c0dc8c0b3bd320c8aa745280c84853e767856de4092f1a825c673e66a98",
+      "current_sha256": "61110c0dc8c0b3bd320c8aa745280c84853e767856de4092f1a825c673e66a98",
+      "archive_bytes": 2846
+    },
+    {
+      "archive_path": "../Binding/Prompts/CoreContext.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/CoreContext.md",
+      "status": "unchanged",
+      "archive_sha256": "a72b1ec55a63e55128f36b3dd7d36d4ae0e70f6f8f15df95678eeaabc12e8406",
+      "current_sha256": "a72b1ec55a63e55128f36b3dd7d36d4ae0e70f6f8f15df95678eeaabc12e8406",
+      "archive_bytes": 873
+    },
+    {
+      "archive_path": "../Binding/Prompts/CurrentState.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/CurrentState.md",
+      "status": "unchanged",
+      "archive_sha256": "97dc400c5abd185a1a8045d544b46f56908436b3ac465a8768e5147a5ddf4ad1",
+      "current_sha256": "97dc400c5abd185a1a8045d544b46f56908436b3ac465a8768e5147a5ddf4ad1",
+      "archive_bytes": 2948
+    },
+    {
+      "archive_path": "../Binding/Prompts/EdgeMenusOverlay.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/EdgeMenusOverlay.md",
+      "status": "unchanged",
+      "archive_sha256": "5d331a62d78ec0975185126cbbe34b3cfda0ab35ab892e1a0929a48545e6d3e6",
+      "current_sha256": "5d331a62d78ec0975185126cbbe34b3cfda0ab35ab892e1a0929a48545e6d3e6",
+      "archive_bytes": 4357
+    },
+    {
+      "archive_path": "../Binding/Prompts/ExplainToAnotherLLM.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/ExplainToAnotherLLM.md",
+      "status": "unchanged",
+      "archive_sha256": "6190431ad6e81a3a366b57164103772827e00db19d08931349d34a8d2621812b",
+      "current_sha256": "6190431ad6e81a3a366b57164103772827e00db19d08931349d34a8d2621812b",
+      "archive_bytes": 7818
+    },
+    {
+      "archive_path": "../Binding/Prompts/SkeletonExamples.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/SkeletonExamples.json",
+      "status": "unchanged",
+      "archive_sha256": "be0c398191cb774572c88e6316d2f544dd91ea897e639437436612bfa4e0d9df",
+      "current_sha256": "be0c398191cb774572c88e6316d2f544dd91ea897e639437436612bfa4e0d9df",
+      "archive_bytes": 4673
+    },
+    {
+      "archive_path": "../Binding/Prompts/SystemPrompt-Codex.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/SystemPrompt-Codex.md",
+      "status": "unchanged",
+      "archive_sha256": "f49198bf83ec77c118886b41ba5380bbc197d05327e076ceae94031f848cfef7",
+      "current_sha256": "f49198bf83ec77c118886b41ba5380bbc197d05327e076ceae94031f848cfef7",
+      "archive_bytes": 680
+    },
+    {
+      "archive_path": "../Binding/Prompts/SystemPrompt-Xcode53.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/SystemPrompt-Xcode53.md",
+      "status": "unchanged",
+      "archive_sha256": "2321825e1a348345acbe6789f2ad01393db1f12c5a2f71683db1fe73f48184b0",
+      "current_sha256": "2321825e1a348345acbe6789f2ad01393db1f12c5a2f71683db1fe73f48184b0",
+      "archive_bytes": 782
+    },
+    {
+      "archive_path": "../Binding/Prompts/SystemPrompts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/Binding/Prompts/SystemPrompts.md",
+      "status": "changed",
+      "archive_sha256": "fb6eddc83478f4ed930cfb18a523c571206da542632857befc95983d9a47adf3",
+      "current_sha256": "0052acd30a231156d105dedfe411ada85e8be3e797716302ecc468b6f50fe8b7",
+      "archive_bytes": 893
+    },
+    {
+      "archive_path": "../CellProtocol/Docs/ReplayFlow_PR1.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Docs/ReplayFlow_PR1.md",
+      "status": "unchanged",
+      "archive_sha256": "ae57ef23a8fb503d06c8bacceccc61c6c14b71a5bf08e1f77ddbc7b54b4b8226",
+      "current_sha256": "ae57ef23a8fb503d06c8bacceccc61c6c14b71a5bf08e1f77ddbc7b54b4b8226",
+      "archive_bytes": 2922
+    },
+    {
+      "archive_path": "../CellProtocol/Docs/ReplayFlow_PR2.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Docs/ReplayFlow_PR2.md",
+      "status": "changed",
+      "archive_sha256": "40e5c3a9252f7ad9f736ba77943e96a6661280fc84e73fb722bf7d8dcf4b266b",
+      "current_sha256": "0ce5c04b0bb026ff4fb22cea7d0fb4ba0933b78a97b8a64959afe50fec1b8b63",
+      "archive_bytes": 2223
+    },
+    {
+      "archive_path": "../CellProtocol/Docs/SkeletonRenderer_NullGap_Iteration_2026-02-19.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Docs/SkeletonRenderer_NullGap_Iteration_2026-02-19.md",
+      "status": "unchanged",
+      "archive_sha256": "0d448a2b3ebd3a4bd086ee56da82580de4880a4e2752ebc50892de10bd26fdc7",
+      "current_sha256": "0d448a2b3ebd3a4bd086ee56da82580de4880a4e2752ebc50892de10bd26fdc7",
+      "archive_bytes": 5897
+    },
+    {
+      "archive_path": "../CellProtocol/Docs/TrustedIssuerCell_VC_Profile_Proposal.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Docs/TrustedIssuerCell_VC_Profile_Proposal.md",
+      "status": "changed",
+      "archive_sha256": "b36ed6c0b9c0ab86685fd61041bd622708511a79b2be150d09e38a5580e68547",
+      "current_sha256": "371d27bd5be4233db50ad1b0f152cc9aed9260a9b2ddeb9834b9c7c5998a4923",
+      "archive_bytes": 10329
+    },
+    {
+      "archive_path": "../CellProtocol/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/README.md",
+      "status": "changed",
+      "archive_sha256": "6c129cd1b3ca11629110466f2254e2225a13d37ba5d237faa39e70fce9886120",
+      "current_sha256": "ddd979f1fcf01839437b652381d0d8ac972a826bbfaf3438040ce58cbb53acd1",
+      "archive_bytes": 5931
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellApple/Cells/EntityAnchorCell.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellApple/Cells/EntityAnchorCell.swift",
+      "status": "changed",
+      "archive_sha256": "e89ad0586df22de801aefa2387c88b9e314d56322e3608a15d686add18728785",
+      "current_sha256": "832a810ad1a4d6473cc8c0f87b1a7c1ad301a76545f1ce53d63b0ff3b9dd87a4",
+      "archive_bytes": 16405
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellApple/Cells/Porthole/Utility Views/Skeleton/AppInitializer.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellApple/Cells/Porthole/Utility Views/Skeleton/AppInitializer.swift",
+      "status": "changed",
+      "archive_sha256": "b81c74d49bac84f8fd3203636bb96e91d48e31774a55807cb13de4c09f05af35",
+      "current_sha256": "32a6fd94e375b03380e7abf7d302da49e5bccdb43aa80e844d240ce75977543b",
+      "archive_bytes": 10137
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellApple/Intelligence/AppleIntelligenceCell-Design.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellApple/Intelligence/AppleIntelligenceCell-Design.md",
+      "status": "unchanged",
+      "archive_sha256": "90e8bbe3680ac3afe599a291d7cc75f4401d8a681d7fb48de1a00692f0a78d26",
+      "current_sha256": "90e8bbe3680ac3afe599a291d7cc75f4401d8a681d7fb48de1a00692f0a78d26",
+      "archive_bytes": 21450
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellApple/Intelligence/Architecture.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellApple/Intelligence/Architecture.md",
+      "status": "unchanged",
+      "archive_sha256": "1aeb87fcb6a553757d505fb774664f35274041edeabd8a039d1a739b7f320f78",
+      "current_sha256": "1aeb87fcb6a553757d505fb774664f35274041edeabd8a039d1a739b7f320f78",
+      "archive_bytes": 3055
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellApple/Intelligence/ChatLog.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellApple/Intelligence/ChatLog.md",
+      "status": "unchanged",
+      "archive_sha256": "2fee792d5f75c117f83e9e734c9c9c022bcf9b0df30bd5c78342808ea67dd13c",
+      "current_sha256": "2fee792d5f75c117f83e9e734c9c9c022bcf9b0df30bd5c78342808ea67dd13c",
+      "archive_bytes": 1769
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellApple/PurposeAndInterest/Cells/PerspectiveCell.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellApple/PurposeAndInterest/Cells/PerspectiveCell.swift",
+      "status": "changed",
+      "archive_sha256": "175014451eb794f503f02f4f80a18e1c9315fbcc4a9658b92471b216ad3ed9f5",
+      "current_sha256": "ed95ceb85627bd8880d07d7a2c387434f74f9d6dcb6387157eb091800f38014b",
+      "archive_bytes": 40438
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellBase/Cells/CellResolver/CellResolver.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellBase/Cells/CellResolver/CellResolver.swift",
+      "status": "changed",
+      "archive_sha256": "322fa3d7a3d6e9a83bacde225f515080e0e122bbcbf7a12aafd0feba21ec42f8",
+      "current_sha256": "84880edc3e1e4e37c15965de352ac5e55166578c1b068f51da2a3e5d4c424d99",
+      "archive_bytes": 31516
+    },
+    {
+      "archive_path": "../CellProtocol/Sources/CellBase/Identity/IdentitiesCell.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/Sources/CellBase/Identity/IdentitiesCell.swift",
+      "status": "changed",
+      "archive_sha256": "91b094f2f99bc26b398b30c25ad9442d89de51cab9b986361a841b1d905a7d29",
+      "current_sha256": "deb3f161e00ba871e209ebe3510bc851cdfeebe82dc9adbeb400185f332ee05a",
+      "archive_bytes": 2406
+    },
+    {
+      "archive_path": "../CellProtocol/commons/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/README.md",
+      "status": "changed",
+      "archive_sha256": "76b864bed741d44e986dd2b74c485e6b8698d7a1a60765a82ef7b55efe58b69f",
+      "current_sha256": "54999f44bebe17ac0562a11f366f4ea808a9417d13a665b260ad43f7292b470a",
+      "archive_bytes": 4947
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/API.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/API.md",
+      "status": "changed",
+      "archive_sha256": "057ffbd1fbeaf56953130cb8c5ba08a5177762891738672f209c883f53f524cc",
+      "current_sha256": "3ec7fb66aeb031a01f16b30cfe6d62d6198d71f6fac84cb9ceb89c6227802f43",
+      "archive_bytes": 1752
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/ARCHITECTURE.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/ARCHITECTURE.md",
+      "status": "changed",
+      "archive_sha256": "f78e5f3e6045f37f2c289e353f6bea673f1b898fbbb42eebe911d5a98b102490",
+      "current_sha256": "6428b4ac226d3b7d71b55fea5edc425db7fc3d65c62378786f820a61d080eea8",
+      "archive_bytes": 2817
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/CELLS.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/CELLS.md",
+      "status": "changed",
+      "archive_sha256": "016842a6034443c0cca5920bc30e071ea548ddd67e72f45bb5fc4d2176019a3d",
+      "current_sha256": "8f9e0d61a4f5f13742582b7736174725d0181f5395c930b6ea7f3e3db5b19376",
+      "archive_bytes": 1865
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/CLI.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/CLI.md",
+      "status": "changed",
+      "archive_sha256": "5bc3983f25228d8819e843466f18334ce19171f8650947740db4e084c22d7ca2",
+      "current_sha256": "3e22de1e85210bea78e4a602dafca7c2ff4a564b8767cba5d9a29b9adb917834",
+      "archive_bytes": 1461
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/README.md",
+      "status": "changed",
+      "archive_sha256": "1f3417d4179c1b971d8b5a2bcf569470f16a731e52dd03f2868af5aab656c13a",
+      "current_sha256": "47876ab59a4d7d2386984580788bd7a76a7aca9ba8d67dfc29806d2f21e42a99",
+      "archive_bytes": 461
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/SEED_DATA.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/SEED_DATA.md",
+      "status": "changed",
+      "archive_sha256": "37f3340f44770d5641d7fc53df914f4e89963869e80e53fb84c8bd790bba74b9",
+      "current_sha256": "95f9e79e55f7e2ef3a08121b0f883e7fe30f2d5e2af6703ef083d29aacde05ee",
+      "archive_bytes": 1970
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/TESTING.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/TESTING.md",
+      "status": "changed",
+      "archive_sha256": "634b4ec9e2009f151429d42759feaad05233b6d29817a10dba101d0c7477397f",
+      "current_sha256": "f063112613635a8d5a9c274c64def3c9c77228b218706f01041853b2a4b87f04",
+      "archive_bytes": 1147
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/iterations/ITERATION-1-cell-wrappers.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/iterations/ITERATION-1-cell-wrappers.md",
+      "status": "unchanged",
+      "archive_sha256": "1e21290d876872d6c72665e25461ffa2dbe04e0f206beb7b09f9cbd2ec4f4484",
+      "current_sha256": "1e21290d876872d6c72665e25461ffa2dbe04e0f206beb7b09f9cbd2ec4f4484",
+      "archive_bytes": 380
+    },
+    {
+      "archive_path": "../CellProtocol/commons/docs/iterations/ITERATION-2-refinement-testdata.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/docs/iterations/ITERATION-2-refinement-testdata.md",
+      "status": "unchanged",
+      "archive_sha256": "5c4768ed80fe782afc6475f6669571f8ebdcb0f8ba08c2cf3c789d5d2a61ff9c",
+      "current_sha256": "5c4768ed80fe782afc6475f6669571f8ebdcb0f8ba08c2cf3c789d5d2a61ff9c",
+      "archive_bytes": 599
+    },
+    {
+      "archive_path": "../CellProtocol/commons/keypaths/haven.core/keypaths.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/keypaths/haven.core/keypaths.json",
+      "status": "unchanged",
+      "archive_sha256": "0fe3d08a30310626007fe68908a9dac9c8e2bce71036f8fe837b3aa23b5bb4de",
+      "current_sha256": "0fe3d08a30310626007fe68908a9dac9c8e2bce71036f8fe837b3aa23b5bb4de",
+      "archive_bytes": 4286
+    },
+    {
+      "archive_path": "../CellProtocol/commons/keypaths/haven.core/routes.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/keypaths/haven.core/routes.json",
+      "status": "unchanged",
+      "archive_sha256": "c0634b3cbbe3e891306d1fa4c9b9add527b53d8f1a5fe28e9aed7c0e9650d4ce",
+      "current_sha256": "c0634b3cbbe3e891306d1fa4c9b9add527b53d8f1a5fe28e9aed7c0e9650d4ce",
+      "archive_bytes": 788
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/README.md",
+      "status": "changed",
+      "archive_sha256": "e895ef143f52aa90fe8806f57e61a1ca6e824884915fe7abd61611c7a1668f05",
+      "current_sha256": "a222cdfdf32964ede96fc630305508fda2bf2bf4257c0594d37ce07c983c58aa",
+      "archive_bytes": 635
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/codex_add_keypath_prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/codex_add_keypath_prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "5020bf327ae2671c84039b1525fc66f76f1f6d9740831c8faba25afd65005fc4",
+      "current_sha256": "5020bf327ae2671c84039b1525fc66f76f1f6d9740831c8faba25afd65005fc4",
+      "archive_bytes": 1005
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/codex_add_taxonomy_prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/codex_add_taxonomy_prompt.md",
+      "status": "changed",
+      "archive_sha256": "d6a946fd35b97ae611b21f5d30541a511d33c75fcb9ec5fee1f409c37f35860c",
+      "current_sha256": "4f51d9998268c88e26e87560dbbb507080557e37c3fd0e3654d36003b4378fde",
+      "archive_bytes": 971
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/codex_cellscaffold_commons_cells_prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/codex_cellscaffold_commons_cells_prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "432b4d3b2cb5800ed35378395e342655685398a8f1dfd5478fcec3cbe29ce955",
+      "current_sha256": "432b4d3b2cb5800ed35378395e342655685398a8f1dfd5478fcec3cbe29ce955",
+      "archive_bytes": 788
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/codex_commons_mvp_prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/codex_commons_mvp_prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "a7175c164cd219d87e8fbce2063b0b6b921b95ec9f32f0b670a2447d60e19a43",
+      "current_sha256": "a7175c164cd219d87e8fbce2063b0b6b921b95ec9f32f0b670a2447d60e19a43",
+      "archive_bytes": 1422
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/codex_review_prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/codex_review_prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "54083687d9722112cfdfb74d8898c06151f905bd1b0b568640a03bfb64774bd5",
+      "current_sha256": "54083687d9722112cfdfb74d8898c06151f905bd1b0b568640a03bfb64774bd5",
+      "archive_bytes": 588
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/iterations/ITERATION-1-cell-wrappers-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/iterations/ITERATION-1-cell-wrappers-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "0594620e111b04dcf8f4b5170227d02559b40bfce5d69b896f715ceb5d56cdbe",
+      "current_sha256": "0594620e111b04dcf8f4b5170227d02559b40bfce5d69b896f715ceb5d56cdbe",
+      "archive_bytes": 297
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/iterations/ITERATION-2-refinement-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/iterations/ITERATION-2-refinement-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "5d49e6bfa2d771f6cae82d2a0e9ba5a3ae07399bba1ea92ac274cb2dde42c7e9",
+      "current_sha256": "5d49e6bfa2d771f6cae82d2a0e9ba5a3ae07399bba1ea92ac274cb2dde42c7e9",
+      "archive_bytes": 330
+    },
+    {
+      "archive_path": "../CellProtocol/commons/prompts/iterations/ITERATION-3-skeleton-parity-file-upload-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/prompts/iterations/ITERATION-3-skeleton-parity-file-upload-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "cfb61900b1aff04285448951282130660292d101b419c46ebf9f62f39a8fc97b",
+      "current_sha256": "cfb61900b1aff04285448951282130660292d101b419c46ebf9f62f39a8fc97b",
+      "archive_bytes": 888
+    },
+    {
+      "archive_path": "../CellProtocol/commons/schemas/haven.core/keypath-spec.schema.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/schemas/haven.core/keypath-spec.schema.json",
+      "status": "unchanged",
+      "archive_sha256": "48e553ae5089903b123443c586b317398073fd0cd7514d262ae51a1a725c91e6",
+      "current_sha256": "48e553ae5089903b123443c586b317398073fd0cd7514d262ae51a1a725c91e6",
+      "archive_bytes": 696
+    },
+    {
+      "archive_path": "../CellProtocol/commons/schemas/haven.core/path-route.schema.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/schemas/haven.core/path-route.schema.json",
+      "status": "unchanged",
+      "archive_sha256": "45c96aac81bf0955afb51c8b2d50f69c842bdde3db37555b7193f09c86009262",
+      "current_sha256": "45c96aac81bf0955afb51c8b2d50f69c842bdde3db37555b7193f09c86009262",
+      "archive_bytes": 450
+    },
+    {
+      "archive_path": "../CellProtocol/commons/schemas/haven.core/taxonomy-package.schema.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/schemas/haven.core/taxonomy-package.schema.json",
+      "status": "changed",
+      "archive_sha256": "a29de76f819c04cef1c310547b26e0c29d4476ec93906724326bef8d3ea1d9c3",
+      "current_sha256": "4f423b563d395f5bb59bdc1a3cf0aa7aafd877f50a387ce8210f2b503730f334",
+      "archive_bytes": 2197
+    },
+    {
+      "archive_path": "../CellProtocol/commons/schemas/haven.perspective/perspective.schema.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/schemas/haven.perspective/perspective.schema.json",
+      "status": "changed",
+      "archive_sha256": "fcf22cc673c029b969b01f87d0162745e312e27a412573b7d20a4914bc84428e",
+      "current_sha256": "3233993f3970fc9cdcede6002157d91de30f8171358e41a62caa0d772ea069d6",
+      "archive_bytes": 1247
+    },
+    {
+      "archive_path": "../CellProtocol/commons/taxonomies/haven.conference/package.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/taxonomies/haven.conference/package.json",
+      "status": "unchanged",
+      "archive_sha256": "7d8711cf1ccc51f0488b1b8f18981fd48a73f296f18319fa42ea6c72b4568d95",
+      "current_sha256": "7d8711cf1ccc51f0488b1b8f18981fd48a73f296f18319fa42ea6c72b4568d95",
+      "archive_bytes": 2663
+    },
+    {
+      "archive_path": "../CellProtocol/commons/taxonomies/haven.core/package.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocol/commons/taxonomies/haven.core/package.json",
+      "status": "changed",
+      "archive_sha256": "8d2daa646513c2ed9f14cd65fa349a5f5934a502f97a3a22b5bc91f749c51976",
+      "current_sha256": "16f0ac31cce6d06b3753de1aeb27551cb99ca74cfef6a70d2e32d8f0de7b971f",
+      "archive_bytes": 13316
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "status": "changed",
+      "archive_sha256": "ce5eebe5359f3585a3ccc0afc466b3891c208e6db1ee3b56bf4c8555d952cba7",
+      "current_sha256": "998137d50be374a3ad801bcf3f28b926ba0ece49be823ce83cb026f34fc5777c",
+      "archive_bytes": 5193
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "status": "changed",
+      "archive_sha256": "43f4bc1b133965c81b25851aa1c5fa0fd17b4a4cde5757c5cf91977737418d89",
+      "current_sha256": "48ce64df6d88c4d8b0498265ca4e7db716a90ef7182b6214f1e31a098e695afc",
+      "archive_bytes": 2290
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/03_Identity_Model.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/03_Identity_Model.md",
+      "status": "changed",
+      "archive_sha256": "41e756a69fa218729d7e4d1c25469fe54f74c129892e1a3544b6cca7e20c1d35",
+      "current_sha256": "9bc4a9f1544e396c39e421b00a6df6ef3ee0dc234543d7cd27a4ff73ec1c4b1b",
+      "archive_bytes": 2999
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "status": "changed",
+      "archive_sha256": "b0da32f48871d0ebbb34379aa7ecf76819dd55b7fad8db59d14ced0d47cacf57",
+      "current_sha256": "a9dcdc97ec55d184d020025eaec12fae0066a5c15c70ce41947a494957a5fcde",
+      "archive_bytes": 3143
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "status": "changed",
+      "archive_sha256": "9315b0adb573379a95f20000446479bb2958260226740209289713741a61489f",
+      "current_sha256": "ace5ac1f8a37c5f31cb31bf91ed412973027019d382a3eb1ef9794b7983a1559",
+      "archive_bytes": 2732
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/06_CellResolver.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/06_CellResolver.md",
+      "status": "changed",
+      "archive_sha256": "5b613949db0f204e7d8af0202692920fb67122927488a8e7dc3f2f4840aa29ee",
+      "current_sha256": "503aa4e32453712591d14e618794f0421813dc352b038d1e8b81dd9a50121ecc",
+      "archive_bytes": 5193
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "status": "changed",
+      "archive_sha256": "fb60cce3c5313e5a5a3df5dfeac88fa821e9176bc006ba42d34f4867ae1fef9f",
+      "current_sha256": "ee5bf01a9b177c05e37258d368db50d402e27aadd52d1843d99603f5f52f39e0",
+      "archive_bytes": 3856
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "status": "changed",
+      "archive_sha256": "a3d55a1ab5d4f82ac120aad5875f9b1801aa033d9eb4576135bbcdec9fe2f55d",
+      "current_sha256": "2c7954bcb573146451a6b7af135d551c7570fb74abe9f1a92215ab59cd784e83",
+      "archive_bytes": 4523
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "status": "changed",
+      "archive_sha256": "ecdbf0aa67d8c152852e646b7c1de348fe436195e5eb3283da323c64a1d25968",
+      "current_sha256": "6df6bfef2150f8b4ee0f5fe2563bc49ccaa698193d7544fa21c983f3bf880671",
+      "archive_bytes": 3468
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/10_Quickstart.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/10_Quickstart.md",
+      "status": "changed",
+      "archive_sha256": "5310794f34e508c356da9c4c6ba1591b049ad7d52bd70f914d3182c732c319ac",
+      "current_sha256": "3a8f9cdd1151b2ea40a50a580838db3a008e167a58cb633802b731a3408ecb50",
+      "archive_bytes": 5530
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "status": "changed",
+      "archive_sha256": "720e1d8a8f0d4726d4524fa0e3093c3fec4c9728c6d79a2c193cf5a14533f86f",
+      "current_sha256": "84c5aea14f396c9b81f342c17e0f8e6d4736268c3de54d7bae42823b65b5f634",
+      "archive_bytes": 4958
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "status": "changed",
+      "archive_sha256": "2832545bf8e31d7bde46d125f20c303791c80c83cfbde24d137d3544cb1a0a5f",
+      "current_sha256": "805b89c21b05cea40200c8bcc4c0d49ca8cb10097b064da3478ee7a3211ada68",
+      "archive_bytes": 6901
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "status": "changed",
+      "archive_sha256": "b99d441eebddd26a33020193bb9ccc263c62dd48bef93a2a875e1850a6aa7fab",
+      "current_sha256": "3af7e8f1e15c7ab3ed5a0a989a41cff831cc45b61dac690e52df42fd0c38e5b9",
+      "archive_bytes": 5158
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "status": "changed",
+      "archive_sha256": "b4bb7865bf90d43ea9a10fa1c8647981fa83bd285357b488d2e3d0790a94a0c1",
+      "current_sha256": "e4aae358b8964a434fc6c0a2b99d0ce92f73ee0915b64d1a3afdea0d2235bf6e",
+      "archive_bytes": 5789
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Book/Book_Extras.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Book/Book_Extras.md",
+      "status": "changed",
+      "archive_sha256": "c4cbb5393ecd8767b987b928825b5896904d2585f748753c1e4f08c601993110",
+      "current_sha256": "e7bdc2af71feb8eaa275d00c4a4f2fecc5e62c5f8c6b950f3e5e8e2f13f1f6b6",
+      "archive_bytes": 4960
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Gap_Analysis.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Gap_Analysis.md",
+      "status": "changed",
+      "archive_sha256": "587addcdac1c7c7b1d675ebea213b4f0f6ed9d17a86923682acc701fe8a60aae",
+      "current_sha256": "ea30293f5121c351f611b07c5a76dcfd4f7c09ba0b31c0ad96c0ca0b1f8a7d1c",
+      "archive_bytes": 3745
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "status": "changed",
+      "archive_sha256": "e66504a59a3318ae0271ed3bc089f39d9085d98a46ba16bb5e38de9c36cdc042",
+      "current_sha256": "17cf61e3655d303321acb7eccdf80463c9b0ceb83faf229816ed88dc4c5d0230",
+      "archive_bytes": 1093
+    },
+    {
+      "archive_path": "../CellProtocolDocuments/README-CellProtocol.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellProtocolDocuments/README-CellProtocol.md",
+      "status": "changed",
+      "archive_sha256": "526fdba4b3972fadc3f16fe4731774cf85d0f5ec8dde1249d4832f328b00f7e4",
+      "current_sha256": "0862fad58146b6108b6f97b493a5ff01e255fe5d5ebdc6f125b053a4d17235f1",
+      "archive_bytes": 2038
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/01_CellProtocol_Core.md",
+      "status": "unchanged",
+      "archive_sha256": "ce5eebe5359f3585a3ccc0afc466b3891c208e6db1ee3b56bf4c8555d952cba7",
+      "current_sha256": "ce5eebe5359f3585a3ccc0afc466b3891c208e6db1ee3b56bf4c8555d952cba7",
+      "archive_bytes": 5193
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/02_Cell_Interfaces.md",
+      "status": "unchanged",
+      "archive_sha256": "43f4bc1b133965c81b25851aa1c5fa0fd17b4a4cde5757c5cf91977737418d89",
+      "current_sha256": "43f4bc1b133965c81b25851aa1c5fa0fd17b4a4cde5757c5cf91977737418d89",
+      "archive_bytes": 2290
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/03_Identity_Model.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/03_Identity_Model.md",
+      "status": "unchanged",
+      "archive_sha256": "41e756a69fa218729d7e4d1c25469fe54f74c129892e1a3544b6cca7e20c1d35",
+      "current_sha256": "41e756a69fa218729d7e4d1c25469fe54f74c129892e1a3544b6cca7e20c1d35",
+      "archive_bytes": 2999
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/04_Agreements_Contracts.md",
+      "status": "unchanged",
+      "archive_sha256": "b0da32f48871d0ebbb34379aa7ecf76819dd55b7fad8db59d14ced0d47cacf57",
+      "current_sha256": "b0da32f48871d0ebbb34379aa7ecf76819dd55b7fad8db59d14ced0d47cacf57",
+      "archive_bytes": 3143
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/05_Flows_Lifecycle.md",
+      "status": "unchanged",
+      "archive_sha256": "9315b0adb573379a95f20000446479bb2958260226740209289713741a61489f",
+      "current_sha256": "9315b0adb573379a95f20000446479bb2958260226740209289713741a61489f",
+      "archive_bytes": 2732
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/06_CellResolver.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/06_CellResolver.md",
+      "status": "changed",
+      "archive_sha256": "5b613949db0f204e7d8af0202692920fb67122927488a8e7dc3f2f4840aa29ee",
+      "current_sha256": "946ffe752904fa3cf9a7daa6140ab250bee6ec0d6096cd3667b5459cd05e51b1",
+      "archive_bytes": 5193
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/07_Scaffold_Runtime.md",
+      "status": "unchanged",
+      "archive_sha256": "fb60cce3c5313e5a5a3df5dfeac88fa821e9176bc006ba42d34f4867ae1fef9f",
+      "current_sha256": "fb60cce3c5313e5a5a3df5dfeac88fa821e9176bc006ba42d34f4867ae1fef9f",
+      "archive_bytes": 3856
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/08_Bridging_Transport.md",
+      "status": "changed",
+      "archive_sha256": "a3d55a1ab5d4f82ac120aad5875f9b1801aa033d9eb4576135bbcdec9fe2f55d",
+      "current_sha256": "2c7954bcb573146451a6b7af135d551c7570fb74abe9f1a92215ab59cd784e83",
+      "archive_bytes": 4523
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/09_Purpose_Interests.md",
+      "status": "changed",
+      "archive_sha256": "ecdbf0aa67d8c152852e646b7c1de348fe436195e5eb3283da323c64a1d25968",
+      "current_sha256": "d5f8585b9f1b9b43bb19cce09f76db30f8408a3fce896728147b1459462a3bed",
+      "archive_bytes": 3468
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/10_Quickstart.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/10_Quickstart.md",
+      "status": "changed",
+      "archive_sha256": "5310794f34e508c356da9c4c6ba1591b049ad7d52bd70f914d3182c732c319ac",
+      "current_sha256": "3a8f9cdd1151b2ea40a50a580838db3a008e167a58cb633802b731a3408ecb50",
+      "archive_bytes": 5530
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/11_Developer_Guide_Cell.md",
+      "status": "changed",
+      "archive_sha256": "720e1d8a8f0d4726d4524fa0e3093c3fec4c9728c6d79a2c193cf5a14533f86f",
+      "current_sha256": "327e404803b304dd84128871f50a13a3c89280ff1d23f468c9907830b3f222f3",
+      "archive_bytes": 4958
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/12_Skeleton_Spec.md",
+      "status": "changed",
+      "archive_sha256": "2832545bf8e31d7bde46d125f20c303791c80c83cfbde24d137d3544cb1a0a5f",
+      "current_sha256": "f97d118a0df26da8113905df94675b0210a065c6b6d9d4594a04401bd1c3da06",
+      "archive_bytes": 6901
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/13_Agent_Instructions.md",
+      "status": "changed",
+      "archive_sha256": "b99d441eebddd26a33020193bb9ccc263c62dd48bef93a2a875e1850a6aa7fab",
+      "current_sha256": "3e5003d56d22732c6258ba06d9119aa62906356965b481743d83f171484820f9",
+      "archive_bytes": 5158
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/14_Perspective_Runtime_Matching.md",
+      "status": "changed",
+      "archive_sha256": "b4bb7865bf90d43ea9a10fa1c8647981fa83bd285357b488d2e3d0790a94a0c1",
+      "current_sha256": "e4aae358b8964a434fc6c0a2b99d0ce92f73ee0915b64d1a3afdea0d2235bf6e",
+      "archive_bytes": 5789
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Book/Book_Extras.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Book/Book_Extras.md",
+      "status": "changed",
+      "archive_sha256": "c4cbb5393ecd8767b987b928825b5896904d2585f748753c1e4f08c601993110",
+      "current_sha256": "e7bdc2af71feb8eaa275d00c4a4f2fecc5e62c5f8c6b950f3e5e8e2f13f1f6b6",
+      "archive_bytes": 4960
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/DEVELOPERS.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/DEVELOPERS.md",
+      "status": "changed",
+      "archive_sha256": "235c92e68536eb58f07d3ff51e0f0c2e09769d80cda803fb85a61a492ed8d411",
+      "current_sha256": "66dd6f507ddaac03fb27ad655bf8c5ff8dc8b87c5be68c0a6765bdf695ce5453",
+      "archive_bytes": 1370
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Gap_Analysis.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Gap_Analysis.md",
+      "status": "unchanged",
+      "archive_sha256": "587addcdac1c7c7b1d675ebea213b4f0f6ed9d17a86923682acc701fe8a60aae",
+      "current_sha256": "587addcdac1c7c7b1d675ebea213b4f0f6ed9d17a86923682acc701fe8a60aae",
+      "archive_bytes": 3745
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Prompts/CoreContext.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Prompts/CoreContext.md",
+      "status": "changed",
+      "archive_sha256": "f43d491149e9da276da3b2d684419ae324b66d2cf693676511062de82023d430",
+      "current_sha256": "d2d2a91a82f41cfbb14bf97b900cfa1055473635ab3c400225acd79a123e8a98",
+      "archive_bytes": 2190
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Prompts/SystemPrompt-Codex.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Prompts/SystemPrompt-Codex.md",
+      "status": "unchanged",
+      "archive_sha256": "3bc77c47029a49a29f1f30b329293aa2b359fc9e5ace49281304b01e1ba4095e",
+      "current_sha256": "3bc77c47029a49a29f1f30b329293aa2b359fc9e5ace49281304b01e1ba4095e",
+      "archive_bytes": 462
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Prompts/SystemPrompt-Xcode53.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Prompts/SystemPrompt-Xcode53.md",
+      "status": "unchanged",
+      "archive_sha256": "84a1b99849cd75b72b99c9eff9bb4a2216919da8b6c7d0cdf77adb8d92d44d89",
+      "current_sha256": "84a1b99849cd75b72b99c9eff9bb4a2216919da8b6c7d0cdf77adb8d92d44d89",
+      "archive_bytes": 522
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/Prompts/SystemPrompts.md",
+      "status": "changed",
+      "archive_sha256": "f9f1d0b14fe7925511bb4fca4d098c595dd042e99360db5972f6143c935080fb",
+      "current_sha256": "2f81352fdf89251277cc263dc3d2d9020c16caf77d846959023653d0a6587e93",
+      "archive_bytes": 612
+    },
+    {
+      "archive_path": "../CellScaffold/CellProtocolDocuments/README-CellProtocol.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/CellProtocolDocuments/README-CellProtocol.md",
+      "status": "changed",
+      "archive_sha256": "e1592eedc6fc04a6fe95b5ac8929de61e0afd4643139e33e6b418e70a09db3ac",
+      "current_sha256": "134c021bcf8bd0acaacac927924da95909a13bddcb8180968b40d213d0b9bea7",
+      "archive_bytes": 2205
+    },
+    {
+      "archive_path": "../CellScaffold/DOCKER_FIX.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/DOCKER_FIX.md",
+      "status": "unchanged",
+      "archive_sha256": "2e843ccb399e4db5ec32e0e64f53a4f2c1e659a9122a0523bfce35cbc237894f",
+      "current_sha256": "2e843ccb399e4db5ec32e0e64f53a4f2c1e659a9122a0523bfce35cbc237894f",
+      "archive_bytes": 1328
+    },
+    {
+      "archive_path": "../CellScaffold/DockerWithPrivateReposHowto.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/DockerWithPrivateReposHowto.md",
+      "status": "unchanged",
+      "archive_sha256": "e4a49a53d0c4556ea2472e9bf5921123193bba064c567fe2cff546980e4eec9c",
+      "current_sha256": "e4a49a53d0c4556ea2472e9bf5921123193bba064c567fe2cff546980e4eec9c",
+      "archive_bytes": 967
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/AdminCells.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/AdminCells.md",
+      "status": "changed",
+      "archive_sha256": "7c035b56f3ff8d5e00bac4b724203b933b99d819aa2b23877317a103425a155f",
+      "current_sha256": "7d5443008f6d1c901e2e6ffdcc8fdacd82b6789182b3fd40f379595cbad07b20",
+      "archive_bytes": 4555
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/CONTRIBUTING.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/CONTRIBUTING.md",
+      "status": "unchanged",
+      "archive_sha256": "a459886848d964787d49b8e3154a0854facb6fe6fe5ecb49f6e84324bec6c7a3",
+      "current_sha256": "a459886848d964787d49b8e3154a0854facb6fe6fe5ecb49f6e84324bec6c7a3",
+      "archive_bytes": 1244
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ChatCell_Plan_Implementasjon_og_Test.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ChatCell_Plan_Implementasjon_og_Test.md",
+      "status": "unchanged",
+      "archive_sha256": "2af1333a2dd63c2c5674655a33ee60a47a6607c6a6a333788b937cf499e61475",
+      "current_sha256": "2af1333a2dd63c2c5674655a33ee60a47a6607c6a6a333788b937cf499e61475",
+      "archive_bytes": 12476
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ConfigurationCatalog/CatalogConfigurations.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ConfigurationCatalog/CatalogConfigurations.md",
+      "status": "changed",
+      "archive_sha256": "3d8c73435ef5cae4cdc60da8ac21bc78f6abddfb0ea355fb2a1b30e2de967531",
+      "current_sha256": "8b5b94a70a3ab6c64eb22103679b6c24cb465988da064952b7378dced16d45fb",
+      "archive_bytes": 1741
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.cell.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.cell.json",
+      "status": "unchanged",
+      "archive_sha256": "35d076ae393fee55ebccab2f97aa8e122326f8ac3cf61e09cc5140c35bd48d4f",
+      "current_sha256": "35d076ae393fee55ebccab2f97aa8e122326f8ac3cf61e09cc5140c35bd48d4f",
+      "archive_bytes": 512
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.chat.mvp.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.chat.mvp.json",
+      "status": "unchanged",
+      "archive_sha256": "f0f37c69c90f7630964afaef2ef66c4ef98e32a86b28bf82844ba7c89344da1b",
+      "current_sha256": "f0f37c69c90f7630964afaef2ef66c4ef98e32a86b28bf82844ba7c89344da1b",
+      "archive_bytes": 523
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.json",
+      "status": "unchanged",
+      "archive_sha256": "1918f0955716e1b743943f846f503e8274127a1af391698fcecd9fb7ffaf00f2",
+      "current_sha256": "1918f0955716e1b743943f846f503e8274127a1af391698fcecd9fb7ffaf00f2",
+      "archive_bytes": 522
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.wss.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ConfigurationCatalog/CellConfiguration.wss.json",
+      "status": "unchanged",
+      "archive_sha256": "1918f0955716e1b743943f846f503e8274127a1af391698fcecd9fb7ffaf00f2",
+      "current_sha256": "1918f0955716e1b743943f846f503e8274127a1af391698fcecd9fb7ffaf00f2",
+      "archive_bytes": 522
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/ConfigurationCatalog/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/ConfigurationCatalog/README.md",
+      "status": "changed",
+      "archive_sha256": "0fc65dfbca817080e2e8f479d57ac569bb7d400b6750e02d22820c8857193e27",
+      "current_sha256": "8333e804ad6c6a5ebad83ea6c863f9e36b48a79928cdccd6badbf75050b6a100",
+      "archive_bytes": 1215
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Losningsforslag/ConferenceMVP_APNS_Callback_Implementation_2026-02-16.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Losningsforslag/ConferenceMVP_APNS_Callback_Implementation_2026-02-16.md",
+      "status": "unchanged",
+      "archive_sha256": "9a7ba2e6e90ee504d6e4c5f6cc0b0cf00283a6ea3986a78124226cb4702d49e9",
+      "current_sha256": "9a7ba2e6e90ee504d6e4c5f6cc0b0cf00283a6ea3986a78124226cb4702d49e9",
+      "archive_bytes": 7198
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Losningsforslag/ConferenceMVP_ArkitekturScope_og_MarkedsGap.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Losningsforslag/ConferenceMVP_ArkitekturScope_og_MarkedsGap.md",
+      "status": "changed",
+      "archive_sha256": "65f0aad3e5512e3ce050324b4dbb8ade6d82c2df06a56d9b17691b62af4cce9e",
+      "current_sha256": "3b50e2496742e0385b09ea12ebbe666ffa35ed7afec8900f89aaeeaf0226b187",
+      "archive_bytes": 14282
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Operations/Xcode_Codex_SSH_and_Handoff_Runbook.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Operations/Xcode_Codex_SSH_and_Handoff_Runbook.md",
+      "status": "changed",
+      "archive_sha256": "3853404d24b883c7755eca3d8b62d03f29bfc0e4c20b5d3b79a6612792e13f61",
+      "current_sha256": "f85958ffdb40525cdaff7134ecba4ddb798066a2d268230bdfd0a23696614c52",
+      "archive_bytes": 4488
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Operations/Xcode_SSH_and_Key_Strategy.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Operations/Xcode_SSH_and_Key_Strategy.md",
+      "status": "unchanged",
+      "archive_sha256": "1f6cbb12cd7b867a93e31053af6d08b9761251b4b0b7c3c47a6b49b564b56ed9",
+      "current_sha256": "1f6cbb12cd7b867a93e31053af6d08b9761251b4b0b7c3c47a6b49b564b56ed9",
+      "archive_bytes": 2091
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Operations/assistant_handoff.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Operations/assistant_handoff.md",
+      "status": "changed",
+      "archive_sha256": "513728dd60c7a0d515f532a957c13b229c1029b59152ac07573ef3401d60f792",
+      "current_sha256": "cf5f4cf8981d3d8b09db20c5dceb697e46baf810433ed45514592e32f82e47f5",
+      "archive_bytes": 495
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Porthole-and-skeleton.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Porthole-and-skeleton.md",
+      "status": "changed",
+      "archive_sha256": "47a3960bd0c92e02dcc6cf6df79698060036d06585f9268e97684a97e9f5083d",
+      "current_sha256": "eb41e986f7f2920f746db9d446d288d59fa39790f0e7df5e2bdb18623cc20c58",
+      "archive_bytes": 1859
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/Research/oslo_restaurant_formal_interesse_dataset.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/Research/oslo_restaurant_formal_interesse_dataset.json",
+      "status": "unchanged",
+      "archive_sha256": "4090faf46b9a6246de50ccd928355a8d6a6a0f2ab401eca525ce3a9f10cc36e8",
+      "current_sha256": "4090faf46b9a6246de50ccd928355a8d6a6a0f2ab401eca525ce3a9f10cc36e8",
+      "archive_bytes": 10682
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/SQLLiteCell.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/SQLLiteCell.md",
+      "status": "unchanged",
+      "archive_sha256": "cd0532b569c3d51f801bb1811b5f08025b00e144ad80bf7df2bcffc3ca4a9842",
+      "current_sha256": "cd0532b569c3d51f801bb1811b5f08025b00e144ad80bf7df2bcffc3ca4a9842",
+      "archive_bytes": 8863
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/TestData/Perspective/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/TestData/Perspective/README.md",
+      "status": "unchanged",
+      "archive_sha256": "2b98bf1a10944bbcd63fc04152a9d0e63a60df7c59877cf0a86319630b05a77f",
+      "current_sha256": "2b98bf1a10944bbcd63fc04152a9d0e63a60df7c59877cf0a86319630b05a77f",
+      "archive_bytes": 1008
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/TestData/Perspective/cellscaffold_conference_dataset.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/TestData/Perspective/cellscaffold_conference_dataset.json",
+      "status": "unchanged",
+      "archive_sha256": "e79591a13e0f4e3b21369c23c0a27495c3044f508efadd21ed2e92e2eea7ad23",
+      "current_sha256": "e79591a13e0f4e3b21369c23c0a27495c3044f508efadd21ed2e92e2eea7ad23",
+      "archive_bytes": 3736
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/TestData/Perspective/cellscaffold_match_request_with_local_targets.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/TestData/Perspective/cellscaffold_match_request_with_local_targets.json",
+      "status": "unchanged",
+      "archive_sha256": "36b3da5a01fbfffb5a3203aea5e782bc3a94aac5a227328208c3f9af708acbf4",
+      "current_sha256": "36b3da5a01fbfffb5a3203aea5e782bc3a94aac5a227328208c3f9af708acbf4",
+      "archive_bytes": 4730
+    },
+    {
+      "archive_path": "../CellScaffold/Documentation/TestData/Perspective/oslo_restaurant_purpose_interest_match_request.json",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Documentation/TestData/Perspective/oslo_restaurant_purpose_interest_match_request.json",
+      "status": "unchanged",
+      "archive_sha256": "4d46313e57d0faa33df7ce6db6934a7f29b0a29126b98afc077347822e8ee76f",
+      "current_sha256": "4d46313e57d0faa33df7ce6db6934a7f29b0a29126b98afc077347822e8ee76f",
+      "archive_bytes": 13892
+    },
+    {
+      "archive_path": "../CellScaffold/Prompts/Architecture.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Prompts/Architecture.md",
+      "status": "unchanged",
+      "archive_sha256": "56519948a20c7c79d942a904b451dc411863fb2fddb254fefab6293f74a9c3d0",
+      "current_sha256": "56519948a20c7c79d942a904b451dc411863fb2fddb254fefab6293f74a9c3d0",
+      "archive_bytes": 1251
+    },
+    {
+      "archive_path": "../CellScaffold/Prompts/CONTRIBUTING.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Prompts/CONTRIBUTING.md",
+      "status": "unchanged",
+      "archive_sha256": "a459886848d964787d49b8e3154a0854facb6fe6fe5ecb49f6e84324bec6c7a3",
+      "current_sha256": "a459886848d964787d49b8e3154a0854facb6fe6fe5ecb49f6e84324bec6c7a3",
+      "archive_bytes": 1244
+    },
+    {
+      "archive_path": "../CellScaffold/Prompts/ChatMVP_SkeletonRuntime_IterationLog.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Prompts/ChatMVP_SkeletonRuntime_IterationLog.md",
+      "status": "changed",
+      "archive_sha256": "295cacc52167afdbebeeabcde5325af312a71f50587a8827427405e139c90551",
+      "current_sha256": "817136b9480929269eb11524d2464aa72094bf854d580473a89bd480de9ec66c",
+      "archive_bytes": 3480
+    },
+    {
+      "archive_path": "../CellScaffold/Prompts/EdgeMenusOverlay.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Prompts/EdgeMenusOverlay.md",
+      "status": "unchanged",
+      "archive_sha256": "8013e7c52eada943ac33070d57ec25efff0ca0e8fc86b8f33e948e23554a946c",
+      "current_sha256": "8013e7c52eada943ac33070d57ec25efff0ca0e8fc86b8f33e948e23554a946c",
+      "archive_bytes": 3090
+    },
+    {
+      "archive_path": "../CellScaffold/Prompts/SystemPrompts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Prompts/SystemPrompts.md",
+      "status": "changed",
+      "archive_sha256": "13d3f74a5b4db609284f023a89bf7f7efb75fcf600819b55a05f640caaf7171f",
+      "current_sha256": "b88c960930494e92204571fac0660ad3845156f0f27b4183ea4ff912a0976078",
+      "archive_bytes": 1509
+    },
+    {
+      "archive_path": "../CellScaffold/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/README.md",
+      "status": "changed",
+      "archive_sha256": "a1b2d234cfc6ae6f63b3310b72290b2277d0146c1b38273bcb75dbed6d79d0b8",
+      "current_sha256": "ac6a8b9909e4c6321aa91b82950eeb9982b3e459d389c65d896f79f8f0ec60a9",
+      "archive_bytes": 3227
+    },
+    {
+      "archive_path": "../CellScaffold/SSH_SETUP.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/SSH_SETUP.md",
+      "status": "changed",
+      "archive_sha256": "0a9f4d6f0a723e99c39b819af8c27a3d16dad69f84b7e26994b9115f19f76805",
+      "current_sha256": "d703e1c974e3a61541d06c441574645b55c296392ff0e6eff988394387a9baa0",
+      "archive_bytes": 537
+    },
+    {
+      "archive_path": "../CellScaffold/Sources/App/Cells/ConferenceMVP/Models/ConferenceKPIAndAggregator.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Sources/App/Cells/ConferenceMVP/Models/ConferenceKPIAndAggregator.md",
+      "status": "unchanged",
+      "archive_sha256": "05b041862ef262f419e5976f7111a22045d538a113380d3a6d56229381fd10bc",
+      "current_sha256": "05b041862ef262f419e5976f7111a22045d538a113380d3a6d56229381fd10bc",
+      "archive_bytes": 3844
+    },
+    {
+      "archive_path": "../CellScaffold/Sources/App/Cells/ConferenceMVP/Models/ConferenceKPIInsights.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Sources/App/Cells/ConferenceMVP/Models/ConferenceKPIInsights.md",
+      "status": "unchanged",
+      "archive_sha256": "717d8c240fda71d99f39779bd335f5d1010199f08f28e954f8226a015e41ed6e",
+      "current_sha256": "717d8c240fda71d99f39779bd335f5d1010199f08f28e954f8226a015e41ed6e",
+      "archive_bytes": 2428
+    },
+    {
+      "archive_path": "../CellScaffold/Sources/App/Cells/ConfigurationCatalog/ConfigurationCatalogCell.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Sources/App/Cells/ConfigurationCatalog/ConfigurationCatalogCell.swift",
+      "status": "changed",
+      "archive_sha256": "8552dd4a2afe840070e171673870d40b63646e9f40a7f22849d1df6ad21f544d",
+      "current_sha256": "0e830bd7ac8aca44c0d4c0f035bf4e8c26e5399665ef379e7c18e45e233c3d9f",
+      "archive_bytes": 34393
+    },
+    {
+      "archive_path": "../CellScaffold/Sources/App/configure.swift",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/CellScaffold/Sources/App/configure.swift",
+      "status": "changed",
+      "archive_sha256": "3fb2366d2a2bc4d8b941556f3d09781adec8cc9db98906fe1174247dfeb24211",
+      "current_sha256": "32950c500321ba18c5c443c6b5d95fd92e1f4d6a8b1e075b76eba5829bd0f897",
+      "archive_bytes": 20087
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/DiMy_Jitsi_Meet_CellScaffold_Implementation_Plan.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/DiMy_Jitsi_Meet_CellScaffold_Implementation_Plan.md",
+      "status": "unchanged",
+      "archive_sha256": "c4f84f7e9b1387855112a26293d76ab3e15f6302a231f32d76d782cbc7409d48",
+      "current_sha256": "c4f84f7e9b1387855112a26293d76ab3e15f6302a231f32d76d782cbc7409d48",
+      "archive_bytes": 6283
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/ADR-001-jitsi-control-vs-media.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/ADR-001-jitsi-control-vs-media.md",
+      "status": "unchanged",
+      "archive_sha256": "eb6e865cbed19b0a9e47572767c89067a2ac503b295c46f86a11b7485a98a93f",
+      "current_sha256": "eb6e865cbed19b0a9e47572767c89067a2ac503b295c46f86a11b7485a98a93f",
+      "archive_bytes": 3006
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/conference-action-contract-v1.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/conference-action-contract-v1.md",
+      "status": "unchanged",
+      "archive_sha256": "4d37649af6a509c9ce0713edb4ce4a48199bc4b4ceb527e627a28a87f2f81adb",
+      "current_sha256": "4d37649af6a509c9ce0713edb4ce4a48199bc4b4ceb527e627a28a87f2f81adb",
+      "archive_bytes": 3336
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/implementation-repo-map.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/implementation-repo-map.md",
+      "status": "unchanged",
+      "archive_sha256": "77203b1ee267dded3e5d51c0e9ac180fef925b3f582947d2386215d5a248e4fd",
+      "current_sha256": "77203b1ee267dded3e5d51c0e9ac180fef925b3f582947d2386215d5a248e4fd",
+      "archive_bytes": 5505
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/renderer-event-contract-v1.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-00/renderer-event-contract-v1.md",
+      "status": "unchanged",
+      "archive_sha256": "650ec98f8de1275667b039b37078aae45af2cd2c1a51cc6cb39f940a98cbf87a",
+      "current_sha256": "650ec98f8de1275667b039b37078aae45af2cd2c1a51cc6cb39f940a98cbf87a",
+      "archive_bytes": 2551
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-01/iteration-01-smoke-test-report.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-01/iteration-01-smoke-test-report.md",
+      "status": "unchanged",
+      "archive_sha256": "e9f3ac1caa852c6102d6fe0733c38be711ebbe9316399c22104de316b3722376",
+      "current_sha256": "e9f3ac1caa852c6102d6fe0733c38be711ebbe9316399c22104de316b3722376",
+      "archive_bytes": 1055
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-01/jitsi-cloud-operations-runbook.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/artifacts/iteration-01/jitsi-cloud-operations-runbook.md",
+      "status": "unchanged",
+      "archive_sha256": "8b92d8f747a0ad4420670046728c0399a265ed269594ef4859d3bea28a199f1d",
+      "current_sha256": "8b92d8f747a0ad4420670046728c0399a265ed269594ef4859d3bea28a199f1d",
+      "archive_bytes": 2109
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-00-foundation-and-contracts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-00-foundation-and-contracts.md",
+      "status": "unchanged",
+      "archive_sha256": "85d7f9401723df0daa0fe808e50d1626ed080d60a87edc8e56abe8a03e30ea86",
+      "current_sha256": "85d7f9401723df0daa0fe808e50d1626ed080d60a87edc8e56abe8a03e30ea86",
+      "archive_bytes": 3136
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-01-jitsi-docker-cloud-baseline.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-01-jitsi-docker-cloud-baseline.md",
+      "status": "unchanged",
+      "archive_sha256": "73c183da361c7101fed1b879e7bc9f07f143b24fa8409c8730a53efafb1684a5",
+      "current_sha256": "73c183da361c7101fed1b879e7bc9f07f143b24fa8409c8730a53efafb1684a5",
+      "archive_bytes": 2970
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-02-gatekeeper-cell-and-token-authorization.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-02-gatekeeper-cell-and-token-authorization.md",
+      "status": "unchanged",
+      "archive_sha256": "ff6602cc07671845f46a285affbb6295adac7198f38b33cf45789decfe3aec95",
+      "current_sha256": "ff6602cc07671845f46a285affbb6295adac7198f38b33cf45789decfe3aec95",
+      "archive_bytes": 1714
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-03-skeleton-video-elements-and-action-model.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-03-skeleton-video-elements-and-action-model.md",
+      "status": "unchanged",
+      "archive_sha256": "ad1664ebcb8a181e547fc2b2631edd01b80f045402e1d5825a34745574467c11",
+      "current_sha256": "ad1664ebcb8a181e547fc2b2631edd01b80f045402e1d5825a34745574467c11",
+      "archive_bytes": 1579
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-04-web-skeleton-renderer-jitsi-adapter.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-04-web-skeleton-renderer-jitsi-adapter.md",
+      "status": "unchanged",
+      "archive_sha256": "5d7845b683e28e7b776763ad70dbe94ae62019cca2a0b517c3291c160a024245",
+      "current_sha256": "5d7845b683e28e7b776763ad70dbe94ae62019cca2a0b517c3291c160a024245",
+      "archive_bytes": 1552
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-05-swiftui-skeleton-renderer-jitsi-adapter.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-05-swiftui-skeleton-renderer-jitsi-adapter.md",
+      "status": "unchanged",
+      "archive_sha256": "b489ae0e937f4f33b78ce3f6af958cc6d9ac728d0e63d2335dba4be483a5b7d0",
+      "current_sha256": "b489ae0e937f4f33b78ce3f6af958cc6d9ac728d0e63d2335dba4be483a5b7d0",
+      "archive_bytes": 1628
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/iteration-06-e2e-hardening-observability-rollout.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/iteration-06-e2e-hardening-observability-rollout.md",
+      "status": "unchanged",
+      "archive_sha256": "30fc32fe2ff680d837cb0618966b4cd97d49f75a1723a984efee2e6a7b815098",
+      "current_sha256": "30fc32fe2ff680d837cb0618966b4cd97d49f75a1723a984efee2e6a7b815098",
+      "archive_bytes": 1603
+    },
+    {
+      "archive_path": "../DiMyDocuments/JitsiMeet/iterations/procedure-log-2026-02-20.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/JitsiMeet/iterations/procedure-log-2026-02-20.md",
+      "status": "unchanged",
+      "archive_sha256": "fc86078c852542c8d90c7e15f8c21d85cacb8b7aab3ce97b16323213c90f31fb",
+      "current_sha256": "fc86078c852542c8d90c7e15f8c21d85cacb8b7aab3ce97b16323213c90f31fb",
+      "archive_bytes": 1774
+    },
+    {
+      "archive_path": "../DiMyDocuments/Micro payments/DiMy_CellProtocol_Economic_and_Regulatory_Appendix.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Micro payments/DiMy_CellProtocol_Economic_and_Regulatory_Appendix.md",
+      "status": "unchanged",
+      "archive_sha256": "84cee8902de6d1a68a82fff9fe67642cba7fee71dc1d48559f50fb00e409d7e1",
+      "current_sha256": "84cee8902de6d1a68a82fff9fe67642cba7fee71dc1d48559f50fb00e409d7e1",
+      "archive_bytes": 7247
+    },
+    {
+      "archive_path": "../DiMyDocuments/Micro payments/DiMy_CellProtocol_Micropayments_Report.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Micro payments/DiMy_CellProtocol_Micropayments_Report.md",
+      "status": "unchanged",
+      "archive_sha256": "fddd0ded1fa6995db3309a41a8cdf94c93a87582ba44335bfe68a0807241bda2",
+      "current_sha256": "fddd0ded1fa6995db3309a41a8cdf94c93a87582ba44335bfe68a0807241bda2",
+      "archive_bytes": 23915
+    },
+    {
+      "archive_path": "../DiMyDocuments/Micro payments/DiMy_CellProtocol_Micropayments_v2.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Micro payments/DiMy_CellProtocol_Micropayments_v2.md",
+      "status": "unchanged",
+      "archive_sha256": "5978e170d6e21744482a5736739e1eec781e708eb52a82cfd7efe6939a85bd58",
+      "current_sha256": "5978e170d6e21744482a5736739e1eec781e708eb52a82cfd7efe6939a85bd58",
+      "archive_bytes": 4875
+    },
+    {
+      "archive_path": "../DiMyDocuments/Micro payments/DiMy_Regulatory_Risk_Matrix_and_Finanstilsynet_Strategy.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Micro payments/DiMy_Regulatory_Risk_Matrix_and_Finanstilsynet_Strategy.md",
+      "status": "unchanged",
+      "archive_sha256": "28c42b0eb87d223a98bfaabf4adf69d18221ac7e239139afe7a85fc71d06168e",
+      "current_sha256": "28c42b0eb87d223a98bfaabf4adf69d18221ac7e239139afe7a85fc71d06168e",
+      "archive_bytes": 3871
+    },
+    {
+      "archive_path": "../DiMyDocuments/Micro payments/DiMy_Skeleton_Publication_and_WebAuthn_Access.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Micro payments/DiMy_Skeleton_Publication_and_WebAuthn_Access.md",
+      "status": "changed",
+      "archive_sha256": "27bdc47552801ec36d22262a228da525ca5328736c56d88d9269c61297a896ca",
+      "current_sha256": "68bd34a08315ccc13a574a260aba7458b8b0de402e5252382f6ef98830028e78",
+      "archive_bytes": 6945
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-00-foundation-and-contracts-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-00-foundation-and-contracts-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "bd0a3311f4b403ebea2d151b2c1a3f733416feba2f13cdacb8b8e58ee478ae8f",
+      "current_sha256": "bd0a3311f4b403ebea2d151b2c1a3f733416feba2f13cdacb8b8e58ee478ae8f",
+      "archive_bytes": 1299
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-01-jitsi-docker-cloud-baseline-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-01-jitsi-docker-cloud-baseline-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "f898d7ee1053dc15588833cc493e2cc2a48578b9b5204732b9042be8cf1abab2",
+      "current_sha256": "f898d7ee1053dc15588833cc493e2cc2a48578b9b5204732b9042be8cf1abab2",
+      "archive_bytes": 1250
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-02-gatekeeper-cell-and-token-authorization-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-02-gatekeeper-cell-and-token-authorization-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "76e86c4f36ea6657679e6760fc2d9c362433fd9d684d5df94fd9ce5b5e9b4985",
+      "current_sha256": "76e86c4f36ea6657679e6760fc2d9c362433fd9d684d5df94fd9ce5b5e9b4985",
+      "archive_bytes": 1318
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-03-skeleton-video-elements-and-action-model-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-03-skeleton-video-elements-and-action-model-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "1e208960bbc369bf5fdc026367bc5b85b8984fc411c66a62e3e12dda5c7a348d",
+      "current_sha256": "1e208960bbc369bf5fdc026367bc5b85b8984fc411c66a62e3e12dda5c7a348d",
+      "archive_bytes": 1307
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-04-web-skeleton-renderer-jitsi-adapter-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-04-web-skeleton-renderer-jitsi-adapter-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "952027bc5d5459c756e7a54c5033eaa348e6c2233cdd899518a5787a78015e88",
+      "current_sha256": "952027bc5d5459c756e7a54c5033eaa348e6c2233cdd899518a5787a78015e88",
+      "archive_bytes": 1297
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-05-swiftui-skeleton-renderer-jitsi-adapter-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-05-swiftui-skeleton-renderer-jitsi-adapter-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "1170d17bf2024fbf95d6907a8d1c51b6f40845eaf455e29dd5070b88fcb0c10c",
+      "current_sha256": "1170d17bf2024fbf95d6907a8d1c51b6f40845eaf455e29dd5070b88fcb0c10c",
+      "archive_bytes": 1303
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/jitsi_meet/iteration-06-e2e-hardening-observability-rollout-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/jitsi_meet/iteration-06-e2e-hardening-observability-rollout-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "793be05bb2b37836ce5f1cefbbea236a71e83414310f5d3d96a7f5b029ea4326",
+      "current_sha256": "793be05bb2b37836ce5f1cefbbea236a71e83414310f5d3d96a7f5b029ea4326",
+      "archive_bytes": 1286
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/produktideer.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/produktideer.md",
+      "status": "unchanged",
+      "archive_sha256": "f921e8aaa290c8934b203bd09d0c7a34fbffab0a9e3f1f7f53f3c8beb765553d",
+      "current_sha256": "f921e8aaa290c8934b203bd09d0c7a34fbffab0a9e3f1f7f53f3c8beb765553d",
+      "archive_bytes": 440
+    },
+    {
+      "archive_path": "../DiMyDocuments/Prompts/system_prompts.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/Prompts/system_prompts.md",
+      "status": "unchanged",
+      "archive_sha256": "a485d8f823885882ae18a4311510519a4bc3fa7a3c19b63709f2ab506af35362",
+      "current_sha256": "a485d8f823885882ae18a4311510519a4bc3fa7a3c19b63709f2ab506af35362",
+      "archive_bytes": 859
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/00_inventory.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/00_inventory.md",
+      "status": "unchanged",
+      "archive_sha256": "4c64284eb0671a2aab40569d7d586769127ed22f39c6f2ba136b61a59ff74d4c",
+      "current_sha256": "4c64284eb0671a2aab40569d7d586769127ed22f39c6f2ba136b61a59ff74d4c",
+      "archive_bytes": 22895
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/01_glossary.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/01_glossary.md",
+      "status": "unchanged",
+      "archive_sha256": "b923440f3017e15bb0c3682584825a1b81fc7eacab71853f7641e37070a50ac6",
+      "current_sha256": "b923440f3017e15bb0c3682584825a1b81fc7eacab71853f7641e37070a50ac6",
+      "archive_bytes": 11275
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/02_claim_bank.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/02_claim_bank.md",
+      "status": "unchanged",
+      "archive_sha256": "6b05442e3b4400a91fd6dd74da7d145f4c0759734f5a5f01d6924f4ee2da2907",
+      "current_sha256": "6b05442e3b4400a91fd6dd74da7d145f4c0759734f5a5f01d6924f4ee2da2907",
+      "archive_bytes": 20696
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/03_architecture_minimum.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/03_architecture_minimum.md",
+      "status": "unchanged",
+      "archive_sha256": "72952338a58e00f4ee263122efec5cf705da4f68000d57de2fa27453a3889bd4",
+      "current_sha256": "72952338a58e00f4ee263122efec5cf705da4f68000d57de2fa27453a3889bd4",
+      "archive_bytes": 8611
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/04_governance_commons.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/04_governance_commons.md",
+      "status": "unchanged",
+      "archive_sha256": "29712ce126b693f33cc5aa3e901e24c3bbb26157237ea3a1c490ee44a6d676f3",
+      "current_sha256": "29712ce126b693f33cc5aa3e901e24c3bbb26157237ea3a1c490ee44a6d676f3",
+      "archive_bytes": 8337
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/05_security_compliance.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/05_security_compliance.md",
+      "status": "unchanged",
+      "archive_sha256": "44ee726f1b6a35324b3d99e912a3d0d9dc8836c9e3a41de0f92262b53d810835",
+      "current_sha256": "44ee726f1b6a35324b3d99e912a3d0d9dc8836c9e3a41de0f92262b53d810835",
+      "archive_bytes": 11353
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/06_key_quotes.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/06_key_quotes.md",
+      "status": "unchanged",
+      "archive_sha256": "fd94882d836166ee79af8612818dd1536fdcf1b605c32c9634fdd298a162fd8e",
+      "current_sha256": "fd94882d836166ee79af8612818dd1536fdcf1b605c32c9634fdd298a162fd8e",
+      "archive_bytes": 3947
+    },
+    {
+      "archive_path": "../DiMyDocuments/research_pack/07_open_questions.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyDocuments/research_pack/07_open_questions.md",
+      "status": "unchanged",
+      "archive_sha256": "a3108e914ce15e95cbf32539bc8f18e61a3f3f7be99f940e58704ea446378fc2",
+      "current_sha256": "a3108e914ce15e95cbf32539bc8f18e61a3f3f7be99f940e58704ea446378fc2",
+      "archive_bytes": 7674
+    },
+    {
+      "archive_path": "../DiMyMicropayments/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/README.md",
+      "status": "changed",
+      "archive_sha256": "9f1215a156d2a47f68dccaf212f139e18c55856c11dcef1a5516ffb4b4e8c820",
+      "current_sha256": "4910c38c4ce36957427501aa6aa37a33280318808e0feac7e3ec77b35a4e8175",
+      "archive_bytes": 6566
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/README.md",
+      "status": "changed",
+      "archive_sha256": "fb1347b5c9f80e992bb6e5c87c19193f54b5aae99971f3be1e7ee5e2ac4ce1f7",
+      "current_sha256": "c9fb8056912e54fd5677fde3806ac08cfae52c1ac16b2f81cdd9e593cdb0c677",
+      "archive_bytes": 746
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/api-reference.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/api-reference.md",
+      "status": "changed",
+      "archive_sha256": "9fa08868d5e3c7f571d66078cff40dba3194d5c311c64a5750c536403a7b4823",
+      "current_sha256": "5c4efce2aff2a79dae255b9378a1966d40ded474b39edc653ea4ce44a0561345",
+      "archive_bytes": 4436
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/architecture.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/architecture.md",
+      "status": "unchanged",
+      "archive_sha256": "e08f8c97398e4b1727fc44c7b74de3a61cf11a7bd40ccd55f3fa0a83f9ec4dce",
+      "current_sha256": "e08f8c97398e4b1727fc44c7b74de3a61cf11a7bd40ccd55f3fa0a83f9ec4dce",
+      "archive_bytes": 4231
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-0-framing.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-0-framing.md",
+      "status": "unchanged",
+      "archive_sha256": "1cb8a237100b3936aaa05aae4aa8a32ef3a96a7e18ba510d7aa96636fce2c392",
+      "current_sha256": "1cb8a237100b3936aaa05aae4aa8a32ef3a96a7e18ba510d7aa96636fce2c392",
+      "archive_bytes": 4407
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-1-repo-inventory.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-1-repo-inventory.md",
+      "status": "unchanged",
+      "archive_sha256": "6e02432a2cce7d6a27bfb5e4d489fc0d3ab13c89d4e7795ce1f0c87254fd845b",
+      "current_sha256": "6e02432a2cce7d6a27bfb5e4d489fc0d3ab13c89d4e7795ce1f0c87254fd845b",
+      "archive_bytes": 10868
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-2-product-1-plan.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-2-product-1-plan.md",
+      "status": "unchanged",
+      "archive_sha256": "b7b6af784b1c923852b5a3c01cd5f70e8c881649a8a179b79784171f9175a044",
+      "current_sha256": "b7b6af784b1c923852b5a3c01cd5f70e8c881649a8a179b79784171f9175a044",
+      "archive_bytes": 11552
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-3-product-2-plan.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-3-product-2-plan.md",
+      "status": "unchanged",
+      "archive_sha256": "cb85ebbdc144c6c964a5ee80df601df74cde1e2226487ca525c9d5ff5ad8e25b",
+      "current_sha256": "cb85ebbdc144c6c964a5ee80df601df74cde1e2226487ca525c9d5ff5ad8e25b",
+      "archive_bytes": 10360
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-4-product-3-plan.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-4-product-3-plan.md",
+      "status": "unchanged",
+      "archive_sha256": "0e021ae16ab7e25de9440284f92a76ecead61b4b8c9674f1ec75ac813770e09c",
+      "current_sha256": "0e021ae16ab7e25de9440284f92a76ecead61b4b8c9674f1ec75ac813770e09c",
+      "archive_bytes": 10326
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-5-crosscutting-testing-and-infra.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-5-crosscutting-testing-and-infra.md",
+      "status": "unchanged",
+      "archive_sha256": "46985f0d7b4e28496bb36c292501d4cc95b8de844f24bf92aa9006d1493365fd",
+      "current_sha256": "46985f0d7b4e28496bb36c292501d4cc95b8de844f24bf92aa9006d1493365fd",
+      "archive_bytes": 7357
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-6-90-day-roadmap.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-6-90-day-roadmap.md",
+      "status": "unchanged",
+      "archive_sha256": "255468709fc4994fb2aa87c2224e8c33f4c0ffb5261879c7d679ef59a309a8fb",
+      "current_sha256": "255468709fc4994fb2aa87c2224e8c33f4c0ffb5261879c7d679ef59a309a8fb",
+      "archive_bytes": 8701
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/ITERATION-7-sprint1-step1-3-execution.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/ITERATION-7-sprint1-step1-3-execution.md",
+      "status": "unchanged",
+      "archive_sha256": "e9e3c9430800001f17db7a3705e9c25fcdd17f024578714bc28dd64b95cdde3d",
+      "current_sha256": "e9e3c9430800001f17db7a3705e9c25fcdd17f024578714bc28dd64b95cdde3d",
+      "archive_bytes": 7039
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/iterations/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/iterations/README.md",
+      "status": "changed",
+      "archive_sha256": "7a15f1b37a29e2cac767ca0d1915f4a677691e8f064cb529a15072af391e7208",
+      "current_sha256": "bc2ca317ca994be6b942e3fd75cb0e8c7d92a56144190672f506d3afa05be66d",
+      "archive_bytes": 470
+    },
+    {
+      "archive_path": "../DiMyMicropayments/docs/operations.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/docs/operations.md",
+      "status": "changed",
+      "archive_sha256": "f302d0b045f2584feac44f1ac0dc3929cc16ea9cf8d1350f4740c8b00c7a45b2",
+      "current_sha256": "7eea796d7dfeb12671c028cd329b89f90c6c4bb4f1d6b4fd12697196ed6b10aa",
+      "archive_bytes": 3308
+    },
+    {
+      "archive_path": "../DiMyMicropayments/memory/context-ledger.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/memory/context-ledger.md",
+      "status": "changed",
+      "archive_sha256": "b4d1fd1579a4667995ac5389b903232d6d76eb4da218364e54ceaecb5375dc1e",
+      "current_sha256": "8d4d7ed4c1262041a3c50a8a2a77013a5cb5f3db1593b4a4eac7150c67cce768",
+      "archive_bytes": 1491
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/README.md",
+      "status": "changed",
+      "archive_sha256": "f70a81594725a434c07ab64f4af511a8891441eb17c0ef9d280fdc42a9ca1fc8",
+      "current_sha256": "2b6f09a6b7be1a23f534d27e8a97d51a97e95214d9a7f886a6aff58fc9ea6126",
+      "archive_bytes": 1372
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-1-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-1-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "93c42d6f373553ecfc1857fbaf4c4f426d2cd0cd59e41ec76afa078e880e3345",
+      "current_sha256": "93c42d6f373553ecfc1857fbaf4c4f426d2cd0cd59e41ec76afa078e880e3345",
+      "archive_bytes": 339
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-2-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-2-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "224deea2f12ca71fa9638a120150d27d9e5ff96d9f90d01fb0f17de9ff01ec28",
+      "current_sha256": "224deea2f12ca71fa9638a120150d27d9e5ff96d9f90d01fb0f17de9ff01ec28",
+      "archive_bytes": 396
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-3-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-3-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "29426bcdf6c772c56532f24175489f97283046a628931f3f47a7e94452df728e",
+      "current_sha256": "29426bcdf6c772c56532f24175489f97283046a628931f3f47a7e94452df728e",
+      "archive_bytes": 377
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-4-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-4-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "386322e95378e67db415f7e186c5f51aac168e788f9b29a9c725f9835f77b98d",
+      "current_sha256": "386322e95378e67db415f7e186c5f51aac168e788f9b29a9c725f9835f77b98d",
+      "archive_bytes": 351
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-5-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-5-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "64806d3146e742343d06786757dabb2ed8a34ec5512f7b1234dbbec86e89148b",
+      "current_sha256": "64806d3146e742343d06786757dabb2ed8a34ec5512f7b1234dbbec86e89148b",
+      "archive_bytes": 373
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-6-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-6-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "4c37e2fc526ce9f3c268a36ada6add304641222bb5546506aa5678652b6fdfa3",
+      "current_sha256": "4c37e2fc526ce9f3c268a36ada6add304641222bb5546506aa5678652b6fdfa3",
+      "archive_bytes": 323
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/ITERATION-7-next-prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/ITERATION-7-next-prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "91e4ab4962916045a5a909460f416145345a040ae6f0796aef6bc97d539b9289",
+      "current_sha256": "91e4ab4962916045a5a909460f416145345a040ae6f0796aef6bc97d539b9289",
+      "archive_bytes": 735
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/iterations/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/iterations/README.md",
+      "status": "changed",
+      "archive_sha256": "b2889ef15611f9ef452cefbec7294bfa96b5933ff4fded63b5b29edb33ac709e",
+      "current_sha256": "9d6102a8cd1707dbaebdf0daee58896eee9707f7f80215b3a2975fdff870945b",
+      "archive_bytes": 365
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/system-implementation.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/system-implementation.md",
+      "status": "unchanged",
+      "archive_sha256": "fbd08b6d8d3efbced9dbbbcbc5929adddf8f01b094d1d1cca89ded5f92e200a4",
+      "current_sha256": "fbd08b6d8d3efbced9dbbbcbc5929adddf8f01b094d1d1cca89ded5f92e200a4",
+      "archive_bytes": 1726
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/system-product-roadmap.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/system-product-roadmap.md",
+      "status": "unchanged",
+      "archive_sha256": "7db906fced8c8975f8080c8593ddc573df3c1a64e5267a974f9cd95b6359ac2d",
+      "current_sha256": "7db906fced8c8975f8080c8593ddc573df3c1a64e5267a974f9cd95b6359ac2d",
+      "archive_bytes": 2101
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/system-review.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/system-review.md",
+      "status": "unchanged",
+      "archive_sha256": "06a4342e16aee8f19dcc1db66289c1b0ebed4bd34124f3d33eaa59bee27806c3",
+      "current_sha256": "06a4342e16aee8f19dcc1db66289c1b0ebed4bd34124f3d33eaa59bee27806c3",
+      "archive_bytes": 1355
+    },
+    {
+      "archive_path": "../DiMyMicropayments/prompts/system-runtime-ops.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMicropayments/prompts/system-runtime-ops.md",
+      "status": "unchanged",
+      "archive_sha256": "337a360cb09eef872ac3c8d454c291a617f567acdba3476d28f7bdd72946c82e",
+      "current_sha256": "337a360cb09eef872ac3c8d454c291a617f567acdba3476d28f7bdd72946c82e",
+      "archive_bytes": 1760
+    },
+    {
+      "archive_path": "../DiMyMint/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/DiMyMint/README.md",
+      "status": "unchanged",
+      "archive_sha256": "ced4ad92dbe2967b080a0cd99fc0455cf4a08b6e3614244ee4d5f7834f5f136a",
+      "current_sha256": "ced4ad92dbe2967b080a0cd99fc0455cf4a08b6e3614244ee4d5f7834f5f136a",
+      "archive_bytes": 836
+    },
+    {
+      "archive_path": "../HAVEN_MVP/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/HAVEN_MVP/README.md",
+      "status": "changed",
+      "archive_sha256": "6105fa24a2f94224383988535ccff67ffc3b6429d94eb8535005e383b7458195",
+      "current_sha256": "f57dc800c00074dd08aed52546adc0daf7fd4f16ff82d75495003cdb6b70fd9f",
+      "archive_bytes": 229
+    },
+    {
+      "archive_path": "../sprout/docs/prompts/HAVEN_Bootstrap_MCM_ChatGPT_Prompt.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/sprout/docs/prompts/HAVEN_Bootstrap_MCM_ChatGPT_Prompt.md",
+      "status": "unchanged",
+      "archive_sha256": "d4132cf2a756c1795a3267b3a6676447f79ac9c2b76e950bbda96347509bfd4d",
+      "current_sha256": "d4132cf2a756c1795a3267b3a6676447f79ac9c2b76e950bbda96347509bfd4d",
+      "archive_bytes": 6084
+    },
+    {
+      "archive_path": "../test/test/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/test/test/README.md",
+      "status": "unchanged",
+      "archive_sha256": "c57944484ff5978cfb68993754021052682c657a30d360539d1d7327bfa273ec",
+      "current_sha256": "c57944484ff5978cfb68993754021052682c657a30d360539d1d7327bfa273ec",
+      "archive_bytes": 593
+    },
+    {
+      "archive_path": "../tmp/FileUtils-c/README.md",
+      "current_path": "/Users/kjetil/Build/Digipomps/HAVEN/tmp/FileUtils-c/README.md",
+      "status": "missing",
+      "archive_sha256": "dd13cedfc905ffcdf46a4661830c7331f7147e4d289757e1be0111b9514e39d5",
+      "current_sha256": null,
+      "archive_bytes": 45
+    }
+  ],
+  "audit_date": "2026-09-07",
+  "timezone": "Europe/Oslo",
+  "archive_crc_check": "passed",
+  "comparison": "SHA-256 of archived bytes against current working-tree bytes at corresponding HAVEN path; absent paths are not inferred deletions",
+  "redundant_identical_copies": 40,
+  "runtime_tests_run": false,
+  "live_haven_requests_run": false,
+  "archive_modified": false,
+  "repository_snapshots": [
+    {
+      "repo": "sprout",
+      "head": "473d6998bf5417c6355de053fe806ebdf91383e6",
+      "branch": "main",
+      "head_commit_date": "2026-07-17T23:23:48+02:00",
+      "modified_tracked_entries": 5
+    },
+    {
+      "repo": "CellProtocol",
+      "head": "83de32626390928f477c47b39df4dd13ae7831e3",
+      "branch": "claude/perspective-entities-invite-20260822",
+      "head_commit_date": "2026-09-05T06:57:26+02:00",
+      "modified_tracked_entries": 3
+    },
+    {
+      "repo": "CellProtocolDocuments",
+      "head": "37578a9980fd9edf3d4f142a8ea883b899f95851",
+      "branch": "codex/docs-cleanup-20260810",
+      "head_commit_date": "2026-09-05T07:03:08+02:00",
+      "modified_tracked_entries": 5
+    },
+    {
+      "repo": "CellScaffold",
+      "head": "5c63499d58cb5cab17b2271b0ed825c5eb7b4476",
+      "branch": "claude/working-tree-salvage-20260829",
+      "head_commit_date": "2026-09-03T10:06:29+02:00",
+      "modified_tracked_entries": 60
+    },
+    {
+      "repo": "Binding",
+      "head": "775fc93db71397022733e8225827d92a9423c803",
+      "branch": "codex/havenagentd-sentinel-remote-intent-icon-20260804",
+      "head_commit_date": "2026-09-05T07:03:08+02:00",
+      "modified_tracked_entries": 19
+    }
+  ],
+  "preexisting_sprout_work": {
+    "modified_tracked": [
+      "Apps/sprout-cli/Sources/sprout-cli/main.swift",
+      "Packages/SproutCore/Sources/SproutCore/BootstrapModels.swift",
+      "Packages/SproutCore/Sources/SproutCore/SproutBootstrapStateMachine.swift",
+      "Packages/SproutResolverAdapter/Sources/SproutResolverAdapter/ResolverAdapter.swift",
+      "Tests/SproutCoreTests/BootstrapStateMachineTests.swift"
+    ],
+    "untracked": [
+      "_wt-overlay-20260902/",
+      "docs/Sprout_Newborn_Owner_Bootstrap_Security_Assessment_2026-07-18.md"
+    ]
+  },
+  "sprout_tracked_inventory": {
+    "root_and_docs_markdown": 43,
+    "root_and_docs_markdown_absent_from_archive": 42,
+    "apps_packages_swift": 64,
+    "tests_swift": 34
+  },
+  "external_sources": [
+    {
+      "url": "https://reproducible-builds.org/docs/definition/",
+      "checked": "2026-09-07",
+      "purpose": "Definition of independent bit-for-bit reproducibility"
+    },
+    {
+      "url": "https://support.apple.com/en-gb/guide/security/sec3ad8e6e53/web",
+      "checked": "2026-09-07",
+      "purpose": "Separate purposes of code signing and notarization"
+    }
+  ]
+}

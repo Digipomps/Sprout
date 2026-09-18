@@ -4,6 +4,7 @@ import SproutCrypto
 public enum StarterIdentityStoreError: Error, Equatable {
     case invalidScaffoldDomain(String)
     case identityNotFound(String)
+    case recoveryRequired(String)
 }
 
 public struct StarterIdentityRecord: Codable, Equatable, Sendable {
@@ -47,11 +48,18 @@ public actor StarterIdentityStore {
 
     public func loadOrCreate(scaffoldDomain: String) async throws -> StarterIdentityRecord {
         let validatedDomain = try Self.validateDomain(scaffoldDomain)
-        if let existing = try? load(scaffoldDomain: validatedDomain) {
-            return existing
+        let lock = try PrivateStateLock(directory: root)
+        defer { withExtendedLifetime(lock) {} }
+        let names = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        guard !names.contains(where: { $0 != validatedDomain && $0.lowercased() == validatedDomain }) else {
+            throw StarterIdentityStoreError.recoveryRequired(validatedDomain)
         }
-
-        try ensureDirectory(root)
+        let domainRoot = self.domainRoot(for: validatedDomain)
+        if PrivateStateFiles.exists(domainRoot) {
+            // Missing or corrupt metadata is not permission to replace an existing key.
+            return try load(scaffoldDomain: validatedDomain)
+        }
+        try PrivateStateFiles.ensureDirectory(domainRoot)
         let seed = Ed25519.generateSeed()
         let publicKey = try Ed25519.publicKeyBase64URL(fromSeed: seed)
         let record = StarterIdentityRecord(
@@ -61,28 +69,39 @@ public actor StarterIdentityStore {
             created_at: Self.iso8601String(from: now())
         )
 
-        let domainRoot = self.domainRoot(for: validatedDomain)
-        try ensureDirectory(domainRoot)
-        let keyStore = LocalKeyStore(root: domainRoot.appendingPathComponent("keys", isDirectory: true))
-        try await keyStore.writeKey(seed, named: Self.seedKeyName)
+        let keys = domainRoot.appendingPathComponent("keys", isDirectory: true)
+        try PrivateStateFiles.ensureDirectory(keys)
+        try PrivateStateFiles.write(seed, to: keys.appendingPathComponent(Self.seedKeyName))
         try persist(record: record, scaffoldDomain: validatedDomain)
         return record
     }
 
     public func load(scaffoldDomain: String) throws -> StarterIdentityRecord {
         let validatedDomain = try Self.validateDomain(scaffoldDomain)
-        let recordURL = domainRoot(for: validatedDomain).appendingPathComponent("identity.json")
-        guard FileManager.default.fileExists(atPath: recordURL.path) else {
+        guard PrivateStateFiles.exists(domainRoot(for: validatedDomain)) else {
             throw StarterIdentityStoreError.identityNotFound(validatedDomain)
         }
-        return try JSONDecoder().decode(StarterIdentityRecord.self, from: Data(contentsOf: recordURL))
+        try PrivateStateFiles.validateDirectory(root)
+        try PrivateStateFiles.validateDirectory(domainRoot(for: validatedDomain))
+        let recordURL = domainRoot(for: validatedDomain).appendingPathComponent("identity.json")
+        do {
+            let record = try JSONDecoder().decode(StarterIdentityRecord.self, from: PrivateStateFiles.read(recordURL))
+            guard record.version == "1.0", record.scaffold_domain == validatedDomain,
+                  record.identity_context == Self.identityContext(for: validatedDomain),
+                  record.key_algorithm == "Ed25519", record.seed_key_name == Self.seedKeyName,
+                  try Ed25519.publicKeyBase64URL(fromSeed: readSeed(domain: validatedDomain)) == record.identity_public_key else {
+                throw StarterIdentityStoreError.recoveryRequired(validatedDomain)
+            }
+            return record
+        } catch {
+            throw StarterIdentityStoreError.recoveryRequired(validatedDomain)
+        }
     }
 
     public func seedBase64URL(scaffoldDomain: String) async throws -> String {
         let validatedDomain = try Self.validateDomain(scaffoldDomain)
-        let keyStore = LocalKeyStore(root: domainRoot(for: validatedDomain).appendingPathComponent("keys", isDirectory: true))
-        let seed = try await keyStore.readKey(named: Self.seedKeyName)
-        return Base64URL.encode(seed)
+        _ = try load(scaffoldDomain: validatedDomain)
+        return Base64URL.encode(try readSeed(domain: validatedDomain))
     }
 
     public static func identityContext(for scaffoldDomain: String) -> String {
@@ -92,26 +111,27 @@ public actor StarterIdentityStore {
     private func persist(record: StarterIdentityRecord, scaffoldDomain: String) throws {
         let recordURL = domainRoot(for: scaffoldDomain).appendingPathComponent("identity.json")
         let data = try JSONEncoder.pretty.encode(record)
-        try data.write(to: recordURL, options: [.atomic])
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: recordURL.path)
+        try PrivateStateFiles.write(data, to: recordURL)
     }
 
     private func domainRoot(for scaffoldDomain: String) -> URL {
         root.appendingPathComponent(scaffoldDomain, isDirectory: true)
     }
 
-    private func ensureDirectory(_ url: URL) throws {
-        try FileManager.default.createDirectory(
-            at: url,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
-        )
+    private func readSeed(domain: String) throws -> Data {
+        let keys = domainRoot(for: domain).appendingPathComponent("keys", isDirectory: true)
+        try PrivateStateFiles.validateDirectory(keys)
+        let seed = try PrivateStateFiles.read(keys.appendingPathComponent(Self.seedKeyName), maximumBytes: 32)
+        guard seed.count == 32 else { throw StarterIdentityStoreError.recoveryRequired(domain) }
+        return seed
     }
 
-    private static func validateDomain(_ value: String) throws -> String {
-        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pattern = "^[A-Za-z0-9.-]+$"
-        guard !trimmed.isEmpty, trimmed.range(of: pattern, options: .regularExpression) != nil else {
+    public static func validateDomain(_ value: String) throws -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let labels = trimmed.split(separator: ".", omittingEmptySubsequences: false)
+        let pattern = "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$"
+        guard !trimmed.isEmpty, trimmed.utf8.count <= 253,
+              labels.allSatisfy({ String($0).range(of: pattern, options: .regularExpression) != nil }) else {
             throw StarterIdentityStoreError.invalidScaffoldDomain(value)
         }
         return trimmed
