@@ -140,7 +140,7 @@ jobs:
       - name: Install release verification tools
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends python3 openssl binutils
+          apt-get install -y --no-install-recommends python3 openssl binutils curl ca-certificates gnupg
 
       - name: Install checksum-pinned static Linux SDK
         run: |
