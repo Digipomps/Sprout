@@ -1,8 +1,35 @@
 # Sprout
 
+Current integration evidence and limits: [2026-09-18 validation](docs/Production_Integration_2026-09-18.md).
+
 Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/Goal`, domain-scoped identities, resolver-enforced contracts/capabilities, and policy-gated update handling.
 
-## Status (2026-03-11)
+## Terminal Onboarding (2026-09-11)
+
+Run `sprout` without arguments, or `sprout onboard`, for a resumable terminal
+dialogue. No invitation/proof files, pasted credentials, or external AI account
+are needed by this dialogue. `sprout onboard --help` lists optional initial
+values. `/help`, `/status`, and `/pause` work at every prompt.
+
+This implements local setup and optional live identity verification, **not a
+complete Correspondence connection**. A local Entity draft is not an enrolled
+Entity, scaffold owner, or network membership. Device approval, Entity admission,
+Agreement/Grant-controlled channel startup and a signed Linux release remain
+integration/release gates. Existing low-level `bootstrap` commands are unchanged
+and still have different, development-oriented defaults.
+
+See [implementation, security boundaries and reusable prompts](docs/Terminal_Onboarding_2026-09-11.md).
+After building, run `bash Scripts/test_terminal_onboarding.sh` for a real CLI
+smoke test that uses disposable local state and no network.
+
+`sprout doctor --json` checks the local platform and ephemeral signing without
+reading identity storage or contacting a service. A static Linux x86_64 candidate
+now builds, but has not executed on Linux or been signed for delivery. See
+[recipient readiness and remaining gates](docs/Recipient_Readiness_2026-09-11.md).
+Staging's public bootstrap descriptor was expired when checked on September 11;
+successful health checks do not bypass this trust failure.
+
+## Historical Status (2026-03-11)
 - P0 is implemented: deterministic bootstrap state machine, JCS subset, Ed25519, strict base64url, schemas, OpenAPI, golden vectors and CLI reference flow.
 - P1 bridge is implemented in-repo: `EntityAnchorResolverAdapter`, feature-flagged `HavenResolverHTTPAdapter`, resolver-signed `EntityInclusionProof`, `PortholeAccessContract` consumers for web/native descriptors, `sprout-macos`, separate `sprout-updater`, release bundle scripts and CI signing.
 - Native Linux baseline is now part of the repo scope for `sprout` and `sprout-updater`: Ubuntu 22.04 `x86_64`, no Docker required for build or deployment.

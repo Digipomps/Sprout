@@ -34,7 +34,7 @@ public actor ScaffoldTrustRootHTTPClient {
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await session.boundedData(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ScaffoldTrustRootHTTPClientError.invalidResponseStatus(-1)
         }

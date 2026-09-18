@@ -3,6 +3,8 @@ import Foundation
 import Darwin
 #elseif canImport(Glibc)
 import Glibc
+#elseif canImport(Musl)
+import Musl
 #endif
 import SproutTransport
 
@@ -65,6 +67,8 @@ public enum ProcessResourceSampler {
         getrusage(RUSAGE_SELF, &usage)
         #elseif canImport(Glibc)
         getrusage(__rusage_who_t(RUSAGE_SELF.rawValue), &usage)
+        #elseif canImport(Musl)
+        getrusage(RUSAGE_SELF, &usage)
         #endif
         let user = UInt64(usage.ru_utime.tv_sec) * 1_000_000 + UInt64(usage.ru_utime.tv_usec)
         let system = UInt64(usage.ru_stime.tv_sec) * 1_000_000 + UInt64(usage.ru_stime.tv_usec)

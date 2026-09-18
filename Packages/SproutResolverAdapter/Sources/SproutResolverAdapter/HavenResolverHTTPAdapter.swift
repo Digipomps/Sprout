@@ -152,7 +152,7 @@ public actor HavenResolverHTTPAdapter: SproutResolverAdapter {
         }
         request.httpBody = try JSONEncoder().encode(body)
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await session.boundedData(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw HavenResolverHTTPAdapterError.invalidResolverResponse("non-HTTP response")
         }

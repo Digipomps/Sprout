@@ -20,6 +20,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check out pinned Nearby companion source
+        uses: actions/checkout@v4
+        with:
+          repository: Digipomps/CellProtocol
+          ref: 533b42d5dc25cf1453cbe5ad08f523d47d5d32e9
+          path: .release-dependencies/CellProtocol
+          persist-credentials: false
+
       - name: Set platform artifact names
         run: |
           suffix="macos-$(uname -m)"
@@ -46,9 +54,16 @@ jobs:
 
       - name: Verify installed nearby companion lookup
         run: python3 Scripts/test_nearby_companion.py .build/debug/sprout
+      - name: Terminal and release guard regressions
+        run: |
+          bash Scripts/test_terminal_onboarding.sh
+          bash Scripts/test_release_guards.sh
 
       - name: Build release bundle
         run: bash Scripts/build_release_bundle.sh dist "$SPROUT_RELEASE_SUFFIX"
+
+      - name: Verify actual packaged Nearby companion
+        run: python3 Scripts/test_packaged_nearby.py dist "$SPROUT_RELEASE_SUFFIX"
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
@@ -71,6 +86,9 @@ jobs:
             --armor --detach-sign --output "${SPROUT_CHECKSUM_FILE}.asc" "$SPROUT_CHECKSUM_FILE"
 
       - name: Verify release bundle
+        env:
+          SPROUT_ALLOW_UNSIGNED: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          COSIGN_CERT_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/ci.yml@${{ github.ref }}
         run: bash Scripts/verify_release_bundle.sh dist "" "$SPROUT_CHECKSUM_FILE"
 
       - name: Attest build provenance
@@ -108,7 +126,12 @@ jobs:
       - name: Setup Swift
         uses: swift-actions/setup-swift@v2
         with:
-          swift-version: "6.1"
+          swift-version: "6.2.4"
+
+      - name: Install checksum-pinned static Linux SDK
+        run: |
+          swift sdk install https://download.swift.org/swift-6.2.4-release/static-sdk/swift-6.2.4-RELEASE/swift-6.2.4-RELEASE_static-linux-0.1.0.artifactbundle.tar.gz --checksum 24bdf84495dd31a6de2eb679647c1982b747bfbfe1a2060c779d84dcecd902a4
+          echo 'SPROUT_STATIC_LINUX_SDK=x86_64-swift-linux-musl' >> "$GITHUB_ENV"
 
       - name: Set platform artifact names
         run: |
@@ -133,8 +156,18 @@ jobs:
       - name: Test
         run: swift test
 
+      - name: Terminal and release guard regressions
+        run: |
+          bash Scripts/test_terminal_onboarding.sh
+          bash Scripts/test_release_guards.sh
+
       - name: Build release bundle
         run: bash Scripts/build_release_bundle.sh dist "$SPROUT_RELEASE_SUFFIX"
+
+      - name: Execute the actual static Linux artifact
+        run: |
+          "$SPROUT_ARTIFACT_SPROUT" doctor --json
+          bash Scripts/test_terminal_onboarding.sh "$SPROUT_ARTIFACT_SPROUT"
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}
@@ -157,6 +190,9 @@ jobs:
             --armor --detach-sign --output "${SPROUT_CHECKSUM_FILE}.asc" "$SPROUT_CHECKSUM_FILE"
 
       - name: Verify release bundle
+        env:
+          SPROUT_ALLOW_UNSIGNED: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          COSIGN_CERT_IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/ci.yml@${{ github.ref }}
         run: bash Scripts/verify_release_bundle.sh dist "" "$SPROUT_CHECKSUM_FILE"
 
       - name: Attest build provenance

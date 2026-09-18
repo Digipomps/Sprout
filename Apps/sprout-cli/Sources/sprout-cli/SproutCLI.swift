@@ -10,12 +10,11 @@ import SproutStorage
 struct SproutCLI {
     static func main() async {
         let arguments = Array(CommandLine.arguments.dropFirst())
-        guard !arguments.isEmpty else {
-            printUsage()
-            exit(1)
-        }
-
         do {
+            guard !arguments.isEmpty else {
+                try await runOnboarding(arguments: [])
+                return
+            }
             switch arguments[0] {
             case "entity":
                 guard arguments.dropFirst().first == "connect" else {
@@ -24,6 +23,21 @@ struct SproutCLI {
                 try PersonEntityCommands.connect(Array(arguments.dropFirst(2)))
             case "nearby":
                 try PersonEntityCommands.nearby(Array(arguments.dropFirst()))
+            case "doctor":
+                guard arguments.count == 1 || arguments == ["doctor", "--json"] else {
+                    throw CLIError.invalidArguments("Expected: doctor [--json]")
+                }
+                let report = try SproutDoctor.inspect()
+                if arguments.count == 2 {
+                    print(String(decoding: try JSONEncoder.pretty.encode(report), as: UTF8.self))
+                } else {
+                    print("Sprout: \(report.platform)/\(report.architecture), \(report.cRuntime). Crypto self-test: \(report.cryptography).")
+                    print("No network contact or stored identities inspected. Channel readiness is not verified.")
+                }
+            case "onboard", "chat":
+                try await runOnboarding(arguments: Array(arguments.dropFirst()))
+            case "--help", "-h", "help":
+                printUsage()
             case "bootstrap":
                 try await runBootstrap(arguments: Array(arguments.dropFirst()))
             case "bridges":
@@ -1552,6 +1566,8 @@ struct SproutCLI {
     }
 
     private static func printUsage() {
+        print("Start sprout uten argumenter for en gjenopptakbar terminaldialog. Se sprout onboard --help.")
+        print("sprout doctor [--json] kontrollerer runtime og kryptografi lokalt, uten aa lese identiteter eller kontakte nettverket.")
         let text = """
         sprout commands:
           sprout bootstrap plan --domain <d> [--purpose <p>] [--goal <g>] [--interests <i1,i2>] [--requested-capabilities <cap1,cap2>] [--runtime <cli-service|on-prem-service|macos-app|ios-app>] [--trust-root <file>] [--starter <file>] [--catalog <file>] [--enable-live-resolver --resolver-base-url <https://resolver.example>] [--entity-anchor <file>] [--resolved-entity <entity-id>] [--porthole <web|cli|native>] [--out <json>]

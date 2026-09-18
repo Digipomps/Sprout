@@ -34,7 +34,7 @@ public actor StarterBootstrapHTTPClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONEncoder().encode(requestBody)
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await session.boundedData(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw StarterBootstrapHTTPClientError.invalidIntent("non-HTTP response")
         }
