@@ -45,3 +45,10 @@ stops without verified Entity admission; it is not a complete correspondence
 client or channel authorization. The separate sprout-macos UI is built in CI but
 is still outside the CLI release bundle. Do not infer production deployment or
 human enrollment from the local evidence above.
+
+The first exact PR CI passed every macOS gate, including the actual release
+bundle, but Linux stopped before compilation because setup-swift v2 did not
+recognize Swift 6.2.4. Both Linux workflows now use the official Swift 6.2.4
+Noble image pinned by registry digest; the matching static SDK checksum and
+all runtime/release assertions remain unchanged. Official image availability
+was independently verified against Docker Hub's registry manifest.
