@@ -182,6 +182,46 @@ public struct BootstrapExecutionContext: Codable, Equatable, Sendable {
         self.membershipDecision = membershipDecision
         self.portholeAccessContract = portholeAccessContract
     }
+
+    private enum CodingKeys: String, CodingKey {
+        case runtime, domain, requestedPortholeKind, requestedCapabilities
+        case purposeGoal, starterAuthPayload, identity, entityLinkEvidence
+        case entityAdmissionEvidence, entityResolution, environmentReport, economics
+        case discoveredBridges, selectedBridge, scaffoldTrustRootDescriptor
+        case scaffoldAdminIdentity, registrationResult, capabilityDecision
+        case membershipDecision, portholeAccessContract
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // Historical persisted contexts predate explicit capability requests.
+        // Only absence means an empty request; a present malformed value fails.
+        let requestedCapabilities = try container.contains(.requestedCapabilities)
+            ? container.decode([String].self, forKey: .requestedCapabilities)
+            : []
+        self.init(
+            runtime: try container.decode(SproutRuntimeProfile.self, forKey: .runtime),
+            domain: try container.decode(String.self, forKey: .domain),
+            requestedPortholeKind: try container.decode(PortholeClientKind.self, forKey: .requestedPortholeKind),
+            requestedCapabilities: requestedCapabilities,
+            purposeGoal: try container.decodeIfPresent(BootstrapPurposeGoal.self, forKey: .purposeGoal),
+            starterAuthPayload: try container.decodeIfPresent(StarterAuthPayload.self, forKey: .starterAuthPayload),
+            identity: try container.decodeIfPresent(BootstrapIdentity.self, forKey: .identity),
+            entityLinkEvidence: try container.decodeIfPresent(EntityLinkEvidence.self, forKey: .entityLinkEvidence),
+            entityAdmissionEvidence: try container.decodeIfPresent(EntityAdmissionEvidence.self, forKey: .entityAdmissionEvidence),
+            entityResolution: try container.decodeIfPresent(EntityResolutionDecision.self, forKey: .entityResolution),
+            environmentReport: try container.decodeIfPresent(BootstrapEnvironmentReport.self, forKey: .environmentReport),
+            economics: try container.decodeIfPresent(BootstrapEconomicsContext.self, forKey: .economics),
+            discoveredBridges: try container.decode([BridgeDescriptor].self, forKey: .discoveredBridges),
+            selectedBridge: try container.decodeIfPresent(BridgeDescriptor.self, forKey: .selectedBridge),
+            scaffoldTrustRootDescriptor: try container.decodeIfPresent(ScaffoldAdminTrustRootDescriptor.self, forKey: .scaffoldTrustRootDescriptor),
+            scaffoldAdminIdentity: try container.decodeIfPresent(ScaffoldAdminIdentity.self, forKey: .scaffoldAdminIdentity),
+            registrationResult: try container.decodeIfPresent(ResolverRegistrationResult.self, forKey: .registrationResult),
+            capabilityDecision: try container.decodeIfPresent(CapabilityDecision.self, forKey: .capabilityDecision),
+            membershipDecision: try container.decodeIfPresent(MembershipDecision.self, forKey: .membershipDecision),
+            portholeAccessContract: try container.decodeIfPresent(PortholeAccessContract.self, forKey: .portholeAccessContract)
+        )
+    }
 }
 
 public struct BootstrapTransitionEvent: Codable, Equatable, Sendable {
