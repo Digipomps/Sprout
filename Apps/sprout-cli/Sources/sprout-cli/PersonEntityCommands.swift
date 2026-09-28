@@ -31,6 +31,22 @@ enum PersonEntityCommands {
         #endif
     }
 
+    static func policy(_ arguments: [String]) throws {
+        guard arguments.isEmpty else { throw Failure.invalidArguments }
+        let address = "haven://entity-extension-policy"
+        #if os(macOS)
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        process.arguments = [address]
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { throw Failure.helperFailed(process.terminationStatus) }
+        print("Åpnet HAVENs policy for bruk av eide celler. Sprout endrer ingen tillatelser.")
+        #else
+        print("Åpne på enheten med HAVEN: \(address)")
+        #endif
+    }
+
     static func nearby(_ arguments: [String]) throws {
         #if os(macOS)
         // Installed next to sprout; an explicit local override supports candidate tests.

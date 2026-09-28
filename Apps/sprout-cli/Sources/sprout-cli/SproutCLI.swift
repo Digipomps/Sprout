@@ -17,8 +17,12 @@ struct SproutCLI {
             }
             switch arguments[0] {
             case "entity":
+                if arguments.dropFirst().first == "policy" {
+                    try PersonEntityCommands.policy(Array(arguments.dropFirst(2)))
+                    return
+                }
                 guard arguments.dropFirst().first == "connect" else {
-                    throw CLIError.invalidArguments("Expected: entity connect [--place app|haven|staging]")
+                    throw CLIError.invalidArguments("Expected: entity connect [--place app|haven|staging] or entity policy")
                 }
                 try PersonEntityCommands.connect(Array(arguments.dropFirst(2)))
             case "nearby":
@@ -1588,6 +1592,7 @@ struct SproutCLI {
           sprout link export --file <entity-link.json> [--out <canonical.json>]
           sprout link import --file <entity-link.json>
           sprout entity connect [--place app|haven|staging]
+          sprout entity policy
           sprout nearby browse [--seconds 1…120]
           sprout nearby inspect|advertise --offer-file <file>
           sprout porthole web-bootstrap --contract <porthole-access-contract.json> [--out <descriptor.json>] [--now <ISO8601>]

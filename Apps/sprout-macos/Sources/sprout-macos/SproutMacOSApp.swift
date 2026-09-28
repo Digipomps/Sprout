@@ -20,6 +20,10 @@ struct SproutMacOSApp: App {
                             ? "Fortsett i HAVEN og bekreft hvilke av dine entiteter som skal kobles."
                             : "Installer HAVEN-appen for å finne eller skanne en invitasjon."
                     }
+                    Button("Automatikk ved cellebruk …") {
+                        let opened = NSWorkspace.shared.open(URL(string: "haven://entity-extension-policy")!)
+                        personLinkMessage = opened ? "Fortsett i HAVEN." : "Installer HAVEN-appen for å administrere policyen."
+                    }
                     if let personLinkMessage {
                         Text(personLinkMessage).font(.caption).foregroundStyle(.secondary)
                     }
