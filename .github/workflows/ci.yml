@@ -158,6 +158,34 @@ jobs:
       - name: Test
         run: swift test
 
+      - name: Build static sprout-admin and run same-owner process tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p admin-ci
+          swift build --jobs 2 --swift-sdk x86_64-swift-linux-musl -c release --product sprout-admin 2>&1 | tee admin-ci/build.log
+          bin=$(swift build --jobs 2 --swift-sdk x86_64-swift-linux-musl -c release --show-bin-path)
+          cp "$bin/sprout-admin" admin-ci/sprout-admin
+          export SPROUT_ADMIN_TEST_BINARY="$PWD/admin-ci/sprout-admin"
+          swift test --jobs 2 --filter ScaffoldTrustRootSameOwnerRenewal 2>&1 | tee admin-ci/tests.log
+          python3 - <<'PYTEST'
+          import pathlib, re
+          text = pathlib.Path('admin-ci/tests.log').read_text()
+          passed = re.findall(r"Test Case '[^']+' passed", text)
+          rows = re.findall(r'Executed (\d+) tests?, with (\d+) failures?', text)
+          if len(passed) != 6 or ('6', '0') not in rows or re.search(r"Test Case '[^']+' failed|\bskipped\b", text, re.I):
+              raise SystemExit('All six same-owner/support/process tests must pass with no skips')
+          PYTEST
+          (cd admin-ci && sha256sum sprout-admin > SHA256SUMS)
+          printf '%s\n' "$GITHUB_SHA" > admin-ci/source-commit.txt
+
+      - name: Upload static sprout-admin evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprout-admin-linux-x86_64
+          if-no-files-found: error
+          path: admin-ci/
+
       - name: Terminal and release guard regressions
         run: |
           bash Scripts/test_terminal_onboarding.sh
