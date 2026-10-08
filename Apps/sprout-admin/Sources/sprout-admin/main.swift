@@ -1,5 +1,6 @@
 import Foundation
 import SproutAdminSupport
+import SproutCrypto
 import SproutCore
 import SproutResolverAdapter
 
@@ -16,13 +17,41 @@ enum AdminCLIError: Error, CustomStringConvertible {
 
 @main
 struct SproutAdminCLI {
-    static func main() {
+    static func main() async {
         do {
-            try run(arguments: Array(CommandLine.arguments.dropFirst()))
+            let arguments = Array(CommandLine.arguments.dropFirst())
+            if Array(arguments.prefix(2)) == ["scaffold-trust-root", "verify-served-staging"] {
+                try await verifyServedStaging(arguments: Array(arguments.dropFirst(2)))
+            } else {
+                try run(arguments: arguments)
+            }
         } catch {
             FileHandle.standardError.write(Data("error: \(error)\n".utf8))
             exit(1)
         }
+    }
+
+    /// Uses the ordinary Sprout discovery client and validator, with the real clock.
+    private static func verifyServedStaging(arguments: [String]) async throws {
+        let flags = try parseFlags(arguments, requireUniqueValues: true)
+        let supported: Set<String> = ["descriptor", "expected-sha256", "expected-owner-public-key"]
+        guard Set(flags.keys) == supported else {
+            throw AdminCLIError.invalidArguments("verify-served-staging requires exactly descriptor, expected-sha256 and expected-owner-public-key.")
+        }
+        let bytes = try Data(contentsOf: URL(fileURLWithPath: requiredFlag("descriptor", flags)))
+        guard bytes.count <= 1_048_576,
+              Hashing.sha256(bytes).map({ String(format: "%02x", $0) }).joined() == flags["expected-sha256"] else {
+            throw AdminCLIError.invalidArguments("Candidate byte pin mismatch.")
+        }
+        let expected = try ScaffoldTrustRootDescriptorBuilder.decodeDescriptorForRenewal(from: bytes)
+        let domain = "staging.haven.digipomps.org"
+        let client = try ScaffoldTrustRootHTTPClient(endpoint: URL(string: "https://\(domain)/.well-known/haven-scaffold-admin-trust-root.json")!)
+        let served = try await client.fetch(expectedDomain: domain)
+        guard served == expected, served.scaffold_admin_public_key == flags["expected-owner-public-key"] else {
+            throw AdminCLIError.invalidArguments("Sprout discovery result differs from reviewed candidate/owner.")
+        }
+        try emitJSON(["status": "sprout-client-accepted", "descriptor_id": served.descriptor_id,
+                      "candidate_sha256": try requiredFlag("expected-sha256", flags)], outPath: nil)
     }
 
     private static func run(arguments: [String]) throws {
@@ -91,10 +120,12 @@ struct SproutAdminCLI {
         guard let subcommand = arguments.first else {
             throw AdminCLIError.invalidArguments(usage)
         }
-        let flags = try parseFlags(Array(arguments.dropFirst()))
+        let flags = try parseFlags(Array(arguments.dropFirst()), requireUniqueValues: subcommand == "renew-from-pinned-v2-vault")
         switch subcommand {
         case "create-from-vapor-vault":
             try createScaffoldTrustRootDescriptor(flags: flags)
+        case "renew-from-pinned-v2-vault":
+            try renewPinnedV2Descriptor(flags: flags)
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -294,6 +325,55 @@ struct SproutAdminCLI {
         try emitJSON(summary, outPath: flags["summary-out"])
     }
 
+    private static func renewPinnedV2Descriptor(flags: [String: String]) throws {
+        let supported: Set<String> = [
+            "descriptor", "expected-descriptor-sha256", "scaffold-domain", "expected-owner-uuid",
+            "expected-owner-context", "expected-owner-fingerprint", "expected-vault-sha256",
+            "vault-file", "master-key-file",
+            "descriptor-id", "expires-at", "out"
+        ]
+        let unknown = Set(flags.keys).subtracting(supported).sorted()
+        guard unknown.isEmpty else {
+            throw AdminCLIError.invalidArguments("Unsupported same-owner renewal flags: \(unknown.map { "--\($0)" }.joined(separator: ", ")).")
+        }
+        // Every authority input is explicit. There are no environment, descriptor-key, legacy
+        // vault, clock, or key-array defaults for this separate same-owner renewal operation.
+        for flag in supported.sorted() { _ = try requiredFlag(flag, flags) }
+        let outputPath = try requiredFlag("out", flags)
+        let outputURL = URL(fileURLWithPath: outputPath)
+        guard !FileManager.default.fileExists(atPath: outputURL.path) else {
+            throw AdminCLIError.invalidArguments("Renewal --out must name a new file; refusing to overwrite \(outputPath).")
+        }
+        guard let expiresAt = try parseDate(requiredFlag("expires-at", flags)) else {
+            throw AdminCLIError.invalidArguments("Missing required --expires-at.")
+        }
+        let descriptorData = try Data(contentsOf: URL(fileURLWithPath: requiredFlag("descriptor", flags)))
+        let pins = try ScaffoldTrustRootSameOwnerRenewalOwnerPins(
+            uuid: requiredFlag("expected-owner-uuid", flags), context: requiredFlag("expected-owner-context", flags),
+            signingKeyFingerprintDigest: requiredFlag("expected-owner-fingerprint", flags),
+            encryptedVaultSHA256: requiredFlag("expected-vault-sha256", flags))
+        let renewed = try ScaffoldTrustRootSameOwnerRenewal.renew(
+            descriptorData: descriptorData, expectedDescriptorSHA256: requiredFlag("expected-descriptor-sha256", flags),
+            expectedDomain: requiredFlag("scaffold-domain", flags),
+            vaultPaths: VaporVaultPaths(vaultFileURL: URL(fileURLWithPath: requiredFlag("vault-file", flags)),
+                masterKeyFileURL: URL(fileURLWithPath: requiredFlag("master-key-file", flags))),
+            ownerPins: pins, descriptorID: requiredFlag("descriptor-id", flags), expiresAt: expiresAt)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(renewed)
+        try data.write(to: outputURL, options: [.withoutOverwriting])
+        let summary: [String: AnyCodable] = [
+            "descriptor_path": AnyCodable(outputPath), "descriptor_id": AnyCodable(renewed.descriptor_id),
+            "scaffold_domain": AnyCodable(renewed.scaffold_domain),
+            "previous_descriptor_sha256": AnyCodable(try requiredFlag("expected-descriptor-sha256", flags)),
+            "renewed_descriptor_sha256": AnyCodable(Hashing.sha256(data).map { String(format: "%02x", $0) }.joined()),
+            "active_owner_fingerprint_digest": AnyCodable(pins.signingKeyFingerprintDigest),
+            "encrypted_vault_sha256": AnyCodable(pins.encryptedVaultSHA256),
+            "issued_at": AnyCodable(renewed.issued_at), "expires_at": AnyCodable(renewed.expires_at)
+        ]
+        try emitJSON(summary, outPath: nil)
+    }
+
     private static func createContinuityProof(flags: [String: String]) throws {
         let sourceScaffoldDomain = try requiredFlag("source-scaffold-domain", flags)
         let identityContext = try requiredFlag("identity-context", flags)
@@ -415,7 +495,7 @@ struct SproutAdminCLI {
         )
     }
 
-    private static func parseFlags(_ arguments: [String]) throws -> [String: String] {
+    private static func parseFlags(_ arguments: [String], requireUniqueValues: Bool = false) throws -> [String: String] {
         var flags = [String: String]()
         var index = 0
         while index < arguments.count {
@@ -424,10 +504,16 @@ struct SproutAdminCLI {
                 throw AdminCLIError.invalidArguments("Unexpected positional argument: \(argument)")
             }
             let key = String(argument.dropFirst(2))
+            if requireUniqueValues, flags[key] != nil {
+                throw AdminCLIError.invalidArguments("Duplicate --\(key).")
+            }
             if index + 1 < arguments.count, !arguments[index + 1].hasPrefix("--") {
                 flags[key] = arguments[index + 1]
                 index += 2
             } else {
+                if requireUniqueValues {
+                    throw AdminCLIError.invalidArguments("Missing value for --\(key).")
+                }
                 flags[key] = "true"
                 index += 1
             }
@@ -513,6 +599,7 @@ struct SproutAdminCLI {
       sprout-admin vapor-vault list-identities [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--out <file>]
       sprout-admin entity-anchor create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> --entity-id <id> --subject-public-key <b64url> --subject-domain <domain> [--accepted-contract-ids <id1,id2>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--added-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin entity-anchor accept-entity-link --snapshot <snapshot.json> --entity-link <entity-link.json> --identity-context <ctx> [--entity-id <id> | --anchored-public-key <b64url> [--anchored-domain <domain>]] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
+      sprout-admin scaffold-trust-root renew-from-pinned-v2-vault --descriptor <old.json> --expected-descriptor-sha256 <hex> --scaffold-domain <domain> --expected-owner-uuid <uuid> --expected-owner-context Scaffold --expected-owner-fingerprint <b64url> --expected-vault-sha256 <hex> --vault-file <path> --master-key-file <path> --descriptor-id <new-id> --expires-at <ISO8601> --out <new-file>
       sprout-admin scaffold-trust-root create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin continuity-proof create-from-vapor-vault --source-scaffold-domain <domain> --identity-context <ctx> --source-entity-id <id> --source-identity-public-key <b64url> --source-identity-domain <domain> --target-scaffold-domain <domain> --purpose <purpose> --goal <goal> --interests <i1,i2> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--proof-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin admission-contract create-from-vapor-vault --target-scaffold-domain <domain> --target-entity-id <id> --target-identity-public-key <b64url> --target-identity-domain <domain> --identity-context <ctx> --continuity-proof <file> --admission-request <file> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--contract-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]

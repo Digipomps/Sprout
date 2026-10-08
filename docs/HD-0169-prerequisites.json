@@ -1,0 +1,12 @@
+[
+  {
+    "path": "Packages/SproutAdminSupport/Sources/SproutAdminSupport/ScaffoldTrustRootDescriptorBuilder.swift",
+    "source": "uncommitted 20260929 prerequisite at codex/sprout-hetzner-cli-20260926",
+    "sha256": "f8b12f53d5254615b0121d29dfbebad5454838037689701d6ce6bed62b4eab18"
+  },
+  {
+    "path": "Packages/SproutAdminSupport/Sources/SproutAdminSupport/VaporVaultAnchorSnapshot.swift",
+    "source": "uncommitted 20260929 prerequisite at codex/sprout-hetzner-cli-20260926",
+    "sha256": "33e4f579395dbf3f2891e691a4d8523dc3a81ac2ca56d1647237b4befaeb668e"
+  }
+]
