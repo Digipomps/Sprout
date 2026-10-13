@@ -21,8 +21,8 @@ installation does not grant remote Entity, Agreement or bridge privileges.
 6. On Linux, normal installation executes the signed `cellscaffold-web-v1`
    service profile as root. It enrolls a new local scaffold owner offline,
    provisions the runtime identities, creates private configuration and starts
-   the service on loopback. Readiness, exact build, login/access boundary and a
-   restart must succeed before the service receipt says `ready`.
+   the service on loopback. Readiness, exact build, login/access boundary, discovery for every
+   selected purpose and a restart must succeed before the service receipt says `ready`.
 7. `sprout scaffold status --instance NAME` measures the actual service;
    plain `status` checks the images referenced by the image receipts.
 
@@ -73,7 +73,7 @@ Normal installation requires Linux, root, Python 3 at `/usr/bin/python3`, Docker
 Engine on the local Unix socket, `unshare`, `setpriv`, `libjemalloc.so.2`, and
 registry read access. Missing prerequisites stop before image download. Sprout
 does not install these host packages or configure DNS, firewalls or a TLS proxy.
-`--public-origin` must be an HTTPS DNS origin, optionally with a port. The
+`--public-origin` must be an HTTPS DNS origin, optionally with a nondefault port (omit explicit `:443`). The
 container binds only `127.0.0.1:PORT`; configure a TLS reverse proxy separately.
 A ready receipt explicitly says `public_tls_verified: false` until an external
 operator verifies that route.
@@ -85,6 +85,9 @@ owner/build-bound manifest, and provisions missing canonical runtime identities
 before ordinary production startup. It uses no existing staging vault or
 production bypass. The accepted container has `unless-stopped` restart policy.
 This assumes Docker itself is configured to start at boot on the host.
+The selected purposes configure discovery policy, and each is queried before
+acceptance. Discovery grants no Entity/capability access; authenticated end-user
+operations and descriptor-signature verification are separate checks.
 
 A failed installation keeps its private generation and keys for diagnosis or
 retry. Repeating the same request reuses that generation; a changed image or

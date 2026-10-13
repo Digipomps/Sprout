@@ -23,7 +23,7 @@ public enum ScaffoldServiceError: Error, Equatable, CustomStringConvertible {
         switch self {
         case .unsupportedPlatform: return "Automatisk tjenesteoppstart krever Linux. Bruk --download-only for bare bildeinstallasjon."
         case .rootRequired: return "Tjenesteinstallasjon krever root. Start den samme sprout-kommandoen med sudo."
-        case .invalidConfiguration: return "Ugyldig instans, port eller HTTPS-adresse. Bruk --instance NAME --port 9089 --public-origin https://HOST."
+        case .invalidConfiguration: return "Ugyldig instans, port eller HTTPS-adresse. Bruk --instance NAME --port 9089 --public-origin https://HOST (utelat standardport :443)."
         case .missingServiceProfile: return "Den signerte katalogen mangler en stoettet tjenesteprofil for formaalet."
         case .multipleServices: return "Denne tjenesteprofilen installerer en scaffold per instans. Velg formaal for samme scaffold, eller bruk separate instanser."
         case .pythonUnavailable: return "Tjenesteoppstart krever Python 3 paa /usr/bin/python3."
@@ -86,7 +86,7 @@ public struct ScaffoldServiceRequest: Codable, Equatable, Sendable {
               host == host.lowercased(), host.range(of: #"^[a-z0-9]+([.-][a-z0-9]+)*$"#, options: .regularExpression) != nil,
               host.range(of: #"^[0-9.]+$"#, options: .regularExpression) == nil,
               origin.user == nil, origin.password == nil,
-              origin.port.map({ (1...65535).contains($0) }) ?? true,
+              origin.port.map({ (1...65535).contains($0) && $0 != 443 }) ?? true,
               origin.query == nil, origin.fragment == nil, origin.path.isEmpty,
               origin.string == value else { return false }
         return true

@@ -382,7 +382,7 @@ final class ScaffoldInstallationTests: XCTestCase {
     func testServiceRejectsUnsafeOriginAndInstanceBeforeAnyHostWork() throws {
         for origin in ["http://service.example.test", "https://user:pass@service.example.test", "https://service.example.test/path",
                        "https://service.example.test/", "https://service.example.test?x=1", "https://service.example.test#x",
-                       "https://service.example.test:0", "https://service.example.test:65536", "https://localhost", "https://127.0.0.1"] {
+                       "https://service.example.test:443", "https://service.example.test:0", "https://service.example.test:65536", "https://localhost", "https://127.0.0.1"] {
             XCTAssertFalse(ScaffoldServiceRequest.validOrigin(origin), origin)
         }
         XCTAssertTrue(ScaffoldServiceRequest.validOrigin("https://service.example.test"))

@@ -18,7 +18,8 @@ ready. The network-isolated EAGER_BOOTSTRAP provisioning container uses the
 runtime's owner/resolver-gated provision-if-missing mode and must exit zero with
 its completion marker. The serving container uses require-existing. Neither
 phase permits developer key generation or staging-manifest bypass. A ready
-receipt proves local health/build/login/auth-boundary checks across restart;
+receipt proves local health/build/login/auth-boundary and selected-purpose
+discovery checks across restart; it does not verify bridge-descriptor signatures;
 public TLS and an authenticated end-user purpose journey are separate evidence.
 """
 from __future__ import annotations
@@ -145,7 +146,9 @@ def request_document(value):
         port = url.port
         host = url.hostname
         require(url.scheme == 'https' and host and url.username is None and url.password is None and url.path == '' and not url.query and not url.fragment, 'invalid_origin')
-        require('.' in host and re.fullmatch(r'[a-z0-9]+(?:[.-][a-z0-9]+)*', host) and (port is None or 1 <= port <= 65535), 'invalid_origin')
+        require('.' in host and re.fullmatch(r'[a-z0-9]+(?:[.-][a-z0-9]+)*', host) and (port is None or (1 <= port <= 65535 and port != 443)), 'invalid_origin')
+        # BridgeChannelAuthentication requires the default TLS port to be
+        # implicit; its canonical wss endpoint rejects an explicit :443.
         try:
             ipaddress.ip_address(host)
         except ValueError:
@@ -273,10 +276,14 @@ class System:
         require(isinstance(data, list) and len(data) == 1 and isinstance(data[0], dict), 'invalid_container_report')
         return data[0]
 
-    def http(self, port, path):
+    def http(self, port, path, *, json_body=None):
         connection = http.client.HTTPConnection('127.0.0.1', port, timeout=5)
         try:
-            connection.request('GET', path)
+            if json_body is None:
+                connection.request('GET', path)
+            else:
+                connection.request('POST', path, body=canonical_json(json_body),
+                                   headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
             response = connection.getresponse()
             body = response.read(MAX_JSON + 1)
             require(len(body) <= MAX_JSON, 'http_response_too_large')
@@ -563,6 +570,8 @@ class Coordinator:
         values = {'VAPOR_ENV': 'production', 'CELL_SCAFFOLD_RUN_EXECUTABLE': '/app/Run', 'RP_ID': urllib.parse.urlsplit(self.request['public_origin']).hostname,
             'RP_ORIGIN': self.request['public_origin'], 'CELL_SCAFFOLD_BRIDGE_ORIGIN': self.request['public_origin'],
             'PUBLIC_BASE_URL': self.request['public_origin'], 'CELL_SCAFFOLD_PUBLIC_BASE_URL': self.request['public_origin'],
+            'SPROUT_SCAFFOLD_DOMAIN': urllib.parse.urlsplit(self.request['public_origin']).hostname,
+            'SPROUT_BRIDGE_ALLOWED_PURPOSES': ','.join(self.request['purposes']),
             'CHAT_MVP_TOKEN_SECRET': auth['chat'], 'JWT_AUTH_SECRET': auth['jwt'],
             'SQLITE_DATABASE_PATH': '/app/CellsContainer/service.sqlite',
             'CELL_VAULT_DOCUMENT_ROOT': '/app/CellsContainer/vault',
@@ -640,7 +649,27 @@ class Coordinator:
                 code, headers, _ = self.system.http(self.request['listen_port'], '/porthole')
                 location = next((v for k, v in headers.items() if k.lower() == 'location'), '')
                 require(code in (302, 303) and location.startswith('/login'), 'authentication_boundary_failed')
-                return {'readiness': True, 'build_matches': True, 'login_surface': True, 'unauthenticated_porthole_denied': True}
+                # This is a real application POST for every selected purpose.
+                # The configured runtime origin, not caller-supplied proxy headers,
+                # must determine discovery endpoints. This does not authenticate
+                # a WebSocket session or cryptographically verify its descriptor.
+                domain = urllib.parse.urlsplit(self.request['public_origin']).hostname
+                websocket_origin = 'wss://' + self.request['public_origin'][len('https://'):]
+                for purpose in self.request['purposes']:
+                    query = {'scaffold_domain': domain, 'purpose': purpose, 'interests': ['haven.core.bridge']}
+                    code, _, body = self.system.http(self.request['listen_port'], '/v1/bridges/query', json_body=query)
+                    discovery = decode(body)
+                    bridges = discovery.get('bridges') if isinstance(discovery, dict) else None
+                    require(code == 200 and isinstance(bridges, list) and 0 < len(bridges) <= 16, 'purpose_discovery_failed')
+                    route = ('/v1/resolver/native-porthole/Porthole' if purpose == 'purpose://operate-local-haven-agent'
+                             else '/bridgehead/Porthole/CloudBridge')
+                    for bridge in bridges:
+                        require(isinstance(bridge, dict) and bridge.get('scaffold_domain') == domain
+                                and bridge.get('purpose_constraints') == [purpose]
+                                and bridge.get('bridge_endpoint') == websocket_origin + route,
+                                'purpose_discovery_binding_mismatch')
+                return {'readiness': True, 'build_matches': True, 'login_surface': True,
+                        'unauthenticated_porthole_denied': True, 'selected_purpose_discovery': True}
             except (Rejected, OSError, http.client.HTTPException, ValueError):
                 if attempt + 1 == attempts:
                     raise Rejected('local_functional_acceptance_failed') from None

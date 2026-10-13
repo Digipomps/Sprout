@@ -119,6 +119,8 @@ class DockerModel(s.System):
         self.canonical_interrupted = False
         self.bad_health = None
         self.bad_after_restart = False
+        self.bridge_fault = None
+        self.bridge_queries = []
         self.did_restart = False
         self.image = {'Id': IMAGE_ID, 'RepoDigests': [IMAGE], 'Os': 'linux', 'Architecture': 'amd64',
                       'Config': {'Labels': {'org.opencontainers.image.revision': BUILD['app_revision'],
@@ -222,7 +224,7 @@ class DockerModel(s.System):
     def pause(self):
         pass
 
-    def http(self, port, path):
+    def http(self, port, path, *, json_body=None):
         self.calls.append(('http', path))
         if self.bad_health == path or (self.did_restart and self.bad_after_restart):
             return 503, {}, b'{}'
@@ -234,6 +236,27 @@ class DockerModel(s.System):
             return 200, {}, b'<html>Passkey<script src="/webauthn.js"></script></html>'
         if path == '/porthole':
             return 303, {'Location': '/login?next=porthole'}, b''
+        if path == '/v1/bridges/query':
+            self.bridge_queries.append(copy.deepcopy(json_body))
+            assert isinstance(json_body, dict) and json_body.get('interests')
+            service = next(value for value in self.containers.values()
+                           if value.get('Config', {}).get('Labels', {}).get('org.haven.sprout.phase') == 'service')
+            env = dict(value.split('=', 1) for value in service['Config']['Env'])
+            purpose = json_body['purpose']
+            if (purpose not in env.get('SPROUT_BRIDGE_ALLOWED_PURPOSES', 'bootstrap.join_scaffold').split(',')
+                    or json_body['scaffold_domain'] != env.get('SPROUT_SCAFFOLD_DOMAIN') or self.bridge_fault == 'forbidden'):
+                return 403, {}, b'{"error":true}'
+            route = ('/v1/resolver/native-porthole/Porthole' if purpose == 'purpose://operate-local-haven-agent'
+                     else '/bridgehead/Porthole/CloudBridge')
+            bridge = {'scaffold_domain': env['SPROUT_SCAFFOLD_DOMAIN'], 'purpose_constraints': [purpose],
+                      'bridge_endpoint': 'wss://' + env['CELL_SCAFFOLD_BRIDGE_ORIGIN'][len('https://'):] + route}
+            if self.bridge_fault == 'domain': bridge['scaffold_domain'] = 'other.example'
+            if self.bridge_fault == 'purpose': bridge['purpose_constraints'] = ['bootstrap.join_scaffold']
+            if self.bridge_fault == 'origin': bridge['bridge_endpoint'] = 'wss://other.example:8443' + route
+            if self.bridge_fault == 'port': bridge['bridge_endpoint'] = 'wss://scaffold.example' + route
+            if self.bridge_fault == 'insecure': bridge['bridge_endpoint'] = 'ws://scaffold.example:8443' + route
+            if self.bridge_fault == 'path': bridge['bridge_endpoint'] += '/unexpected'
+            return 200, {}, s.canonical_json({'bridges': [] if self.bridge_fault == 'empty' else [bridge]})
         raise AssertionError(path)
 
 
@@ -291,7 +314,7 @@ class ServiceTests(unittest.TestCase):
     def test_origin_rejects_insecure_ip_credentials_paths_and_invalid_ports(self):
         for value in ('http://example.com', 'https://127.0.0.1', 'https://[::1]', 'https://user@example.com',
                       'https://example.com/a', 'https://example.com?x=y', 'https://example.com#x',
-                      'https://example.com/', 'https://example.com-', 'https://localhost', 'https://example.com:0', 'https://example.com:65536', 'https://EXAMPLE.com'):
+                      'https://example.com/', 'https://example.com-', 'https://localhost', 'https://example.com:0', 'https://example.com:443', 'https://example.com:65536', 'https://EXAMPLE.com'):
             with self.subTest(value=value), self.assertRaises(s.Rejected):
                 request(public_origin=value)
 
@@ -361,6 +384,9 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(env['RP_ORIGIN'], 'https://scaffold.example:8443')
         self.assertEqual(env['PUBLIC_BASE_URL'], 'https://scaffold.example:8443')
         self.assertEqual(env['CELL_SCAFFOLD_PUBLIC_BASE_URL'], 'https://scaffold.example:8443')
+        self.assertEqual(env['SPROUT_SCAFFOLD_DOMAIN'], 'scaffold.example')
+        self.assertEqual(env['SPROUT_BRIDGE_ALLOWED_PURPOSES'], 'purpose://haven/communicate')
+        self.assertTrue(result['checks']['selected_purpose_discovery'])
         self.assertEqual(env['CELL_SCAFFOLD_OWNER_SIGNING_KEY_FINGERPRINT'], 'o' * 43)
         self.assertEqual(env['CELL_SCAFFOLD_EAGER_BOOTSTRAP_MODE'], 'require-existing')
         key = s.ROOT / 'test/runtime-secrets/cell-vault-master-key'
@@ -368,6 +394,51 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(len(key.read_bytes()), 32)
         self.assertNotIn('JWT_AUTH_SECRET', json.dumps(result))
         self.assertEqual(json.loads((s.ROOT / 'test/receipt.json').read_bytes()), result)
+
+    def test_selected_purposes_are_sorted_exact_and_queried_before_and_after_restart(self):
+        purposes = ['purpose://operate-local-haven-agent', 'purpose://haven/communicate']
+        result = self.execute(request(purposes=purposes))
+        self.assertTrue(result['checks']['selected_purpose_discovery'])
+        self.assertNotIn('signature_verified', result['checks'])
+        env = dict(value.split('=', 1) for value in self.system.container('sprout-test')['Config']['Env'])
+        self.assertEqual(env['SPROUT_BRIDGE_ALLOWED_PURPOSES'], ','.join(sorted(purposes)))
+        self.assertNotIn('bootstrap.join_scaffold', env['SPROUT_BRIDGE_ALLOWED_PURPOSES'])
+        self.assertEqual([query['purpose'] for query in self.system.bridge_queries], sorted(purposes) * 2)
+        self.assertTrue(all(query['scaffold_domain'] == 'scaffold.example' and query['interests']
+                            for query in self.system.bridge_queries))
+
+    def test_discovery_403_prevents_ready_and_stops_provisional_service(self):
+        self.system.bridge_fault = 'forbidden'
+        self.rejected('local_functional_acceptance_failed', self.execute)
+        service = self.system.container('sprout-test')
+        self.assertFalse(service['State']['Running'])
+        self.assertEqual(service['HostConfig']['RestartPolicy']['Name'], 'no')
+        self.assertFalse((s.ROOT / 'test/receipt.json').exists())
+
+    def test_discovery_wrong_domain_purpose_origin_port_scheme_path_or_empty_fails(self):
+        self.execute(request(purposes=['purpose://operate-local-haven-agent']))
+        coordinator = s.Coordinator(self.system)
+        coordinator.preflight(request(purposes=['purpose://operate-local-haven-agent']))
+        for fault in ('domain', 'purpose', 'origin', 'port', 'insecure', 'path', 'empty'):
+            with self.subTest(fault=fault):
+                self.system.bridge_fault = fault
+                self.rejected('local_functional_acceptance_failed', lambda: coordinator.health(attempts=1))
+
+    def test_http_transport_posts_bounded_json_without_proxy_origin_overrides(self):
+        query = {'scaffold_domain': 'scaffold.example', 'purpose': 'purpose://operate-local-haven-agent',
+                 'interests': ['haven.core.bridge']}
+        with patch.object(s.http.client, 'HTTPConnection') as connection_type:
+            connection = connection_type.return_value
+            response = connection.getresponse.return_value
+            response.status = 200
+            response.getheaders.return_value = [('Content-Type', 'application/json')]
+            response.read.return_value = b'{"bridges":[]}'
+            self.assertEqual(s.System().http(9089, '/v1/bridges/query', json_body=query)[0], 200)
+            connection_type.assert_called_once_with('127.0.0.1', 9089, timeout=5)
+            connection.request.assert_called_once_with('POST', '/v1/bridges/query', body=s.canonical_json(query),
+                headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+            response.read.assert_called_once_with(s.MAX_JSON + 1)
+            connection.close.assert_called_once()
 
     def test_idempotent_retry_and_minimal_status_do_not_write_or_reenroll(self):
         self.execute(); before = self.files(); calls = len(self.system.calls)

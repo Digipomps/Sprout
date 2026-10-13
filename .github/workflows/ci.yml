@@ -59,14 +59,14 @@ jobs:
         run: swift test
 
       - name: Service image transport ignores inherited remote Docker context
-        env:
-          DOCKER_CONTEXT: unexpected-remote
-          DOCKER_HOST: tcp://unexpected.invalid:2376
-          DOCKER_TLS_VERIFY: "1"
-          DOCKER_CERT_PATH: /unexpected/certificates
-          DOCKER_CONFIG: /expected/private-registry-config
-          SPROUT_EXPECTED_DOCKER_CONFIG: /expected/private-registry-config
-        run: swift test --skip-build --filter DockerScaffoldRuntimeTests.testServicePullAndInspectionUseTheSameExplicitLocalDaemon
+        # Set poison variables inside the job container, not on the runner's
+        # own docker-exec operation used to enter that container.
+        run: |
+          env DOCKER_CONTEXT=unexpected-remote DOCKER_HOST=tcp://unexpected.invalid:2376 \
+            DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/unexpected/certificates \
+            DOCKER_CONFIG=/expected/private-registry-config \
+            SPROUT_EXPECTED_DOCKER_CONFIG=/expected/private-registry-config \
+            swift test --skip-build --filter DockerScaffoldRuntimeTests.testServicePullAndInspectionUseTheSameExplicitLocalDaemon
 
       - name: Real HTTP transport regressions
         run: python3 Scripts/test_http_transport.py --repeat 3 -- swift test --skip-build --filter BoundedHTTPNetworkTests
@@ -186,14 +186,14 @@ jobs:
         run: swift test
 
       - name: Service image transport ignores inherited remote Docker context
-        env:
-          DOCKER_CONTEXT: unexpected-remote
-          DOCKER_HOST: tcp://unexpected.invalid:2376
-          DOCKER_TLS_VERIFY: "1"
-          DOCKER_CERT_PATH: /unexpected/certificates
-          DOCKER_CONFIG: /expected/private-registry-config
-          SPROUT_EXPECTED_DOCKER_CONFIG: /expected/private-registry-config
-        run: swift test --skip-build --filter DockerScaffoldRuntimeTests.testServicePullAndInspectionUseTheSameExplicitLocalDaemon
+        # Set poison variables inside the job container, not on the runner's
+        # own docker-exec operation used to enter that container.
+        run: |
+          env DOCKER_CONTEXT=unexpected-remote DOCKER_HOST=tcp://unexpected.invalid:2376 \
+            DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/unexpected/certificates \
+            DOCKER_CONFIG=/expected/private-registry-config \
+            SPROUT_EXPECTED_DOCKER_CONFIG=/expected/private-registry-config \
+            swift test --skip-build --filter DockerScaffoldRuntimeTests.testServicePullAndInspectionUseTheSameExplicitLocalDaemon
 
       - name: Real HTTP transport regressions
         run: python3 Scripts/test_http_transport.py --repeat 3 -- swift test --skip-build --filter BoundedHTTPNetworkTests
