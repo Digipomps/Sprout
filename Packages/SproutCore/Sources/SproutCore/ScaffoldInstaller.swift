@@ -12,14 +12,16 @@ public protocol ScaffoldImageRuntime: Sendable {
 /// Arguments are passed directly to exec, never interpolated into a shell.
 public struct DockerScaffoldRuntime: ScaffoldImageRuntime {
     public let executable: URL
+    public let localDaemon: Bool
 
-    public init(executable: URL? = nil) throws {
+    public init(executable: URL? = nil, localDaemon: Bool = false) throws {
         let paths = ["/usr/bin/docker", "/usr/local/bin/docker", "/opt/homebrew/bin/docker",
                      FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".docker/bin/docker").path]
         guard let candidate = executable ?? paths.first(where: FileManager.default.isExecutableFile(atPath:)).map({ URL(fileURLWithPath: $0) }) else {
             throw ScaffoldInstallationError.dockerUnavailable
         }
         self.executable = candidate
+        self.localDaemon = localDaemon
     }
 
     public func pull(image: String, platform: String) async throws {
@@ -34,6 +36,7 @@ public struct DockerScaffoldRuntime: ScaffoldImageRuntime {
 
     private func run(_ arguments: [String], capture: Bool, missingImage: String? = nil) async throws -> Data {
         let executable = executable
+        let localDaemon = localDaemon
         return try await Task.detached {
             // A file avoids pipe backpressure while Docker reports large image pulls.
             let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent("sprout-docker-\(UUID().uuidString)")
@@ -45,7 +48,14 @@ public struct DockerScaffoldRuntime: ScaffoldImageRuntime {
             defer { try? output.close() }
             let process = Process()
             process.executableURL = executable
-            process.arguments = arguments
+            process.arguments = (localDaemon ? ["--host", "unix:///var/run/docker.sock"] : []) + arguments
+            if localDaemon {
+                var environment = ProcessInfo.processInfo.environment
+                for key in ["DOCKER_CONTEXT", "DOCKER_HOST", "DOCKER_TLS", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH"] {
+                    environment.removeValue(forKey: key)
+                }
+                process.environment = environment
+            }
             process.standardInput = FileHandle.nullDevice
             process.standardOutput = capture ? output : FileHandle.standardError
             let errorURL = outputURL.appendingPathExtension("stderr")

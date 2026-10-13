@@ -328,6 +328,75 @@ final class ScaffoldInstallationTests: XCTestCase {
         XCTAssertEqual(try receiptFiles(root).count, 0)
     }
 
+    func testSignedServiceProfileSurvivesRoundTripAndAuthorizesExactImage() throws {
+        var web = try artifact("web", purposes: [purpose, secondaryPurpose])
+        web.installation?.service_profile = "cellscaffold-web-v1"
+        let signed = try catalog([web])
+        let decoded = try JSONDecoder().decode(ScaffoldExecutableCatalog.self, from: JSONEncoder().encode(signed))
+        XCTAssertTrue(try decoded.verifySignature())
+        let request = try ScaffoldServiceRequest.make(plan: plan(decoded, purposes: [purpose, secondaryPurpose]),
+            instance: "acceptance", port: 9089, publicOrigin: "https://staging.example.test:8443")
+        XCTAssertEqual(request.image, web.installation?.image)
+        XCTAssertEqual(request.platform, "linux/amd64")
+        XCTAssertEqual(request.profile, "cellscaffold-web-v1")
+        XCTAssertEqual(request.root, "/var/lib/haven/sprout")
+        XCTAssertEqual(request.public_origin, "https://staging.example.test:8443")
+        XCTAssertEqual(try JSONDecoder().decode(ScaffoldServiceRequest.self, from: JSONEncoder().encode(request)), request)
+        var modified = signed
+        modified.artifacts[0].installation?.service_profile = "arbitrary-code"
+        XCTAssertFalse(try modified.verifySignature(), "The activation profile must be covered by the catalog signature")
+    }
+
+    func testServiceRefusesUnsignedLegacyAndUnknownProfiles() throws {
+        var web = try artifact("web", purposes: [purpose])
+        for profile: String? in [nil, "arbitrary-code"] {
+            web.installation?.service_profile = profile
+            XCTAssertThrowsError(try ScaffoldServiceRequest.make(plan: plan(catalog([web])),
+                instance: "acceptance", port: 9089, publicOrigin: "https://service.example.test")) {
+                XCTAssertEqual($0 as? ScaffoldServiceError, .missingServiceProfile)
+            }
+        }
+    }
+
+    func testServiceDoesNotSilentlyDropAnotherRequestedPurpose() throws {
+        var web = try artifact("web", purposes: [purpose])
+        web.installation?.service_profile = "cellscaffold-web-v1"
+        let other = try artifact("other", purposes: [secondaryPurpose])
+        XCTAssertThrowsError(try ScaffoldServiceRequest.make(plan: plan(catalog([web, other]), purposes: [purpose, secondaryPurpose]),
+            instance: "acceptance", port: 9089, publicOrigin: "https://service.example.test")) {
+            XCTAssertEqual($0 as? ScaffoldServiceError, .missingServiceProfile)
+        }
+    }
+
+    func testServiceRequiresSeparateInstancesForIndependentServices() throws {
+        var web = try artifact("web", purposes: [purpose])
+        var other = try artifact("other", purposes: [secondaryPurpose])
+        web.installation?.service_profile = "cellscaffold-web-v1"
+        other.installation?.service_profile = "cellscaffold-web-v1"
+        XCTAssertThrowsError(try ScaffoldServiceRequest.make(plan: plan(catalog([web, other]), purposes: [purpose, secondaryPurpose]),
+            instance: "acceptance", port: 9089, publicOrigin: "https://service.example.test")) {
+            XCTAssertEqual($0 as? ScaffoldServiceError, .multipleServices)
+        }
+    }
+
+    func testServiceRejectsUnsafeOriginAndInstanceBeforeAnyHostWork() throws {
+        for origin in ["http://service.example.test", "https://user:pass@service.example.test", "https://service.example.test/path",
+                       "https://service.example.test/", "https://service.example.test?x=1", "https://service.example.test#x",
+                       "https://service.example.test:0", "https://service.example.test:65536", "https://localhost", "https://127.0.0.1"] {
+            XCTAssertFalse(ScaffoldServiceRequest.validOrigin(origin), origin)
+        }
+        XCTAssertTrue(ScaffoldServiceRequest.validOrigin("https://service.example.test"))
+        XCTAssertTrue(ScaffoldServiceRequest.validOrigin("https://service.example.test:8443"))
+        for name in ["../escape", "/tmp/escape", "-flag", "UPPER", "trailing-", String(repeating: "a", count: 41)] {
+            XCTAssertThrowsError(try ScaffoldServiceRequest.status(instance: name), name)
+        }
+        let request = try ScaffoldServiceRequest.status(instance: "acceptance-1")
+        let record = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+        XCTAssertNil(record["image"])
+        XCTAssertNil(record["public_origin"])
+        XCTAssertEqual(record["operation"] as? String, "status")
+    }
+
     private func artifact(_ id: String, purposes: [String] = [], dependencies: [String] = []) throws -> ScaffoldExecutableArtifact {
         let digest = Hashing.sha256(Data(id.utf8))
         let hex = digest.map { String(format: "%02x", $0) }.joined()

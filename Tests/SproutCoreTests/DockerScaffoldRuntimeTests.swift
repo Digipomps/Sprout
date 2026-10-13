@@ -47,6 +47,22 @@ final class DockerScaffoldRuntimeTests: XCTestCase {
         XCTAssertFalse(otherRepository)
     }
 
+    func testServicePullAndInspectionUseTheSameExplicitLocalDaemon() async throws {
+        let executable = try script("""
+        [ "$1" = '--host' ] && [ "$2" = 'unix:///var/run/docker.sock' ] || exit 42
+        [ -z "${DOCKER_CONTEXT+x}" ] && [ -z "${DOCKER_HOST+x}" ] && [ -z "${DOCKER_TLS_VERIFY+x}" ] || exit 43
+        if [ -n "${SPROUT_EXPECTED_DOCKER_CONFIG:-}" ]; then [ "${DOCKER_CONFIG:-}" = "$SPROUT_EXPECTED_DOCKER_CONFIG" ] || exit 44; fi
+        shift 2
+        if [ "$1" = 'pull' ]; then exit 0; fi
+        printf '%s\\n' '{"digests":["\(image)"],"os":"linux","architecture":"amd64"}'
+        """)
+        defer { try? FileManager.default.removeItem(at: executable.deletingLastPathComponent()) }
+        let runtime = try DockerScaffoldRuntime(executable: executable, localDaemon: true)
+        try await runtime.pull(image: image, platform: "linux/amd64")
+        let present = try await runtime.contains(image: image, platform: "linux/amd64")
+        XCTAssertTrue(present)
+    }
+
     private func script(_ body: String) throws -> URL {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])

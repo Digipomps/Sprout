@@ -21,10 +21,11 @@ For the **scaffold administrator**, run `sprout scaffold` or
 `sprout onboard --role scaffoldadmin`. Choose purposes from a signed catalog;
 Sprout resolves required artifacts and dependencies, verifies the publisher and
 immutable OCI digests, downloads images through Docker and writes private
-installation receipts. `sprout scaffold plan` previews the selection and
-`sprout scaffold status` verifies installed images. Images are reported as
-`installed-not-started`; first-owner/vault provisioning and service activation
-remain distinct steps. No Mac app is launched by this flow.
+installation receipts. On Linux, the signed service profile also enrolls a new
+local owner, provisions private runtime state and starts a persistent service.
+`sprout scaffold plan` previews the selection; `status --instance NAME` checks
+that service. `--download-only` explicitly stops after image installation.
+No Mac app is launched by this flow.
 
 The CLI itself remains portable on Linux and macOS; only OCI scaffold
 installation requires Docker. Registry access and an actually published v1.1

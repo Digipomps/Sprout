@@ -166,6 +166,13 @@
                   "linux/amd64",
                   "linux/arm64"
                 ]
+              },
+              "service_profile": {
+                "type": "string",
+                "enum": [
+                  "cellscaffold-web-v1"
+                ],
+                "description": "Explicit signed permission to use the fixed CellScaffold web service activation profile."
               }
             }
           }

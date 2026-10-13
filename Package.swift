@@ -73,7 +73,8 @@ var targets: [Target] = [
                 "SproutResolverAdapter",
                 .product(name: "Crypto", package: "swift-crypto")
             ],
-            path: "Packages/SproutCore/Sources/SproutCore"
+            path: "Packages/SproutCore/Sources/SproutCore",
+            exclude: ["Resources"]
         ),
         .target(
             name: "SproutAppSupport",

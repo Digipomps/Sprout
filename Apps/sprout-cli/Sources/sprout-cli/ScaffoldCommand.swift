@@ -11,31 +11,39 @@ extension SproutCLI {
         if arguments.contains("--help") || arguments.contains("-h") {
             print("""
             sprout scaffold [purposes|plan|install|status] --domain HOST [--purpose ID,ID] [--channel stable|beta]
-              [--catalog FILE | --catalog-url HTTPS_URL] [--trusted-publisher-key KEY] [--root DIRECTORY] [--yes] [--offline]
+              [--catalog FILE | --catalog-url HTTPS_URL] [--trusted-publisher-key KEY] [--root DIRECTORY] [--yes] [--offline] [--download-only]
+              [--instance NAME] [--port PORT] [--public-origin https://HOST]
             Uten underkommando: velg formaal fra den signerte katalogen og bekreft installasjonsplanen.
-            plan laster ingen bilder; install henter alle valgte scaffolds og avhengigheter via Docker.
+            plan laster ingen bilder; install henter bilder og starter tjenesten paa Linux som root.
+            --public-origin er tjenestens HTTPS-adresse; --port (9089) bindes bare til 127.0.0.1.
+            --download-only stopper etter bildeinstallasjon. Ingen eier eller tjeneste opprettes da.
             --yes godkjenner planen; foerstegangstillit krever fortsatt en festet utgivernoekkel.
-            status kontrollerer installerte bildedigest-er. Installasjon starter ingen tjeneste eller aapner porter.
+            status kontrollerer bilder; status --instance NAME kontrollerer den faktisk installerte tjenesten.
             """)
             return
         }
         var rest = arguments
         let command = rest.first.map { !$0.hasPrefix("--") } == true ? rest.removeFirst() : "dialogue"
         guard ["dialogue", "purposes", "plan", "install", "status"].contains(command) else { throw OnboardingError.invalidInput }
-        let allowed: Set<String> = ["domain", "purpose", "channel", "catalog", "catalog-url", "trusted-publisher-key", "root", "yes", "offline"]
+        let allowed: Set<String> = ["domain", "purpose", "channel", "catalog", "catalog-url", "trusted-publisher-key", "root", "yes", "offline", "download-only", "instance", "port", "public-origin"]
         var flags: [String: String] = [:]
         while !rest.isEmpty {
             let flag = rest.removeFirst()
             guard flag.hasPrefix("--") else { throw OnboardingError.invalidInput }
             let key = String(flag.dropFirst(2))
             guard allowed.contains(key), flags[key] == nil else { throw OnboardingError.invalidInput }
-            if key == "yes" || key == "offline" { flags[key] = "true"; continue }
+            if key == "yes" || key == "offline" || key == "download-only" { flags[key] = "true"; continue }
             guard !rest.isEmpty, !rest[0].hasPrefix("--") else { throw OnboardingError.invalidInput }
             flags[key] = rest.removeFirst()
         }
         let root = URL(fileURLWithPath: flags["root"] ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/state/haven/sprout/scaffolds").path)
         let installs = root.appendingPathComponent("installations")
         if command == "status" {
+            if let instance = flags["instance"] {
+                let receipt = try await ScaffoldServiceController.run(ScaffoldServiceRequest.status(instance: instance))
+                print(String(decoding: receipt, as: UTF8.self))
+                return
+            }
             try scaffoldJSON(await ScaffoldInstaller(root: installs, runtime: DockerScaffoldRuntime()).inspect())
             return
         }
@@ -108,14 +116,44 @@ extension SproutCLI {
         let plan = try ScaffoldInstallationPlan.make(catalog: catalog, domain: domain, publisherKeys: [publisher], purposes: requested, platform: platform, channel: channel)
         try scaffoldJSON(plan)
         if command == "plan" { return }
-        if flags["yes"] == nil {
-            guard try scaffoldAnswer("Hente og installere disse \(plan.artifacts.count) scaffold-bildene med Docker? [ja/nei]").lowercased() == "ja" else { return }
+        let service: ScaffoldServiceRequest?
+        if flags["download-only"] == "true" {
+            service = nil
+        } else {
+            let origin: String
+            if let value = flags["public-origin"] { origin = value }
+            else if flags["yes"] == "true" { throw ScaffoldServiceError.invalidConfiguration }
+            else { origin = try scaffoldAnswer("Hvilken HTTPS-adresse skal denne scaffold-tjenesten bruke? (https://HOST)") }
+            guard let port = Int(flags["port"] ?? "9089") else { throw ScaffoldServiceError.invalidConfiguration }
+            service = try ScaffoldServiceRequest.make(plan: plan, instance: flags["instance"] ?? "scaffold",
+                                                      port: port, publicOrigin: origin)
+            try ScaffoldServiceController.requireHostAccess()
+            try scaffoldJSON(service!)
         }
-        let receipts = try await ScaffoldInstaller(root: installs, runtime: DockerScaffoldRuntime()).install(
+        if flags["yes"] == nil {
+            let prompt = service == nil ? "Hente og installere disse \(plan.artifacts.count) scaffold-bildene med Docker? [ja/nei]"
+                : "Hente og installere scaffold, opprette en lokal eier og starte tjenesten paa loopback? [ja/nei]"
+            guard try scaffoldAnswer(prompt).lowercased() == "ja" else { return }
+        }
+        if var preflight = service {
+            preflight.operation = "preflight"
+            _ = try await ScaffoldServiceController.run(preflight)
+        }
+        let receipts = try await ScaffoldInstaller(root: installs, runtime: DockerScaffoldRuntime(localDaemon: service != nil)).install(
             catalog: catalog, domain: domain, publisherKeys: [publisher], purposes: requested, platform: platform, channel: channel, offline: flags["offline"] == "true")
         try scaffoldJSON(receipts)
         if flags["offline"] == "true" { print("Offline: bare allerede tilgjengelige og digest-kontrollerte bilder er brukt. Ingen nedlasting ble utfoert.") }
-        print("Installert og digest-kontrollert. Bildene er klare i Docker. Ingen tjeneste er startet; eieroppsett og driftskonfigurasjon kommer foer oppstart.")
+        if let service {
+            // Authorization must still hold immediately before executing the
+            // signed image's fixed activation profile.
+            _ = try ScaffoldInstallationPlan.make(catalog: catalog, domain: domain, publisherKeys: [publisher],
+                                                  purposes: requested, platform: platform, channel: channel)
+            let result = try await ScaffoldServiceController.run(service)
+            print(String(decoding: result, as: UTF8.self))
+            print("Tjenesten er startet og kontrollert paa loopback. HTTPS-proxy og offentlig tilgjengelighet kontrolleres separat.")
+        } else {
+            print("Installert og digest-kontrollert. --download-only: ingen tjeneste er startet.")
+        }
         print("Kvitteringer: \(installs.path)")
     }
 
