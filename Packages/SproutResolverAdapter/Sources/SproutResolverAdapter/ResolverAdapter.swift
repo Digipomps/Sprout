@@ -288,6 +288,7 @@ public struct EntityResolutionRequest: Codable, Equatable, Sendable {
     public var goal: String
     public var interests: [String]
     public var evidence: EntityEvidenceSummary?
+    public var person_link_proof: PersonLinkProof?
 
     public init(
         identity_public_key: String,
@@ -296,7 +297,8 @@ public struct EntityResolutionRequest: Codable, Equatable, Sendable {
         purpose: String,
         goal: String,
         interests: [String],
-        evidence: EntityEvidenceSummary?
+        evidence: EntityEvidenceSummary?,
+        person_link_proof: PersonLinkProof? = nil
     ) {
         self.identity_public_key = identity_public_key
         self.domain = domain
@@ -305,6 +307,7 @@ public struct EntityResolutionRequest: Codable, Equatable, Sendable {
         self.goal = goal
         self.interests = interests
         self.evidence = evidence
+        self.person_link_proof = person_link_proof
     }
 }
 

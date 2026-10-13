@@ -53,6 +53,11 @@ jobs:
       - name: Swift version
         run: swift --version
 
+      - name: Verify embedded service coordinator
+        run: |
+          python3 Scripts/embed_scaffold_service.py --check
+          python3 Scripts/test_scaffold_service.py
+
       - name: Build
         run: |
           swift build --product sprout
@@ -158,6 +163,11 @@ jobs:
 
       - name: Swift version
         run: swift --version
+
+      - name: Verify embedded service coordinator
+        run: |
+          python3 Scripts/embed_scaffold_service.py --check
+          python3 Scripts/test_scaffold_service.py
 
       - name: Build
         run: |

@@ -7,6 +7,7 @@ public enum OnboardingError: Error, Equatable {
     case trustChanged
     case unsafeEndpoint
     case invalidProof
+    case trustDescriptorExpired
     case serviceUnavailable
     case paused
 }
