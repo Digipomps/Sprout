@@ -107,8 +107,42 @@ final class VaporVaultAnchorSnapshotTests: XCTestCase {
         XCTAssertTrue(try descriptor.verifySignature())
     }
 
+    func testCurrentV2VaultExplicitlyRefusesSigningWithoutActiveOwnerBinding() throws {
+        let temporaryDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+        let masterKeyData = SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }
+        let masterKeyURL = temporaryDirectory.appendingPathComponent("synthetic-master.key")
+        try masterKeyData.write(to: masterKeyURL)
+        let seed = Ed25519.generateSeed()
+        let admin = VaporVaultIdentityRecord(uuid: "synthetic-v2-owner", displayName: "Synthetic owner",
+            identityContext: "Scaffold", publicKey: try Ed25519KeyPair(seed: seed).publicKeyData, privateKey: seed)
+        struct CurrentEnvelope: Encodable {
+            let schema = "haven.vapor-identity-vault.v2"
+            let fileVersion: UInt64 = 1
+            let identities: [VaporVaultIdentityRecord]
+        }
+        let plaintext = try JSONEncoder().encode(CurrentEnvelope(identities: [admin]))
+        let encrypted = try encryptVault(plaintext: plaintext, masterKeyData: masterKeyData)
+        let vaultURL = temporaryDirectory.appendingPathComponent("OrganisationIdentities.crypt")
+        try encrypted.write(to: vaultURL)
+        let paths = VaporVaultPaths(vaultFileURL: vaultURL, masterKeyFileURL: masterKeyURL)
+        XCTAssertThrowsError(try VaporVaultDecoder.loadIdentities(paths: paths)) {
+            XCTAssertEqual($0 as? VaporVaultError, .currentVaultRequiresOwnerBinding)
+            XCTAssertTrue(String(describing: $0).contains("verified active-owner binding"))
+        }
+        XCTAssertThrowsError(try VaporVaultDecoder.identity(forContext: "Scaffold", paths: paths)) {
+            XCTAssertEqual($0 as? VaporVaultError, .currentVaultRequiresOwnerBinding)
+        }
+        XCTAssertEqual(try Data(contentsOf: vaultURL), encrypted)
+        XCTAssertEqual(try Data(contentsOf: masterKeyURL), masterKeyData)
+    }
+
     private func encryptVault(identities: [VaporVaultIdentityRecord], masterKeyData: Data) throws -> Data {
-        let plaintext = try JSONEncoder().encode(identities)
+        try encryptVault(plaintext: JSONEncoder().encode(identities), masterKeyData: masterKeyData)
+    }
+
+    private func encryptVault(plaintext: Data, masterKeyData: Data) throws -> Data {
         let key = HKDF<SHA256>.deriveKey(
             inputKeyMaterial: SymmetricKey(data: masterKeyData),
             salt: Data("CellScaffoldVaultSalt.v1".utf8),

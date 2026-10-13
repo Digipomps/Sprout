@@ -44,6 +44,8 @@ struct SproutCLI {
                 try runBridges(arguments: Array(arguments.dropFirst()))
             case "owner":
                 try await runOwner(arguments: Array(arguments.dropFirst()))
+            case "scaffold":
+                try await runScaffold(arguments: Array(arguments.dropFirst()))
             case "software":
                 try await runSoftware(arguments: Array(arguments.dropFirst()))
             case "federation":
@@ -1577,6 +1579,7 @@ struct SproutCLI {
           sprout owner show --domain <local-scaffold-domain> [--root <dir>] [--out <json>]
           sprout owner list [--root <dir>] [--out <json>]
           sprout owner trust-root --domain <local-scaffold-domain> [--root <dir>] [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--software-catalog-url <https://domain/.well-known/haven-executable-catalog.json>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <json>]
+          sprout scaffold [purposes|plan|install|status] --domain <d> [--purpose <id,id>] [--catalog <file>] [--trusted-publisher-key <key>] [--root <dir>] [--yes]
           sprout software fetch --domain <d> [--trust-root <file>] [--catalog-url <https://domain/.well-known/haven-executable-catalog.json>] [--trusted-publisher-keys <k1,k2>] [--now <ISO8601>] [--out <json>]
           sprout software verify --catalog <file> [--domain <d>] [--trust-root <file>] [--trusted-publisher-keys <k1,k2>] [--now <ISO8601>]
           sprout software select --catalog <file> --kind <cellscaffold|sprout|scaffold-bundle> --platform <linux-x86_64|macos-arm64> [--channel <stable|beta>] [--name <artifact-name>] [--domain <d>] [--trust-root <file>] [--trusted-publisher-keys <k1,k2>] [--now <ISO8601>] [--out <json>]

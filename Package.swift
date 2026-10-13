@@ -70,7 +70,8 @@ var targets: [Target] = [
                 "SproutStorage",
                 "SproutTransport",
                 "SproutBridge",
-                "SproutResolverAdapter"
+                "SproutResolverAdapter",
+                .product(name: "Crypto", package: "swift-crypto")
             ],
             path: "Packages/SproutCore/Sources/SproutCore"
         ),
@@ -130,9 +131,11 @@ var targets: [Target] = [
                 "SproutBridge",
                 "SproutResolverAdapter",
                 "SproutStorage",
-                "SproutTransport"
+                "SproutTransport",
+                .product(name: "Crypto", package: "swift-crypto")
             ],
-            path: "Tests/SproutCoreTests"
+            path: "Tests/SproutCoreTests",
+            exclude: ["Fixtures"]
         ),
         .testTarget(
             name: "SproutAppSupportTests",

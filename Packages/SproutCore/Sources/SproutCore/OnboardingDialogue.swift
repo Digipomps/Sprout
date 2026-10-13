@@ -1,5 +1,6 @@
 import Foundation
 import SproutStorage
+import SproutResolverAdapter
 
 public struct OnboardingDefaults: Sendable {
     public var domain: String?
@@ -9,8 +10,8 @@ public struct OnboardingDefaults: Sendable {
     public var interests: [String]
 
     public init(domain: String? = nil, entityIntent: OnboardingEntityIntent? = nil,
-                purpose: String = "purpose://contact.communication",
-                goal: String = "Opprette en privat samtalekanal.", interests: [String] = ["correspondence"]) {
+                purpose: String = "bootstrap.join_scaffold",
+                goal: String = "Koble denne maskinen til HAVEN og finne noedvendige scaffolds.", interests: [String] = ["haven.core.bootstrap"]) {
         self.domain = domain
         self.entityIntent = entityIntent
         self.purpose = purpose
@@ -22,6 +23,8 @@ public struct OnboardingDefaults: Sendable {
 /// A deterministic terminal conversation. No LLM, transcript collection or implicit approvals.
 @MainActor
 public final class OnboardingDialogue {
+    public typealias EnrollmentHandler = @MainActor (OnboardingProfile, ScaffoldAdminTrustRootDescriptor, URL) async throws -> Bool
+    private let enroll: EnrollmentHandler?
     private let store: OnboardingProfileStore
     private let service: any OnboardingService
     private let ask: (String) -> String?
@@ -29,11 +32,13 @@ public final class OnboardingDialogue {
     private var profile: OnboardingProfile?
 
     public init(root: URL, service: any OnboardingService,
-                ask: @escaping (String) -> String?, say: @escaping (String) -> Void) {
+                ask: @escaping (String) -> String?, say: @escaping (String) -> Void,
+                enroll: EnrollmentHandler? = nil) {
         store = OnboardingProfileStore(root: root)
         self.service = service
         self.ask = ask
         self.say = say
+        self.enroll = enroll
     }
 
     public func run(defaults: OnboardingDefaults = .init()) async throws {
@@ -86,17 +91,28 @@ public final class OnboardingDialogue {
             say("Dette ber bare om registrering og identitetskontroll, ikke sammenslaaing, kanaltilgang eller betaling. Tjenestens oppbevaring er ikke verifisert av Sprout; den kan beholde forespoerslene.")
             guard try confirm("Sende dette og kontrollere identiteten naa? [ja/nei]") else { throw OnboardingError.paused }
             guard let current = profile else { throw OnboardingError.recoveryRequired }
-            let outcome = try await service.resolve(
+            var outcome = try await service.resolve(
                 profile: current, descriptor: descriptor,
                 identityRoot: store.root.appendingPathComponent("scaffold-identities", isDirectory: true)
             )
             profile?.lastOutcome = outcome
             try save()
+            if outcome == .awaitingApproval, let enroll {
+                say("Noekkelen mangler godkjent Entity-tilknytning. Du kan bruke HAVENs eksisterende invitasjon og passkey-godkjenning paa https://\(domain)/link.")
+                say("Koblingen bruker /link/api/request, /link/api/completion og /link/api/complete. Den binder denne noekkelen til Entiteten du godkjenner; enkelte datarettigheter krever fortsatt egne avtaler.")
+                guard try confirm("Starte denne koblingen og kontrollere identiteten igjen etter godkjenning? [ja/nei]") else { throw OnboardingError.paused }
+                if try await enroll(current, descriptor, store.root.appendingPathComponent("scaffold-identities", isDirectory: true)) {
+                    outcome = try await service.resolve(profile: current, descriptor: descriptor,
+                        identityRoot: store.root.appendingPathComponent("scaffold-identities", isDirectory: true))
+                    profile?.lastOutcome = outcome
+                    try save()
+                }
+            }
             switch outcome {
             case .localOnly:
                 say("Bare lokalt oppsett er fullfoert.")
             case .awaitingApproval:
-                say("Startidentiteten er registrert, men mangler verifisert Entity-tilknytning. Godkjenning fra en eksisterende enhet eller opprettelse hos tjenesten er ikke koblet inn i denne dialogen ennaa. Ingen filer skal flyttes; oppsettet kan gjenopptas etter at tjenesten har stoette for godkjenningen.")
+                say("Startidentiteten mangler verifisert Entity-tilknytning. Bruk invitasjon og passkey-godkjenning fra en Entitet du kontrollerer paa https://\(domain)/link. Oppsett og noekler er beholdt; start sprout igjen for aa fortsette.")
             case .identityVerified:
                 say("Tjenesten har levert et kontrollert bevis for identitetens Entity-tilknytning. Dette er ikke en aktiv kanal eller fullverdig nettverksmedlemskap. Bridge, Agreement og Grants maa fortsatt kobles til kanalstarten.")
             }

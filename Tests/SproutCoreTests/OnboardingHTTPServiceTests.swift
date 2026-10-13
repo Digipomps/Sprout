@@ -42,6 +42,74 @@ final class OnboardingHTTPServiceTests: XCTestCase {
         XCTAssertEqual(files.filter { $0.hasSuffix("identity.json") }.count, 2)
     }
 
+    @MainActor
+    func testExpiredDiscoveryStopsBeforeIdentityDisclosureAndPreservesLocalStateOnResume() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("sprout-expired-discovery-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let descriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor(expiresAt: "2000-01-01T00:00:00Z")
+        let handler = OnboardingHTTPFixture(descriptor: descriptor, localPublicKey: "not-disclosed")
+        OnboardingURLProtocol.fixture = handler
+        defer { OnboardingURLProtocol.fixture = nil }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [OnboardingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let service = OnboardingHTTPService(testSession: session)
+        var originalSeed: Data?
+        for input in [["ja", "ny", "", "", "", "example.haven.local", "ja", "ja"], ["ja", "ja", "ja"]] {
+            var answers = input
+            let dialogue = OnboardingDialogue(root: root, service: service, ask: { _ in
+                answers.isEmpty ? nil : answers.removeFirst()
+            }, say: { _ in })
+            do {
+                try await dialogue.run()
+                XCTFail("Expired trust must stop the real client composition")
+            } catch {
+                XCTAssertEqual(error as? OnboardingError, .trustDescriptorExpired)
+            }
+            XCTAssertTrue(answers.isEmpty)
+            let profile = try JSONDecoder().decode(OnboardingProfile.self, from: PrivateStateFiles.read(root.appendingPathComponent("onboarding.json")))
+            XCTAssertTrue(profile.trustedAdminKeys.isEmpty)
+            XCTAssertEqual(profile.lastOutcome, .localOnly)
+            XCTAssertFalse(PrivateStateFiles.exists(root.appendingPathComponent("scaffold-identities")))
+            let seed = try PrivateStateFiles.read(root.appendingPathComponent("identities/local.sprout.invalid/keys/ed25519.seed"))
+            if let originalSeed { XCTAssertEqual(seed, originalSeed) }
+            else { originalSeed = seed }
+        }
+        XCTAssertEqual(handler.paths, Array(repeating: "/.well-known/haven-scaffold-admin-trust-root.json", count: 2))
+    }
+
+    func testForgedDiscoveryIsStillRejectedAsInvalidSignature() async throws {
+        for expiry in ["2099-01-01T00:00:00Z", "2000-01-01T00:00:00Z", "invalid"] {
+            var descriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor(expiresAt: expiry)
+            descriptor.signature.sig = Base64URL.encode(Data(repeating: 0, count: 64))
+            try await assertRejectedDiscovery(descriptor, expected: .signatureInvalid)
+        }
+    }
+
+    func testSignedMalformedExpiryIsNotReportedAsExpiredTrust() async throws {
+        let descriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor(expiresAt: "invalid")
+        try await assertRejectedDiscovery(descriptor, expected: .invalidExpiry)
+    }
+
+    private func assertRejectedDiscovery(_ descriptor: ScaffoldAdminTrustRootDescriptor,
+                                         expected: ScaffoldAdminTrustRootDescriptorValidationError) async throws {
+        let handler = OnboardingHTTPFixture(descriptor: descriptor, localPublicKey: "not-disclosed")
+        OnboardingURLProtocol.fixture = handler
+        defer { OnboardingURLProtocol.fixture = nil }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [OnboardingURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        do {
+            _ = try await OnboardingHTTPService(testSession: session).discover(domain: "example.haven.local")
+            XCTFail("Must reject invalid metadata")
+        } catch {
+            XCTAssertEqual(error as? ScaffoldAdminTrustRootDescriptorValidationError, expected)
+        }
+        XCTAssertEqual(handler.paths, ["/.well-known/haven-scaffold-admin-trust-root.json"])
+    }
+
     func testRedirectDelegateAlwaysRejectsRedirectIncludingSameOrigin() throws {
         let session = URLSession(configuration: .ephemeral)
         defer { session.invalidateAndCancel() }

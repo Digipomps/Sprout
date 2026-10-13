@@ -40,6 +40,7 @@ public enum OnboardingTrust {
 
     public static func validateResolution(_ decision: EntityResolutionDecision, domain: String,
                                           publicKey: String, descriptor: ScaffoldAdminTrustRootDescriptor,
+                                          personLinkProof: PersonLinkProof? = nil,
                                           now: Date = Date()) throws -> OnboardingOutcome {
         guard decision.status == .resolved else { return .awaitingApproval }
         guard let entity = decision.entity_id, !entity.isEmpty, let proof = decision.inclusion_proof,
@@ -51,6 +52,15 @@ public enum OnboardingTrust {
               decision.resolved_by == nil || decision.resolved_by == proof.issued_by,
               let issued = ISO8601DateFormatter().date(from: proof.issued_at), issued <= now,
               !proof.isExpired(now: now), try proof.verifySignature() else {
+            throw OnboardingError.invalidProof
+        }
+        if let personLinkProof {
+            let digest = Hashing.sha256Base64URL(try JCSCanonicalizer.canonicalize(JSONEncoder().encode(personLinkProof)))
+            let expected = "person-link-v1:\(personLinkProof.evidenceReference):\(personLinkProof.linkID):\(entity):\(digest)"
+            guard proof.anchor_snapshot_id == expected, UUID(uuidString: entity) != nil else {
+                throw OnboardingError.invalidProof
+            }
+        } else if proof.anchor_snapshot_id.hasPrefix("person-link-v1:") {
             throw OnboardingError.invalidProof
         }
         return .identityVerified
@@ -70,26 +80,23 @@ public actor OnboardingHTTPService: OnboardingService {
     private let session: URLSession
 
     public init() {
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 20
-        configuration.timeoutIntervalForResource = 45
-        configuration.httpShouldSetCookies = false
-        configuration.httpCookieStorage = nil
-        configuration.urlCredentialStorage = nil
-        configuration.urlCache = nil
-        session = URLSession(configuration: configuration, delegate: NoOnboardingRedirects(), delegateQueue: nil)
+        session = BoundedHTTPSessions.onboarding
     }
 
     init(testSession: URLSession) { session = testSession }
 
-    deinit { session.invalidateAndCancel() }
 
     public func discover(domain: String) async throws -> ScaffoldAdminTrustRootDescriptor {
         let canonicalDomain = try StarterIdentityStore.validateDomain(domain)
         let url = try OnboardingTrust.endpoint(
             "https://\(canonicalDomain)/.well-known/haven-scaffold-admin-trust-root.json", domain: canonicalDomain
         )
-        return try await ScaffoldTrustRootHTTPClient(endpoint: url, session: session).fetch(expectedDomain: canonicalDomain)
+        do {
+            return try await ScaffoldTrustRootHTTPClient(endpoint: url, session: session).fetch(expectedDomain: canonicalDomain)
+        } catch ScaffoldAdminTrustRootDescriptorValidationError.expired {
+            // A stable local diagnostic; never echo untrusted response bodies or URLs.
+            throw OnboardingError.trustDescriptorExpired
+        }
     }
 
     public func resolve(profile: OnboardingProfile, descriptor: ScaffoldAdminTrustRootDescriptor,
@@ -126,15 +133,21 @@ public actor OnboardingHTTPService: OnboardingService {
             baseURL: OnboardingTrust.endpoint(descriptor.resolver_base_url, domain: domain),
             trustedResolverPublicKeys: Set(descriptor.resolver_public_keys)
         ), session: session)
+        try OnboardingTrust.validate(descriptor, domain: domain, pinnedKey: pin)
         let registration = try await resolver.registerStarterAuth(payload: payload)
         guard registration.accepted else { throw OnboardingError.invalidProof }
-        let resolution = try await resolver.resolveEntity(.init(
+        var request = EntityResolutionRequest(
             identity_public_key: identity.identity_public_key, domain: domain,
             scaffold_admin_public_key: descriptor.scaffold_admin_public_key,
             purpose: purpose, goal: goal, interests: interests, evidence: nil
-        ))
+        )
+        request.person_link_proof = try await IdentityLinkClient().makeResolveProof(request: request, identityRoot: identityRoot)
+        try OnboardingTrust.validate(descriptor, domain: domain, pinnedKey: pin)
+        let resolution = try await resolver.resolveEntity(request)
+        try OnboardingTrust.validate(descriptor, domain: domain, pinnedKey: pin)
         return try OnboardingTrust.validateResolution(
-            resolution, domain: domain, publicKey: identity.identity_public_key, descriptor: descriptor
+            resolution, domain: domain, publicKey: identity.identity_public_key, descriptor: descriptor,
+            personLinkProof: request.person_link_proof
         )
     }
 }

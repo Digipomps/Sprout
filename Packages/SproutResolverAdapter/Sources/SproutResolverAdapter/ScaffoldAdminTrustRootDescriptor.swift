@@ -5,6 +5,7 @@ public enum ScaffoldAdminTrustRootDescriptorValidationError: Error, Equatable, S
     case wrongDomain(expected: String, got: String)
     case invalidURL(String)
     case expired
+    case invalidExpiry
     case unsupportedSignatureAlgorithm(String)
     case signatureInvalid
     case missingResolverPublicKeys
@@ -128,14 +129,17 @@ public struct ScaffoldAdminTrustRootDescriptorValidator: Sendable {
         if let softwareCatalogURL = descriptor.software_catalog_url {
             try validateURLString(softwareCatalogURL)
         }
-        guard !descriptor.isExpired(now: context.now) else {
-            throw ScaffoldAdminTrustRootDescriptorValidationError.expired
-        }
         guard descriptor.signature.alg == "Ed25519" else {
             throw ScaffoldAdminTrustRootDescriptorValidationError.unsupportedSignatureAlgorithm(descriptor.signature.alg)
         }
         guard try descriptor.verifySignature() else {
             throw ScaffoldAdminTrustRootDescriptorValidationError.signatureInvalid
+        }
+        guard let expiry = ISO8601DateFormatter().date(from: descriptor.expires_at) else {
+            throw ScaffoldAdminTrustRootDescriptorValidationError.invalidExpiry
+        }
+        guard context.now < expiry else {
+            throw ScaffoldAdminTrustRootDescriptorValidationError.expired
         }
     }
 

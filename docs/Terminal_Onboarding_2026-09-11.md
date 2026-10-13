@@ -16,7 +16,7 @@ an Entity association, scaffold ownership, and an authorized communication chann
 | Pause and resume without generating another identity | Versioned private checkpoint; `/pause`, `/quit`, EOF; OS process lock; regression and CLI tests |
 | Avoid manual credential/proof exchange | Starter challenge fetched and signed in memory; Entity resolution requested over HTTPS; no invitation/proof export or import |
 | New start without an existing account | A local Ed25519 identity and explicitly non-authoritative Entity draft reference are created after local-storage consent |
-| Attach this device to an existing Entity | Preference captured, but device approval/admission creation is NOT wired; unresolved status stops explicitly |
+| Attach this device to an existing Entity | Invitation/passkey enrollment is wired through IdentityLink; human approval and verified resolution remain required |
 | Let an assistant operate the tool | Line-oriented stdin/stdout, immediately flushed prompts, no LLM/API-key dependency or persisted chat transcript |
 | Actually open a channel with another person | NOT implemented by this slice; requires approved device identity, Entity Cell access, Agreement/Grants and real transport |
 
@@ -28,8 +28,8 @@ This work does not claim such a new release has been published.
 
 1. Sprout explains exactly what it keeps locally and asks for permission.
 2. Choose a new local draft or an intended association with an existing Entity.
-3. Describe the goal. The default purpose is `purpose://contact.communication`
-   and the default interest is `correspondence`; both can be changed in the chat.
+3. Describe the goal. The default purpose is `bootstrap.join_scaffold`
+   and the default interest is `haven.core.bootstrap`; both can be changed in the chat.
 4. Enter the hostname of the intended scaffold, or choose `senere` to stay offline.
 5. Review the answers. `endre` edits preferences without dropping keys or trust pins.
 6. Separately approve fetching the public HTTPS service descriptor. No answers or
@@ -37,7 +37,9 @@ This work does not claim such a new release has been published.
 7. On first use, explicitly accept domain-based HTTPS trust. Sprout pins the
    advertised admin key and refuses silent replacement later.
 8. Separately approve sending the displayed data to the displayed POST endpoints.
-9. Sprout either reports local-only setup, pending Entity approval, or verified
+9. If unresolved, Sprout offers the existing invitation/passkey linking ceremony.
+   It reuses the domain key and verifies request-bound completion before resolving again.
+10. Sprout either reports local-only setup, pending Entity approval, or verified
    Entity association. None of those messages says the channel is connected.
 
 `/help`, `/status`, `/pause` and `/quit` work at every question. EOF pauses without
@@ -316,3 +318,11 @@ was found. The existing nearby companion uses Apple Network, not Linux.
 For current build evidence, expired staging metadata, source baseline differences
 and the remaining delivery gates, read
 [Recipient readiness](Recipient_Readiness_2026-09-11.md).
+
+## Scaffold administrator role (2026-10-13)
+
+`sprout onboard --role scaffoldadmin` enters the purpose-driven software
+installation dialogue, also available as `sprout scaffold`. This local role does
+not imply verified personal Entity membership. See [Scaffold installation](Scaffold_Installation.md)
+for publisher trust, exact purpose matching, OCI verification and the boundary
+between installed images and an activated production runtime.
