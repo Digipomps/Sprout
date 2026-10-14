@@ -1,6 +1,6 @@
 # Purpose-driven scaffold installation
 
-Last verified against code: 2026-10-13. Live verification results are recorded separately.
+Candidate source contract: 2026-10-14; full real-image acceptance remains required. Live verification results are recorded separately.
 
 `sprout scaffold` is the lightweight CLI entry point for a scaffold administrator.
 `sprout onboard --role scaffoldadmin` enters the same flow. Existing personal
@@ -18,11 +18,14 @@ installation does not grant remote Entity, Agreement or bridge privileges.
    The CLI shows all selected scaffolds and dependencies before applying.
 5. Sprout asks Docker to download immutable OCI image references, verifies each
    resulting RepoDigest, and atomically records the complete installation.
-6. On Linux, normal installation executes the signed `cellscaffold-web-v1`
-   service profile as root. It enrolls a new local scaffold owner offline,
-   provisions the runtime identities, creates private configuration and starts
-   the service on loopback. Readiness, exact build, login/access boundary, discovery for every
-   selected purpose and a restart must succeed before the service receipt says `ready`.
+6. On Linux, normal installation requires an explicit signed three-role stack:
+   `cellscaffold-web-stack-v1` → `cellscaffold-admin-v1` → `cellscaffold-node-agent-v1`.
+   It enrolls separate web and Admin owners through strict offline ceremonies,
+   creates a fresh paired channel credential and node signing key, then starts
+   the isolated dependencies. Admin must accept a real fresh signed snapshot
+   before web canonical provisioning proceeds. Web readiness, exact build,
+   login/access boundary, selected-purpose discovery and restart must succeed
+   before the aggregate service receipt says `ready`.
 7. `sprout scaffold status --instance NAME` measures the actual service;
    plain `status` checks the images referenced by the image receipts.
 
@@ -31,7 +34,8 @@ sprout scaffold --domain staging.haven.digipomps.org
 sprout scaffold purposes --domain staging.haven.digipomps.org
 sprout scaffold plan --domain example.org --purpose purpose://scaffold.operations
 sudo sprout scaffold install --domain example.org --purpose purpose://scaffold.operations \
-  --instance scaffold --port 9089 --public-origin https://scaffold.example.org
+  --instance scaffold --port 9089 --public-origin https://scaffold.example.org \
+  --admin-port 9098 --admin-public-origin https://admin.example.org
 sudo sprout scaffold status --instance scaffold
 # Explicitly download images without creating an owner or starting a service:
 sprout scaffold install --domain example.org --purpose purpose://scaffold.operations --download-only
@@ -59,8 +63,12 @@ Catalog version `1.1` adds optional artifact fields `purpose_ids`, `dependencies
 and `installation`. Installation requires these fields and rejects legacy
 metadata-only entries. `installation` currently supports `oci-image` with
 `image` (registry/repository@sha256:digest), `container_platform`, and optional
-`service_profile`. Activation requires the signed profile `cellscaffold-web-v1`;
-a legacy or unknown profile cannot execute service setup.
+`service_profile`. Activation requires exactly one web-stack, one Admin and one
+node-agent role, with the exact dependency chain above and no extra artifacts.
+All roles require the same trusted publisher and compatible platform. Only the
+web role declares the selected purposes. Legacy `cellscaffold-web-v1` metadata
+remains readable for download and recovery checks, but cannot start a new
+production service by itself. Unknown roles cannot execute service setup.
 `sha256_b64url` must encode that same OCI manifest digest; `download_url` must
 name its registry manifest URL. Docker performs the OCI download and content
 integrity verification. The catalog's pinned Ed25519 publisher authorizes that
@@ -78,13 +86,24 @@ safe and Docker reuses already verified layers.
 ## Runtime boundary
 
 Normal installation requires Linux, root, Python 3 at `/usr/bin/python3`, Docker
-Engine on the local Unix socket, `unshare`, `setpriv`, `libjemalloc.so.2`, and
+Engine on the local Unix socket, `unshare`, `setpriv`, OpenSSL with Ed25519 support, `libjemalloc.so.2`, and
 registry read access. Missing prerequisites stop before image download. Sprout
 does not install these host packages or configure DNS, firewalls or a TLS proxy.
 `--public-origin` must be an HTTPS DNS origin, optionally with a nondefault port (omit explicit `:443`). The
-container binds only `127.0.0.1:PORT`; configure a TLS reverse proxy separately.
-A ready receipt explicitly says `public_tls_verified: false` until an external
-operator verifies that route.
+web container binds only `127.0.0.1:PORT`; Admin uses the separately supplied
+`--admin-port` and `--admin-public-origin`. Both require preconfigured TLS proxies.
+Admin HTTPS must actually work for signed node ingestion; the installer verifies
+its TLS readiness/build. Public web TLS remains a separate acceptance check
+(`public_tls_verified: false` at the top level). Keep Admin's `/health/restore-audit`
+and `/metrics` off the public proxy; the installer uses the private bearer only
+on loopback. Local channel installation grants no human Admin role.
+
+Visible fixed limits are web 2 GiB/2 CPU/512 PIDs, Admin 1 GiB/1 CPU/256 PIDs and
+node 256 MiB/0.25 CPU/64 PIDs, with bounded logs. Admin/node have read-only root
+filesystems, private writable volumes, all capabilities dropped and no Docker
+socket. The node reports its own sidecar observations, not host fleet metrics.
+Its strict persistent sequence mode rejects a missing/corrupt counter and any
+sequence override; it never resets the counter or rotates the signing key.
 
 The coordinator is embedded in the CLI executable. It accepts no shell fragments,
 arbitrary environment or mounts from the catalog. It runs the image's exact
@@ -98,11 +117,44 @@ acceptance. Discovery grants no Entity/capability access; authenticated end-user
 operations and descriptor-signature verification are separate checks.
 
 A failed installation keeps its private generation and keys for diagnosis or
-retry. Repeating the same request reuses that generation; a changed image or
+retry. A renewed signed catalog may have a different payload hash. Repetition
+requires the same publisher, catalog domain/ID and every operative field (all
+image pins, origins, ports, purposes, profile and limits); only that evidence hash
+may differ. The original request/hash and container labels remain unchanged.
+`catalog-verification.json` records the latest verified evidence separately; the
+receipt distinguishes current `catalog_sha256_b64url` from
+`initial_catalog_sha256_b64url`. Status does not fetch/renew catalog evidence:
+it reports the initial catalog binding loaded from state, while the latest
+install-verified hash remains in `catalog-verification.json`.
+Repeating the same request reuses that generation; a changed image or
 configuration for an existing instance is rejected. This is a fresh-install
-profile, not an upgrade mechanism. One service instance can cover multiple
-purposes; independently selected services need separate instances. Dependency
-images are downloaded, but are not implicitly activated.
+profile with one narrowly defined recovery transition: a v0.3.1 web request
+at phase `enrolled` may add the explicit dependency stack while preserving its
+exact image/build, instance/root, origin/port, purposes, owner, generation,
+enrollment and manifest. A private `stack-upgrade.json` records old/new request
+hashes, the exact stopped provision container and preserved file hashes before
+side effects. The old failed container and environment are archived, not deleted.
+Unknown, ready, canonical-ready or changed web requests are refused. Legacy state
+did not store its publisher pin: the new journal records fresh verified catalog
+authority and explicitly does not claim historical signer continuity.
+
+Admin state lives in its own `admin-data` volume, with separate `admin-secrets`,
+`node-secrets` and `node-state`. The web receives only the paired client credential.
+An interrupted Admin ceremony may retry only `verify-owner` against the same
+image/journal; a missing fingerprint checkpoint remains an unknown outcome and
+requires operator recovery. It cannot silently reenroll or heal keys. Repeating
+the same accepted request restarts all three exact owned containers as needed;
+status is read-only and rejects disabled restart policies on any member. A failed
+Admin verifier can reuse its exact container, but the receipt is read only from
+that invocation's nanosecond StartedAt boundary and the stopped run is checked
+before and after capture. Process exit time is not a log cutoff: Docker may
+timestamp the final stdout line later. Earlier failure output cannot poison a
+later receipt.
+Receipt fields include the public owner pins, exact images,
+request/catalog binding and observed node counter. An observed counter is not a
+claim that that precise value was accepted remotely; Admin independently verifies
+fresh signature-bound telemetry. Ongoing freshness requires the node sidecar's
+60-second loop. No mutable image or general in-place upgrade path is introduced.
 
 `--download-only` preserves image-only installation and its `installed-not-started`
 receipts. It also permits macOS use with a compatible Docker engine and catalog

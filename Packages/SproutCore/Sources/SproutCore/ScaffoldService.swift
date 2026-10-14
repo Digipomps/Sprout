@@ -23,9 +23,9 @@ public enum ScaffoldServiceError: Error, Equatable, CustomStringConvertible {
         switch self {
         case .unsupportedPlatform: return "Automatisk tjenesteoppstart krever Linux. Bruk --download-only for bare bildeinstallasjon."
         case .rootRequired: return "Tjenesteinstallasjon krever root. Start den samme sprout-kommandoen med sudo."
-        case .invalidConfiguration: return "Ugyldig instans, port eller HTTPS-adresse. Bruk --instance NAME --port 9089 --public-origin https://HOST (utelat standardport :443)."
-        case .missingServiceProfile: return "Den signerte katalogen mangler en stoettet tjenesteprofil for formaalet."
-        case .multipleServices: return "Denne tjenesteprofilen installerer en scaffold per instans. Velg formaal for samme scaffold, eller bruk separate instanser."
+        case .invalidConfiguration: return "Ugyldig instans, port eller HTTPS-adresse. Bruk --instance NAME --port 9089 --public-origin https://HOST --admin-port PORT --admin-public-origin https://ADMIN_HOST (utelat standardport :443)."
+        case .missingServiceProfile: return "Den signerte katalogen mangler en komplett web/Admin/agent-stack for formaalet. Bruk --download-only for bare bildeinstallasjon."
+        case .multipleServices: return "Denne tjenesteprofilen krever akkurat en web-scaffold, en AdminScaffold og en nodeagent med signerte avhengigheter."
         case .pythonUnavailable: return "Tjenesteoppstart krever Python 3 paa /usr/bin/python3."
         case .invalidResponse: return "Oppstartskoordinatoren returnerte en ugyldig kvittering. Ingen tjenesteaksept er bekreftet."
         case .coordinatorFailed(let code, let reason): return "Tjenesteoppsett stoppet (\(code)): \(reason). Eksisterende noekler og tilstand er beholdt."
@@ -46,33 +46,68 @@ public struct ScaffoldServiceRequest: Codable, Equatable, Sendable {
     public let public_origin: String?
     public let root: String
     public let purposes: [String]?
+    public let admin_image: String?
+    public let node_image: String?
+    public let admin_public_origin: String?
+    public let admin_listen_port: Int?
+    public let catalog_publisher: String?
+    public let catalog_sha256_b64url: String?
+    public let catalog_id: String?
+    public let catalog_domain: String?
+    public let resource_limits: [String: String]?
+
+    public static let stackResourceLimits = ["web": "memory=2g,cpus=2,pids=512",
+        "admin": "memory=1g,cpus=1,pids=256", "node": "memory=256m,cpus=0.25,pids=64"]
 
     public static func make(plan: ScaffoldInstallationPlan, instance: String,
-                            port: Int, publicOrigin: String) throws -> Self {
+                            port: Int, publicOrigin: String, adminPort: Int? = nil,
+                            adminPublicOrigin: String? = nil) throws -> Self {
         guard validInstance(instance), (1024...65535).contains(port), validOrigin(publicOrigin) else {
             throw ScaffoldServiceError.invalidConfiguration
         }
+        let profiles = ["cellscaffold-web-stack-v1", "cellscaffold-admin-v1", "cellscaffold-node-agent-v1"]
         let services = plan.artifacts.filter { $0.installation?.service_profile != nil }
-        guard !services.isEmpty else { throw ScaffoldServiceError.missingServiceProfile }
-        guard services.count == 1 else { throw ScaffoldServiceError.multipleServices }
-        let artifact = services[0]
-        guard artifact.kind == "cellscaffold", let installation = artifact.installation,
-              installation.service_profile == "cellscaffold-web-v1",
-              Set(plan.purposes).isSubset(of: Set(artifact.purpose_ids ?? [])) else {
+        guard services.count == 3, plan.artifacts.count == 3 else {
+            throw services.count > 1 ? ScaffoldServiceError.multipleServices : ScaffoldServiceError.missingServiceProfile
+        }
+        var roles: [ScaffoldExecutableArtifact] = []
+        for profile in profiles {
+            let matches = services.filter { $0.installation?.service_profile == profile }
+            guard matches.count == 1 else { throw ScaffoldServiceError.multipleServices }
+            roles.append(matches[0])
+        }
+        let web = roles[0], admin = roles[1], node = roles[2]
+        guard web.kind == "cellscaffold", admin.kind == "cellscaffold", node.kind == "scaffold-bundle",
+              Set(plan.purposes).isSubset(of: Set(web.purpose_ids ?? [])),
+              (admin.purpose_ids ?? []).isEmpty, (node.purpose_ids ?? []).isEmpty,
+              web.dependencies == [admin.artifact_id], admin.dependencies == [node.artifact_id],
+              (node.dependencies ?? []).isEmpty,
+              Set(roles.compactMap { $0.installation?.image }).count == 3,
+              roles.allSatisfy({ $0.platform == plan.platform && $0.installation?.container_platform == web.installation?.container_platform }) else {
             throw ScaffoldServiceError.missingServiceProfile
         }
-        try ScaffoldInstallationPlan.validateInstallable(artifact, publisher: plan.publisher)
+        for artifact in roles { try ScaffoldInstallationPlan.validateInstallable(artifact, publisher: plan.publisher) }
+        guard let adminPort, let adminPublicOrigin, (1024...65535).contains(adminPort),
+              adminPort != port, validOrigin(adminPublicOrigin), adminPublicOrigin != publicOrigin else {
+            throw ScaffoldServiceError.invalidConfiguration
+        }
         return Self(schema: "haven.sprout.service-request.v1", operation: "install",
-            image: installation.image, platform: installation.container_platform,
-            profile: installation.service_profile, instance: instance, listen_port: port,
-            public_origin: publicOrigin, root: "/var/lib/haven-sprout", purposes: plan.purposes)
+            image: web.installation?.image, platform: web.installation?.container_platform,
+            profile: profiles[0], instance: instance, listen_port: port,
+            public_origin: publicOrigin, root: "/var/lib/haven-sprout", purposes: plan.purposes,
+            admin_image: admin.installation?.image, node_image: node.installation?.image,
+            admin_public_origin: adminPublicOrigin, admin_listen_port: adminPort,
+            catalog_publisher: plan.publisher, catalog_sha256_b64url: plan.catalog_sha256_b64url,
+            catalog_id: plan.catalog_id, catalog_domain: plan.scaffold_domain, resource_limits: stackResourceLimits)
     }
 
     public static func status(instance: String) throws -> Self {
         guard validInstance(instance) else { throw ScaffoldServiceError.invalidConfiguration }
         return Self(schema: "haven.sprout.service-request.v1", operation: "status",
             image: nil, platform: nil, profile: nil, instance: instance, listen_port: nil,
-            public_origin: nil, root: "/var/lib/haven-sprout", purposes: nil)
+            public_origin: nil, root: "/var/lib/haven-sprout", purposes: nil,
+            admin_image: nil, node_image: nil, admin_public_origin: nil, admin_listen_port: nil,
+            catalog_publisher: nil, catalog_sha256_b64url: nil, catalog_id: nil, catalog_domain: nil, resource_limits: nil)
     }
 
     public static func validInstance(_ value: String) -> Bool {
@@ -151,7 +186,19 @@ public enum ScaffoldServiceController {
               receipt["instance"] as? String == request.instance,
               receipt["status"] as? String != "failed" else { throw ScaffoldServiceError.invalidResponse }
         if request.operation == "install" {
-            guard receipt["status"] as? String == "ready", receipt["image"] as? String == request.image else {
+            let admin = receipt["admin"] as? [String: Any]
+            let node = receipt["node"] as? [String: Any]
+            guard receipt["status"] as? String == "ready", receipt["image"] as? String == request.image,
+                  receipt["profile"] as? String == request.profile,
+                  receipt["catalog_publisher"] as? String == request.catalog_publisher,
+                  receipt["catalog_sha256_b64url"] as? String == request.catalog_sha256_b64url,
+                  receipt["catalog_domain"] as? String == request.catalog_domain,
+                  receipt["catalog_id"] as? String == request.catalog_id,
+                  admin?["image"] as? String == request.admin_image,
+                  admin?["public_origin"] as? String == request.admin_public_origin,
+                  admin?["listen_port"] as? Int == request.admin_listen_port,
+                  admin?["public_tls_verified"] as? Bool == true,
+                  node?["image"] as? String == request.node_image else {
                 throw ScaffoldServiceError.invalidResponse
             }
         }

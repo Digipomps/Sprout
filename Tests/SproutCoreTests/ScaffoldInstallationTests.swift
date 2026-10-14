@@ -328,21 +328,17 @@ final class ScaffoldInstallationTests: XCTestCase {
         XCTAssertEqual(try receiptFiles(root).count, 0)
     }
 
-    func testSignedServiceProfileSurvivesRoundTripAndAuthorizesExactImage() throws {
+    func testSignedLegacyProfileSurvivesRoundTripButRequiresCompleteStackForActivation() throws {
         var web = try artifact("web", purposes: [purpose, secondaryPurpose])
         web.installation?.service_profile = "cellscaffold-web-v1"
         let signed = try catalog([web])
         let decoded = try JSONDecoder().decode(ScaffoldExecutableCatalog.self, from: JSONEncoder().encode(signed))
         XCTAssertTrue(try decoded.verifySignature())
-        let request = try ScaffoldServiceRequest.make(plan: plan(decoded, purposes: [purpose, secondaryPurpose]),
-            instance: "acceptance", port: 9089, publicOrigin: "https://staging.example.test:8443")
-        XCTAssertEqual(request.image, web.installation?.image)
-        XCTAssertEqual(request.platform, "linux/amd64")
-        XCTAssertEqual(request.profile, "cellscaffold-web-v1")
-        XCTAssertEqual(request.root, "/var/lib/haven-sprout")
-        XCTAssertEqual(try ScaffoldServiceRequest.status(instance: "test").root, request.root)
-        XCTAssertEqual(request.public_origin, "https://staging.example.test:8443")
-        XCTAssertEqual(try JSONDecoder().decode(ScaffoldServiceRequest.self, from: JSONEncoder().encode(request)), request)
+        XCTAssertThrowsError(try ScaffoldServiceRequest.make(plan: plan(decoded, purposes: [purpose, secondaryPurpose]),
+            instance: "acceptance", port: 9089, publicOrigin: "https://staging.example.test:8443")) {
+            XCTAssertEqual($0 as? ScaffoldServiceError, .missingServiceProfile,
+                "Legacy signed web metadata remains readable but cannot claim a complete production stack")
+        }
         var modified = signed
         modified.artifacts[0].installation?.service_profile = "arbitrary-code"
         XCTAssertFalse(try modified.verifySignature(), "The activation profile must be covered by the catalog signature")
@@ -396,6 +392,73 @@ final class ScaffoldInstallationTests: XCTestCase {
         XCTAssertNil(record["image"])
         XCTAssertNil(record["public_origin"])
         XCTAssertEqual(record["operation"] as? String, "status")
+    }
+
+    private func stackArtifacts() throws -> [ScaffoldExecutableArtifact] {
+        var node = try artifact("node")
+        node.kind = "scaffold-bundle"
+        node.installation?.service_profile = "cellscaffold-node-agent-v1"
+        var admin = try artifact("admin", dependencies: ["node"])
+        admin.installation?.service_profile = "cellscaffold-admin-v1"
+        var web = try artifact("web", purposes: [purpose, secondaryPurpose], dependencies: ["admin"])
+        web.installation?.service_profile = "cellscaffold-web-stack-v1"
+        return [node, admin, web]
+    }
+
+    private func stackRequest(_ artifacts: [ScaffoldExecutableArtifact]) throws -> ScaffoldServiceRequest {
+        try .make(plan: plan(catalog(artifacts)), instance: "acceptance", port: 9089,
+            publicOrigin: "https://web.example.test", adminPort: 9098, adminPublicOrigin: "https://admin.example.test")
+    }
+
+    func testSignedStackBindsExactRolesImagesAuthorityAndVisibleResourceLimits() throws {
+        let artifacts = try stackArtifacts()
+        let signed = try catalog(artifacts)
+        let decoded = try JSONDecoder().decode(ScaffoldExecutableCatalog.self, from: JSONEncoder().encode(signed))
+        XCTAssertTrue(try decoded.verifySignature())
+        let request = try stackRequest(decoded.artifacts)
+        XCTAssertEqual(request.image, artifacts[2].installation?.image)
+        XCTAssertEqual(request.admin_image, artifacts[1].installation?.image)
+        XCTAssertEqual(request.node_image, artifacts[0].installation?.image)
+        XCTAssertEqual(request.profile, "cellscaffold-web-stack-v1")
+        XCTAssertEqual(request.catalog_publisher, signed.issued_by)
+        XCTAssertEqual(request.catalog_sha256_b64url, Hashing.sha256Base64URL(try signed.canonicalPayloadData()))
+        XCTAssertEqual(request.admin_public_origin, "https://admin.example.test")
+        XCTAssertEqual(request.admin_listen_port, 9098)
+        XCTAssertEqual(request.catalog_domain, domain)
+        XCTAssertEqual(request.resource_limits, ScaffoldServiceRequest.stackResourceLimits)
+        XCTAssertEqual(request.root, "/var/lib/haven-sprout")
+        XCTAssertEqual(try ScaffoldServiceRequest.status(instance: "acceptance").root, request.root)
+        XCTAssertEqual(try JSONDecoder().decode(ScaffoldServiceRequest.self, from: JSONEncoder().encode(request)), request)
+        for index in artifacts.indices {
+            var changed = signed
+            changed.artifacts[index].installation?.service_profile = "cellscaffold-web-v1"
+            XCTAssertFalse(try changed.verifySignature(), "Every dependency role is signed")
+        }
+    }
+
+    func testStackRejectsMissingExtraDuplicateUnreachableOrMisclassifiedRoles() throws {
+        let original = try stackArtifacts()
+        var variants: [[ScaffoldExecutableArtifact]] = [Array(original.dropFirst()), Array(original.dropLast())]
+        var value = original
+        value[1].installation?.service_profile = "cellscaffold-node-agent-v1"
+        variants.append(value)
+        value = original; value[2].dependencies = ["node", "admin"]; variants.append(value)
+        value = original; value[0].kind = "cellscaffold"; variants.append(value)
+        value = original; value[1].purpose_ids = [secondaryPurpose]; variants.append(value)
+        value = original; value[2].dependencies = ["admin", "extra"]
+        value.append(try artifact("extra")); variants.append(value)
+        for variant in variants { XCTAssertThrowsError(try stackRequest(variant)) }
+    }
+
+    func testStackRequiresExplicitDistinctAdminOriginAndPortBeforeAnyHostWork() throws {
+        let selected = try plan(catalog(stackArtifacts()))
+        for (port, origin): (Int?, String?) in [(nil, nil), (9089, "https://admin.example.test"),
+            (9098, "https://web.example.test"), (9098, "http://admin.example.test"), (0, "https://admin.example.test")] {
+            XCTAssertThrowsError(try ScaffoldServiceRequest.make(plan: selected, instance: "test", port: 9089,
+                publicOrigin: "https://web.example.test", adminPort: port, adminPublicOrigin: origin)) {
+                XCTAssertEqual($0 as? ScaffoldServiceError, .invalidConfiguration)
+            }
+        }
     }
 
     private func artifact(_ id: String, purposes: [String] = [], dependencies: [String] = []) throws -> ScaffoldExecutableArtifact {
