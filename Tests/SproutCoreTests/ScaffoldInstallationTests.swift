@@ -339,7 +339,8 @@ final class ScaffoldInstallationTests: XCTestCase {
         XCTAssertEqual(request.image, web.installation?.image)
         XCTAssertEqual(request.platform, "linux/amd64")
         XCTAssertEqual(request.profile, "cellscaffold-web-v1")
-        XCTAssertEqual(request.root, "/var/lib/haven/sprout")
+        XCTAssertEqual(request.root, "/var/lib/haven-sprout")
+        XCTAssertEqual(try ScaffoldServiceRequest.status(instance: "test").root, request.root)
         XCTAssertEqual(request.public_origin, "https://staging.example.test:8443")
         XCTAssertEqual(try JSONDecoder().decode(ScaffoldServiceRequest.self, from: JSONEncoder().encode(request)), request)
         var modified = signed

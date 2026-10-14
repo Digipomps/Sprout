@@ -7,7 +7,7 @@ catalog first. No caller-supplied command, environment or host mount is accepted
 This installs a new generation, never upgrades or adopts an unrelated service.
 
 Request schema: haven.sprout.service-request.v1. All operations take instance
-and optional fixed root /var/lib/haven/sprout. Install and read-only preflight
+and optional fixed root /var/lib/haven-sprout. Install and read-only preflight
 also require image (canonical repository@sha256), platform, profile, listen_port,
 purposes and public_origin (HTTPS DNS origin, optional explicit TCP port).
 Status takes only schema/operation/instance/root. Preflight does not inspect the
@@ -45,7 +45,8 @@ import time
 import urllib.parse
 import uuid
 
-ROOT = Path('/var/lib/haven/sprout')
+ROOT = Path('/var/lib/haven-sprout')
+LEGACY_ROOT = Path('/var/lib/haven/sprout')
 ROOT_UID = 0
 ROOT_GID = 0
 RUNTIME_UID = 995
@@ -176,14 +177,45 @@ def validate_directory(path, uid=None, mode=None):
     return info
 
 
-def verify_ancestors(path):
+def validate_runtime_ancestor(path):
+    info = validate_directory(path)
+    # setpriv clears supplementary groups. POSIX selects exactly one access
+    # class; world r+x cannot compensate for a matching group's missing r+x.
+    mask = (0o500 if info.st_uid == RUNTIME_UID else
+            0o050 if info.st_gid == RUNTIME_GID else 0o005)
+    require(info.st_mode & mask == mask, 'runtime_ancestor_inaccessible')
+
+
+def verify_ancestors(path, runtime_access=False):
     require(path.is_absolute() and '..' not in path.parts and '.' not in path.parts, 'unsafe_path')
     cursor = Path('/')
+    if runtime_access:
+        validate_runtime_ancestor(cursor)
     for part in path.parts[1:]:
         cursor /= part
         if not cursor.exists() and not cursor.is_symlink():
             break
-        validate_directory(cursor)
+        if runtime_access:
+            validate_runtime_ancestor(cursor)
+        else:
+            validate_directory(cursor)
+
+
+def reject_legacy_instance(instance):
+    # Never turn an old, partial or ambiguous generation into a fresh identity.
+    # Inspect metadata only; the shared HAVEN parent may intentionally be 0700.
+    verify_ancestors(LEGACY_ROOT)
+    require(not os.path.lexists(LEGACY_ROOT / instance), 'legacy_instance_requires_explicit_recovery')
+
+
+def storage_preflight(instance):
+    verify_ancestors(ROOT.parent, runtime_access=True)
+    require(ROOT.parent.is_dir(), 'service_parent_missing')
+    for path in (ROOT, ROOT / instance):
+        if os.path.lexists(path):
+            info = validate_directory(path, mode=0o755)
+            require(info.st_gid == ROOT_GID, 'unsafe_directory_group')
+    reject_legacy_instance(instance)
 
 
 def mkdir(path, uid=None, gid=None, mode=0o755):
@@ -306,7 +338,6 @@ def host_preflight(request):
     require(sys.platform == 'linux' and os.geteuid() == 0, 'linux_root_required')
     architecture = {'x86_64': 'linux/amd64', 'aarch64': 'linux/arm64'}.get(platform.machine())
     require(architecture is not None and request.get('platform', architecture) == architecture, 'unsupported_host_platform')
-    verify_ancestors(ROOT)
     for tool in (DOCKER, '/usr/bin/unshare', '/usr/bin/setpriv'):
         require(os.path.isfile(tool) and os.access(tool, os.X_OK), 'host_tool_missing')
         require(os.stat(tool).st_uid == 0 and not (os.stat(tool).st_mode & 0o022), 'unsafe_host_tool')
@@ -337,6 +368,7 @@ class Coordinator:
 
     def preflight(self, request):
         host_preflight(request)
+        storage_preflight(request['instance'])
         self.instance = ROOT / request['instance']
         self.state = self.load(self.instance)
         if request['operation'] == 'status':
@@ -405,8 +437,8 @@ class Coordinator:
 
     def prepare(self, image_id, build):
         # All caller-selected paths end at the fixed, root-owned base.
-        for path in (ROOT.parent, ROOT):
-            mkdir(path)
+        # Shared system parents are read-only prerequisites, never ours to chmod.
+        mkdir(ROOT)
         mkdir(self.instance)
         if self.state is None:
             self.state = {'schema': 'haven.sprout.service-state.v1', 'request': identity_request(self.request),
@@ -695,8 +727,8 @@ class Coordinator:
         image_id, build = self.image_metadata()
         # Serialize before preparing any key or enrollment state. Root-owned
         # base lock protects initialization as well as the per-generation lock.
-        for path in (ROOT.parent, ROOT):
-            mkdir(path)
+        # Shared system parents are read-only prerequisites, never ours to chmod.
+        mkdir(ROOT)
         lock_path = ROOT / '.installation.lock'
         global_fd = os.open(lock_path, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
         info = os.fstat(global_fd)
@@ -710,6 +742,7 @@ class Coordinator:
             except BlockingIOError:
                 raise Rejected('installation_busy') from None
             # Recheck after acquiring the writer lock.
+            storage_preflight(request['instance'])
             self.state = self.load(self.instance)
             if self.state:
                 require(self.state['request'] == identity_request(request), 'instance_configuration_conflict')

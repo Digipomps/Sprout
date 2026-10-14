@@ -65,14 +65,14 @@ public struct ScaffoldServiceRequest: Codable, Equatable, Sendable {
         return Self(schema: "haven.sprout.service-request.v1", operation: "install",
             image: installation.image, platform: installation.container_platform,
             profile: installation.service_profile, instance: instance, listen_port: port,
-            public_origin: publicOrigin, root: "/var/lib/haven/sprout", purposes: plan.purposes)
+            public_origin: publicOrigin, root: "/var/lib/haven-sprout", purposes: plan.purposes)
     }
 
     public static func status(instance: String) throws -> Self {
         guard validInstance(instance) else { throw ScaffoldServiceError.invalidConfiguration }
         return Self(schema: "haven.sprout.service-request.v1", operation: "status",
             image: nil, platform: nil, profile: nil, instance: instance, listen_port: nil,
-            public_origin: nil, root: "/var/lib/haven/sprout", purposes: nil)
+            public_origin: nil, root: "/var/lib/haven-sprout", purposes: nil)
     }
 
     public static func validInstance(_ value: String) -> Bool {
