@@ -265,7 +265,9 @@ class ServiceTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix='sprout-service-tests-')
         self.base = Path(self.temporary.name).resolve()
         self.uid, self.gid = os.getuid(), os.getgid()
-        self.patches = [patch.object(s, 'ROOT', self.base / 'haven' / 'sprout'),
+        self.patches = [patch.object(s, 'ROOT', self.base / s.ROOT.relative_to('/var/lib')),
+                        patch.object(s, 'LEGACY_ROOT', self.base / 'haven' / 'sprout', create=True),
+                        patch.object(s, 'verify_ancestors', self.safe_test_ancestors),
                         patch.object(s, 'ROOT_UID', self.uid), patch.object(s, 'ROOT_GID', self.gid),
                         patch.object(s, 'RUNTIME_UID', self.uid), patch.object(s, 'RUNTIME_GID', self.gid),
                         patch.object(s, 'host_preflight', self.safe_test_preflight)]
@@ -284,6 +286,110 @@ class ServiceTests(unittest.TestCase):
         for path in (self.base, self.base / 'haven', s.ROOT):
             if path.exists() or path.is_symlink():
                 s.validate_directory(path)
+
+    def safe_test_ancestors(self, path, runtime_access=False):
+        # The portable fixture substitutes only trusted system ancestors outside
+        # its private root. Production directory/permission checks run inside it.
+        cursor = self.base
+        for part in (None, *path.relative_to(self.base).parts):
+            if part is not None:
+                cursor /= part
+            if not cursor.exists() and not cursor.is_symlink():
+                break
+            if runtime_access:
+                s.validate_runtime_ancestor(cursor)
+            else:
+                s.validate_directory(cursor)
+
+    def test_private_shared_haven_parent_is_unchanged_during_install_retry_and_status(self):
+        shared = self.base / 'haven'
+        shared.mkdir(mode=0o700)
+        marker = shared / 'unrelated-private-state'
+        marker.write_bytes(b'preserve unrelated state')
+        marker.chmod(0o600)
+        before = shared.stat()
+        first = self.execute()
+        state = (s.ROOT / 'test/state.json').read_bytes()
+        key = (s.ROOT / 'test/runtime-secrets/cell-vault-master-key').read_bytes()
+        repeated = self.execute()
+        status = self.execute(s.request_document({'schema': s.SCHEMA, 'operation': 'status', 'instance': 'test'}))
+        self.assertEqual(first['container_id'], repeated['container_id'])
+        self.assertEqual(first['container_id'], status['container_id'])
+        self.assertEqual((s.ROOT / 'test/state.json').read_bytes(), state)
+        self.assertEqual((s.ROOT / 'test/runtime-secrets/cell-vault-master-key').read_bytes(), key)
+        self.assertEqual(self.system.native_calls, 1)
+        after = shared.stat()
+        self.assertEqual((before.st_ino, before.st_uid, before.st_gid, before.st_mode),
+                         (after.st_ino, after.st_uid, after.st_gid, after.st_mode))
+        self.assertEqual(marker.read_bytes(), b'preserve unrelated state')
+        self.assertFalse((shared / 'sprout').exists())
+
+    def test_legacy_instance_partial_state_and_symlink_are_never_adopted(self):
+        s.LEGACY_ROOT.mkdir(parents=True, mode=0o755)
+        legacy = s.LEGACY_ROOT / 'test'
+        for kind in ('empty-directory', 'state-file', 'dangling-symlink'):
+            with self.subTest(kind=kind):
+                if kind == 'dangling-symlink':
+                    legacy.symlink_to(self.base / 'missing')
+                else:
+                    legacy.mkdir()
+                    if kind == 'state-file':
+                        (legacy / 'state.json').write_bytes(b'private legacy state')
+                for operation in ('preflight', 'install', 'status'):
+                    with self.subTest(operation=operation):
+                        value = (s.request_document({'schema': s.SCHEMA, 'operation': 'status', 'instance': 'test'})
+                                 if operation == 'status' else request(operation=operation))
+                        calls = list(self.system.calls)
+                        self.rejected('legacy_instance_requires_explicit_recovery', lambda: self.execute(value))
+                        self.assertEqual(self.system.calls, calls)
+                        self.assertFalse(s.ROOT.exists())
+                        self.assertEqual(self.system.native_calls, 0)
+                if kind == 'dangling-symlink':
+                    legacy.unlink()
+                else:
+                    if kind == 'state-file':
+                        self.assertEqual((legacy / 'state.json').read_bytes(), b'private legacy state')
+                        (legacy / 'state.json').unlink()
+                    legacy.rmdir()
+
+    def test_both_roots_fail_closed_without_replacing_current_identity(self):
+        self.execute()
+        before = self.files()
+        s.LEGACY_ROOT.mkdir(parents=True, mode=0o755)
+        (s.LEGACY_ROOT / 'test').mkdir()
+        self.rejected('legacy_instance_requires_explicit_recovery', lambda: self.execute())
+        self.assertEqual(self.files(), before)
+        self.assertEqual(self.system.native_calls, 1)
+
+    def test_runtime_ancestor_uses_actual_uid_and_primary_group_access_class(self):
+        from types import SimpleNamespace
+        for mode, uid, gid, allowed in [(0o755, 0, 0, True), (0o711, 0, 0, False),
+                                       (0o700, 0, 0, False), (0o705, 0, 995, False),
+                                       (0o750, 0, 995, True), (0o700, 995, 995, True)]:
+            with self.subTest(mode=oct(mode), uid=uid, gid=gid):
+                info = SimpleNamespace(st_mode=stat.S_IFDIR | mode, st_uid=uid, st_gid=gid)
+                with patch.object(s, 'validate_directory', return_value=info), patch.object(s, 'RUNTIME_UID', 995), patch.object(s, 'RUNTIME_GID', 995):
+                    if allowed:
+                        s.validate_runtime_ancestor(Path('/fixed-parent'))
+                    else:
+                        self.rejected('runtime_ancestor_inaccessible', lambda: s.validate_runtime_ancestor(Path('/fixed-parent')))
+
+    def test_existing_service_root_and_instance_modes_fail_before_pull(self):
+        for suffix in ('', 'test'):
+            with self.subTest(suffix=suffix):
+                s.ROOT.mkdir(exist_ok=True)
+                s.ROOT.chmod(0o755)
+                target = s.ROOT / suffix if suffix else s.ROOT
+                if suffix:
+                    target.mkdir()
+                target.chmod(0o700)
+                calls = list(self.system.calls)
+                self.rejected('unsafe_directory_mode', lambda: self.execute(request(operation='preflight')))
+                self.assertEqual(self.system.calls, calls)
+                self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o700)
+                if suffix:
+                    target.rmdir()
+                s.ROOT.rmdir()
 
     def execute(self, value=None):
         return s.Coordinator(self.system).execute(value or request())

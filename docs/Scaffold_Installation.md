@@ -42,8 +42,16 @@ The domain must actually publish a v1.1 catalog. A 404, unsigned catalog, expire
 catalog or missing purpose is an error, never an implicit fallback to arbitrary
 software. A local signed catalog is supported with `--catalog FILE`; its initial
 publisher key must be supplied explicitly. `--root` chooses catalog trust and
-image-receipt state. Service state always lives below `/var/lib/haven/sprout/NAME`;
-it cannot be redirected to an arbitrary host path.
+image-receipt state. Service state always lives below `/var/lib/haven-sprout/NAME`;
+it cannot be redirected to an arbitrary host path. The shared `/var/lib/haven`
+parent is never created or changed. Existing system ancestors must allow UID995
+read/traversal before any pull; Sprout creates only its dedicated root and instance.
+
+An existing `/var/lib/haven/sprout/NAME` from v0.3.0 stops all service operations
+with `legacy_instance_requires_explicit_recovery`, including partial state and
+symlinks. Keep that generation and its keys for explicit operator recovery;
+there is no automatic migration, adoption, or replacement owner. Do not run
+old and new installers concurrently for the same instance.
 
 ## What the signature proves
 
