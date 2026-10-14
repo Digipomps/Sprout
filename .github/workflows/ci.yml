@@ -47,6 +47,7 @@ jobs:
         run: |
           python3 Scripts/embed_scaffold_service.py --check
           python3 Scripts/test_scaffold_service.py
+          python3 Scripts/test_scaffold_stack.py
 
       - name: Build
         run: |
@@ -175,6 +176,7 @@ jobs:
         run: |
           python3 Scripts/embed_scaffold_service.py --check
           python3 Scripts/test_scaffold_service.py
+          python3 Scripts/test_scaffold_stack.py
 
       - name: Build
         run: |

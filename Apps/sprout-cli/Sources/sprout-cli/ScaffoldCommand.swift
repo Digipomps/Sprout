@@ -13,6 +13,7 @@ extension SproutCLI {
             sprout scaffold [purposes|plan|install|status] --domain HOST [--purpose ID,ID] [--channel stable|beta]
               [--catalog FILE | --catalog-url HTTPS_URL] [--trusted-publisher-key KEY] [--root DIRECTORY] [--yes] [--offline] [--download-only]
               [--instance NAME] [--port PORT] [--public-origin https://HOST]
+              [--admin-port PORT] [--admin-public-origin https://ADMIN_HOST]
             Uten underkommando: velg formaal fra den signerte katalogen og bekreft installasjonsplanen.
             plan laster ingen bilder; install henter bilder og starter tjenesten paa Linux som root.
             --public-origin er tjenestens HTTPS-adresse; --port (9089) bindes bare til 127.0.0.1.
@@ -25,7 +26,7 @@ extension SproutCLI {
         var rest = arguments
         let command = rest.first.map { !$0.hasPrefix("--") } == true ? rest.removeFirst() : "dialogue"
         guard ["dialogue", "purposes", "plan", "install", "status"].contains(command) else { throw OnboardingError.invalidInput }
-        let allowed: Set<String> = ["domain", "purpose", "channel", "catalog", "catalog-url", "trusted-publisher-key", "root", "yes", "offline", "download-only", "instance", "port", "public-origin"]
+        let allowed: Set<String> = ["domain", "purpose", "channel", "catalog", "catalog-url", "trusted-publisher-key", "root", "yes", "offline", "download-only", "instance", "port", "public-origin", "admin-port", "admin-public-origin"]
         var flags: [String: String] = [:]
         while !rest.isEmpty {
             let flag = rest.removeFirst()
@@ -125,14 +126,23 @@ extension SproutCLI {
             else if flags["yes"] == "true" { throw ScaffoldServiceError.invalidConfiguration }
             else { origin = try scaffoldAnswer("Hvilken HTTPS-adresse skal denne scaffold-tjenesten bruke? (https://HOST)") }
             guard let port = Int(flags["port"] ?? "9089") else { throw ScaffoldServiceError.invalidConfiguration }
+            let adminOrigin: String
+            if let value = flags["admin-public-origin"] { adminOrigin = value }
+            else if flags["yes"] == "true" { throw ScaffoldServiceError.invalidConfiguration }
+            else { adminOrigin = try scaffoldAnswer("Hvilken separat HTTPS-adresse skal den nye AdminScaffold bruke?") }
+            let adminPortText: String
+            if let value = flags["admin-port"] { adminPortText = value }
+            else if flags["yes"] == "true" { throw ScaffoldServiceError.invalidConfiguration }
+            else { adminPortText = try scaffoldAnswer("Hvilken ledig loopback-port skal AdminScaffold bruke?") }
+            guard let adminPort = Int(adminPortText) else { throw ScaffoldServiceError.invalidConfiguration }
             service = try ScaffoldServiceRequest.make(plan: plan, instance: flags["instance"] ?? "scaffold",
-                                                      port: port, publicOrigin: origin)
+                                                      port: port, publicOrigin: origin, adminPort: adminPort, adminPublicOrigin: adminOrigin)
             try ScaffoldServiceController.requireHostAccess()
             try scaffoldJSON(service!)
         }
         if flags["yes"] == nil {
             let prompt = service == nil ? "Hente og installere disse \(plan.artifacts.count) scaffold-bildene med Docker? [ja/nei]"
-                : "Hente og installere scaffold, opprette en lokal eier og starte tjenesten paa loopback? [ja/nei]"
+                : "Hente og installere web, egen AdminScaffold og signert node-agent, med separate lokale eiere og begrensede ressurser? [ja/nei]"
             guard try scaffoldAnswer(prompt).lowercased() == "ja" else { return }
         }
         if var preflight = service {

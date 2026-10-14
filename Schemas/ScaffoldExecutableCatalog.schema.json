@@ -170,7 +170,10 @@
               "service_profile": {
                 "type": "string",
                 "enum": [
-                  "cellscaffold-web-v1"
+                  "cellscaffold-web-v1",
+                  "cellscaffold-web-stack-v1",
+                  "cellscaffold-admin-v1",
+                  "cellscaffold-node-agent-v1"
                 ],
                 "description": "Explicit signed permission to use the fixed CellScaffold web service activation profile."
               }
