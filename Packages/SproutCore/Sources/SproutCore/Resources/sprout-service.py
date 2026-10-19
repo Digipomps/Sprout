@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import copy
 import datetime as dt
+import errno
 import fcntl
 import hashlib
 import http.client
@@ -384,11 +385,16 @@ class System:
         finally: connection.close()
 
     def port_free(self, port):
-        with socket.socket() as probe:
-            try:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                # Closed TCP connections may retain TIME_WAIT after an owned
+                # service stops. Test listener availability, not plain-bind reuse.
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 probe.bind(('127.0.0.1', port))
-            except OSError:
-                raise Rejected('listen_port_busy') from None
+                probe.listen(1)
+        except OSError as error:
+            reason = 'listen_port_busy' if error.errno == errno.EADDRINUSE else 'listen_port_probe_failed'
+            raise Rejected(reason) from None
 
     def pause(self):
         time.sleep(1)

@@ -223,6 +223,42 @@ class StackTests(unittest.TestCase):
         self.assertEqual(self.system.native_calls, 1)
         self.assertEqual(self.system.enrollment_count, 1)
 
+    def test_stopped_full_stack_resumes_same_containers_without_reenrollment(self):
+        first = self.execute()
+        names = ('sprout-test', 'sprout-test-admin', 'sprout-test-node')
+        identifiers = {name: self.system.container(name)['Id'] for name in names}
+        before = self.immutable()
+        state = (s.ROOT / 'test/state.json').read_bytes()
+        journal = (s.ROOT / 'test/admin-data/.admin-owner-enrollment-v1.json').read_bytes()
+        for identifier in identifiers.values():
+            self.system.docker('stop', identifier)
+            self.assertFalse(self.system.container(identifier)['State']['Running'])
+        calls = len(self.system.calls)
+        resumed = self.execute()
+        self.assertEqual(resumed['status'], 'ready')
+        self.assertEqual(resumed['generation'], first['generation'])
+        self.assertEqual(resumed['owner_uuid'], first['owner_uuid'])
+        self.assertEqual(resumed['admin']['owner_uuid'], first['admin']['owner_uuid'])
+        self.assertEqual(resumed['node']['agent'], first['node']['agent'])
+        self.assertEqual([resumed['container_id'], resumed['admin']['container_id'], resumed['node']['container_id']],
+                         [identifiers[name] for name in names])
+        for name, identifier in identifiers.items():
+            self.assertEqual(self.system.container(name)['Id'], identifier)
+            self.assertTrue(self.system.container(identifier)['State']['Running'])
+        self.assertEqual(before, self.immutable())
+        self.assertEqual((s.ROOT / 'test/state.json').read_bytes(), state)
+        self.assertEqual((s.ROOT / 'test/admin-data/.admin-owner-enrollment-v1.json').read_bytes(), journal)
+        self.assertEqual(self.system.native_calls, 1)
+        self.assertEqual(self.system.enrollment_count, 1)
+        self.assertEqual(self.system.verify_count, 0)
+        self.assertGreater(resumed['admin']['observed_sequence'], first['admin']['observed_sequence'])
+        resumed_calls = self.system.calls[calls:]
+        self.assertEqual([call for call in resumed_calls if call[0] == 'port-free'],
+                         [('port-free', 9089), ('port-free', 9098)])
+        self.assertEqual([call for call in resumed_calls if call[0] == 'start'],
+                         [('start', identifiers[name]) for name in (names[1], names[2], names[0])])
+        self.assertFalse(any(call[0] in ('create', 'restart', 'rename') for call in resumed_calls))
+
     def test_exact_enrolled_upgrade_archives_old_container_and_preserves_web_identity(self):
         old, files = self.legacy_failure()
         old_container = self.system.container('sprout-test-provision')['Id']

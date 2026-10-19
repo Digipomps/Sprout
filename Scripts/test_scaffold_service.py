@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coordinator boundary tests; no Docker daemon, root or network is required.
+"""Coordinator boundary tests; no Docker daemon, root or external network required.
 
 The model simulates Docker but uses real files, subprocesses, flock inheritance,
 atomic writes and crash/retry checkpoints. Actual CellScaffold cryptography and
@@ -7,16 +7,19 @@ Linux namespace behavior belong to the real-image acceptance test on Linux.
 """
 from __future__ import annotations
 import copy
+import errno
 import fcntl
 import hashlib
 import importlib.util
 import json
 import os
 from pathlib import Path
+import socket
 import stat
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 
@@ -104,6 +107,82 @@ def request(**changes):
              'purposes': ['purpose://haven/communicate'], 'public_origin': 'https://scaffold.example:8443'}
     value.update(changes)
     return s.request_document(value)
+
+
+class PortAvailabilityTests(unittest.TestCase):
+    def test_free_loopback_port_can_be_probed_repeatedly(self):
+        # Port zero lets the kernel assign an unused port without a check/use gap.
+        s.System().port_free(0)
+        s.System().port_free(0)
+
+    def assert_listener_rejected(self, address):
+        for reuse in (False, True):
+            with self.subTest(address=address, reuse=reuse):
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+                    if reuse:
+                        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    listener.bind((address, 0))
+                    listener.listen(1)
+                    with self.assertRaisesRegex(s.Rejected, '^listen_port_busy$'):
+                        s.System().port_free(listener.getsockname()[1])
+
+    def test_actual_loopback_listeners_are_rejected_even_with_address_reuse(self):
+        self.assert_listener_rejected('127.0.0.1')
+
+    @unittest.skipUnless(sys.platform == 'linux', 'requires Linux wildcard binding semantics')
+    def test_actual_wildcard_listeners_are_rejected_even_with_address_reuse(self):
+        # BSD permits a more-specific reusable listener alongside a wildcard.
+        # The production coordinator is Linux-only; verify its kernel contract.
+        self.assert_listener_rejected('0.0.0.0')
+
+    def test_probe_errors_preserve_conflict_vs_operating_system_failure(self):
+        for stage, number, reason in (
+                ('bind', errno.EADDRINUSE, 'listen_port_busy'),
+                ('listen', errno.EADDRINUSE, 'listen_port_busy'),
+                ('bind', errno.EACCES, 'listen_port_probe_failed'),
+                ('listen', errno.ENOBUFS, 'listen_port_probe_failed')):
+            with self.subTest(stage=stage, errno=number):
+                with patch.object(s.socket, 'socket') as factory:
+                    operation = getattr(factory.return_value.__enter__.return_value, stage)
+                    operation.side_effect = OSError(number, 'injected probe failure')
+                    with self.assertRaisesRegex(s.Rejected, '^' + reason + '$'):
+                        s.System().port_free(12345)
+                    operation.assert_called_once()
+        with patch.object(s.socket, 'socket', side_effect=OSError(errno.EMFILE, 'injected limit')) as factory:
+            with self.assertRaisesRegex(s.Rejected, '^listen_port_probe_failed$'):
+                s.System().port_free(12345)
+            factory.assert_called_once()
+
+    @unittest.skipUnless(sys.platform == 'linux', 'requires Linux TCP state evidence')
+    def test_closed_listener_time_wait_allows_immediate_restart(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.settimeout(2)
+            listener.bind(('127.0.0.1', 0))
+            port = listener.getsockname()[1]
+            listener.listen(1)
+            with socket.create_connection(('127.0.0.1', port), timeout=2) as client:
+                with listener.accept()[0] as server:
+                    server.settimeout(2)
+                    server.shutdown(socket.SHUT_WR)
+                    self.assertEqual(client.recv(1), b'')
+                    client.shutdown(socket.SHUT_WR)
+                    self.assertEqual(server.recv(1), b'')
+        # Observe the actual kernel state instead of sleeping for TCP expiry.
+        deadline = time.monotonic() + 2
+        while True:
+            states = [row.split()[3] for row in Path('/proc/net/tcp').read_text().splitlines()[1:]
+                      if int(row.split()[1].split(':')[1], 16) == port]
+            if '06' in states and '0A' not in states:
+                break
+            self.assertLess(time.monotonic(), deadline, 'TIME_WAIT not observed: ' + repr(states))
+            time.sleep(.01)
+        # Negative control: the published plain-bind probe rejects this state.
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as old_probe:
+            with self.assertRaises(OSError) as caught:
+                old_probe.bind(('127.0.0.1', port))
+            self.assertEqual(caught.exception.errno, errno.EADDRINUSE)
+        s.System().port_free(port)
 
 
 class DockerModel(s.System):
