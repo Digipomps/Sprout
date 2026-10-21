@@ -1,0 +1,459 @@
+{
+  "challengeCanonicalBase64": "eyJhY3Rpb24iOiJzcHJvdXQuZW50aXR5LnJlc29sdmUudjEiLCJhdWRpZW5jZSI6Imh0dHBzOlwvXC9zeW50aGV0aWMtcGVyc29uLmV4YW1wbGUiLCJkb21haW4iOiJwcml2YXRlIiwiZXhwaXJlc0F0IjoxNzkwNjgzMjYwLCJpZGVudGl0eVVVSUQiOiIxMTExMTExMS0yMjIyLTQzMzMtODQ0NC01NTU1NTU1NTU1NTUiLCJpc3N1ZWRBdCI6MTc5MDY4MzIwMCwibm9uY2UiOiJSMGRIUjBkSFIwZEhSMGRIUjBkSFIwZEhSMGRIUjBkSFIwZEhSMGRIUjBjPSIsInB1YmxpY0tleUZpbmdlcnByaW50IjoiRWREU0E6Q3VydmUyNTUxOTpBNkVIdlwvUE9FTDRkY04wWTUwdkFtV2ZrMWpDYnBRMWZIZHlHWkJKVk1iZz0iLCJwdXJwb3NlIjoiaWRlbnRpdHktb3JpZ2luLXByb29mIiwicmVzb3VyY2UiOiJzcHJvdXQtZW50aXR5LXJlc29sdXRpb246VjAzQkhaYk9uMk9FYktUR0R6REdIRzlRN2xoMjVNWlZqTVZ0LUZ1S3hKRSIsInR5cGUiOiJvcmcuaGF2ZW4uY2VsbHByb3RvY29sLmlkZW50aXR5LXNpZ25pbmctY2hhbGxlbmdlIiwidmVyc2lvbiI6MX0=",
+  "deepLink": "haven://identity-link?t=eyJhcHByb3ZlckxhYmVsIjoiU3ludGhldGljIGJyb3dzZXIiLCJhdWRpZW5jZSI6InN5bnRoZXRpYy1wZXJzb24uZXhhbXBsZSIsImVudGl0eUJpbmRpbmciOnsiYXVkaWVuY2UiOiJzeW50aGV0aWMtcGVyc29uLmV4YW1wbGUiLCJlbnRpdHlBbmNob3JSZWZlcmVuY2UiOiJjZWxsOi8vL0VudGl0eUFuY2hvciIsIm1vZGUiOiJsb2NhbEVudGl0eUFuY2hvciJ9LCJleHBpcmVzQXQiOiIyMDI2LTA5LTI5VDEyOjEwOjAwWiIsIm5vbmNlIjoiTVRFeE1URXhNVEV4TVRFeE1URXhNVEV4TVRFeE1URXhNVEV4TVRFeE1URT0iLCJvcmlnaW4iOiJodHRwczovL3N5bnRoZXRpYy1wZXJzb24uZXhhbXBsZSIsIm93bmVyRGlzcGxheU5hbWUiOiJTeW50aGV0aWMgb3duZXIiLCJwcmVzZW50YXRpb25DaGFsbGVuZ2UiOiJOemMzTnpjM056YzNOemMzTnpjM056YzNOemMzTnpjM056YzNOemMzTnpjPSIsInByZXNlbnRhdGlvbkRvbWFpbiI6Imh0dHBzOi8vc3ludGhldGljLXBlcnNvbi5leGFtcGxlIiwicmVuZGV6dm91c1VSTCI6Imh0dHBzOi8vc3ludGhldGljLXBlcnNvbi5leGFtcGxlL2xpbmsvYXBpIiwic2NoZW1hIjoiaGF2ZW4uaWRlbnRpdHktbGluay50aWNrZXQudjEiLCJ0aWNrZXRJRCI6Imx0LTAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwMSJ9",
+  "envelope": {
+    "approval": {
+      "approvalID": "00000000-0000-4000-8000-000000000003",
+      "approvedDomains": [
+        "private",
+        "scaffold"
+      ],
+      "approvedIdentityContexts": [
+        "sprout-cli"
+      ],
+      "approvedScopes": [
+        "same_entity"
+      ],
+      "audience": "synthetic-person.example",
+      "createdAt": "2026-09-29T12:00:00Z",
+      "entityBinding": {
+        "audience": "synthetic-person.example",
+        "entityAnchorReference": "cell:///EntityAnchor",
+        "mode": "localEntityAnchor"
+      },
+      "expiresAt": "2026-09-29T12:05:00Z",
+      "freshAuthEvidence": {
+        "authenticatorData": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAA==",
+        "challenge": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+        "clientDataJSON": "c3ludGhldGljLWNsaWVudC1kYXRh",
+        "credentialID": "c3ludGhldGljLWNyZWRlbnRpYWw=",
+        "method": "webauthn",
+        "performedAt": "2026-09-29T12:00:00Z",
+        "signature": "c3ludGhldGljLWF1dGhlbnRpY2F0b3Itc2lnbmF0dXJl"
+      },
+      "freshAuthMethod": "local-user-presence",
+      "freshAuthPerformedAt": "2026-09-29T12:00:00Z",
+      "freshAuthRequired": true,
+      "issuerIdentityUUID": "66666666-7777-4888-8999-AAAAAAAAAAAA",
+      "issuerType": "existingDevice",
+      "jti": "00000000-0000-4000-8000-000000000004",
+      "origin": "https://synthetic-person.example",
+      "proof": {
+        "algorithm": "EdDSA",
+        "curveType": "Curve25519",
+        "issuerIdentityUUID": "66666666-7777-4888-8999-AAAAAAAAAAAA",
+        "issuerType": "existingDevice",
+        "signature": "bFXHCdk0CawsDPKvqFz/2ai7GqZg9Rb6SpyaJCANwT2BRtt/qd+EvYA6DMA9QijT5SzMdUKp4JiU6vH5VGoEDg==",
+        "type": "signature"
+      },
+      "purpose": "approve_link_identity",
+      "requestHash": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+      "subjectIdentity": {
+        "algorithm": "EdDSA",
+        "curveType": "Curve25519",
+        "displayName": "Sprout CLI",
+        "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+        "uuid": "11111111-2222-4333-8444-555555555555"
+      },
+      "version": 1
+    },
+    "expectedAudience": "synthetic-person.example",
+    "expectedOrigin": "https://synthetic-person.example",
+    "expectedPresentationChallenge": "Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc=",
+    "expectedPresentationDomain": "https://synthetic-person.example",
+    "issuerIdentity": {
+      "algorithm": "EdDSA",
+      "curveType": "Curve25519",
+      "displayName": "Synthetic owner",
+      "publicKey": "Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=",
+      "uuid": "66666666-7777-4888-8999-AAAAAAAAAAAA"
+    },
+    "presentation": {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1"
+      ],
+      "challenge": "Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc=",
+      "domain": "https://synthetic-person.example",
+      "holder": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+      "holderBinding": {
+        "algorithm": "EdDSA",
+        "curveType": "Curve25519",
+        "displayName": "Sprout CLI",
+        "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+        "uuid": "11111111-2222-4333-8444-555555555555"
+      },
+      "id": "cell:///identity/11111111-2222-4333-8444-555555555555/claims/00000000-0000-4000-8000-000000000006",
+      "proof": {
+        "created": "2026-09-29T12:00:00Z",
+        "proofPurpose": "authentication",
+        "signatureData": "nPB526OKseoBuCvNkk++F5vNTP6EdRauRxAspnmBaoMz3h/0MtjNHWGfSI5phAQD9Fgblf2a2H2+varnQeI5CA==",
+        "type": "Ed25519Signature2020",
+        "verificationMethod": "11111111-2222-4333-8444-555555555555"
+      },
+      "type": [
+        "VerifiableCredential",
+        "SameEntityIdentityLinkPresentation"
+      ],
+      "verifiableCredential": [
+        {
+          "@context": [
+            "https://www.w3.org/2018/credentials/v1",
+            "https://www.w3.org/2018/credentials/examples/v1"
+          ],
+          "credentialSubject": {
+            "approvedDomains": [
+              "private",
+              "scaffold"
+            ],
+            "approvedIdentityContexts": [
+              "sprout-cli"
+            ],
+            "approvedScopes": [
+              "same_entity"
+            ],
+            "assuranceLevel": "high",
+            "assuranceSource": "fresh_auth_and_possession",
+            "enrollmentRequestHash": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+            "entityBinding": {
+              "audience": "synthetic-person.example",
+              "entityAnchorReference": "cell:///EntityAnchor",
+              "mode": "localEntityAnchor"
+            },
+            "id": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+            "linkType": "same_entity",
+            "linkedIdentity": {
+              "algorithm": "EdDSA",
+              "curveType": "Curve25519",
+              "displayName": "Sprout CLI",
+              "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+              "uuid": "11111111-2222-4333-8444-555555555555"
+            },
+            "validUntil": "2026-09-29T12:10:00Z"
+          },
+          "id": "cell:///identity/11111111-2222-4333-8444-555555555555/claims/00000000-0000-4000-8000-000000000005",
+          "issuanceDate": "2026-09-29T12:00:00Z",
+          "issuer": "did:key:z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2",
+          "proof": {
+            "created": "2026-09-29T12:00:00Z",
+            "proofPurpose": "assertionMethod",
+            "signatureData": "h6LjJccafExRqqbwCfhq7gMTg+TH5YsPPHM4dlJwALZQq8Gsy2FxQMH8Dcszi+Xs/So+hulqjnjtvapw18+wDg==",
+            "type": "Ed25519Signature2020",
+            "verificationMethod": "66666666-7777-4888-8999-AAAAAAAAAAAA"
+          },
+          "type": [
+            "VerifiableCredential",
+            "SameEntityIdentityLinkCredential"
+          ]
+        }
+      ]
+    },
+    "request": {
+      "audience": "synthetic-person.example",
+      "createdAt": "2026-09-29T12:00:00Z",
+      "deviceLabel": "Sprout CLI",
+      "entityBinding": {
+        "audience": "synthetic-person.example",
+        "entityAnchorReference": "cell:///EntityAnchor",
+        "mode": "localEntityAnchor"
+      },
+      "expiresAt": "2026-09-29T12:10:00Z",
+      "newIdentity": {
+        "algorithm": "EdDSA",
+        "curveType": "Curve25519",
+        "displayName": "Sprout CLI",
+        "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+        "uuid": "11111111-2222-4333-8444-555555555555"
+      },
+      "nonce": "MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=",
+      "origin": "https://synthetic-person.example",
+      "platform": "linux",
+      "proof": {
+        "algorithm": "EdDSA",
+        "byIdentityUUID": "11111111-2222-4333-8444-555555555555",
+        "curveType": "Curve25519",
+        "signature": "Wgccwprv63sNaYP/onQ6zMQuVMLdxt2767+s1IDERAEhBwFwLzUBePQplLBorpcvifa1ZVsoXFS8faLlH9X6Bw==",
+        "type": "signature"
+      },
+      "purpose": "link_identity",
+      "requestID": "request-00000000-0000-4000-8000-000000000002",
+      "requestedDomains": [
+        "private",
+        "scaffold"
+      ],
+      "requestedIdentityContexts": [
+        "sprout-cli"
+      ],
+      "requestedScopes": [
+        "same_entity"
+      ],
+      "version": 1
+    },
+    "requireFreshAuthEvidence": true,
+    "sameEntityCredential": {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1"
+      ],
+      "credentialSubject": {
+        "approvedDomains": [
+          "private",
+          "scaffold"
+        ],
+        "approvedIdentityContexts": [
+          "sprout-cli"
+        ],
+        "approvedScopes": [
+          "same_entity"
+        ],
+        "assuranceLevel": "high",
+        "assuranceSource": "fresh_auth_and_possession",
+        "enrollmentRequestHash": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+        "entityBinding": {
+          "audience": "synthetic-person.example",
+          "entityAnchorReference": "cell:///EntityAnchor",
+          "mode": "localEntityAnchor"
+        },
+        "id": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+        "linkType": "same_entity",
+        "linkedIdentity": {
+          "algorithm": "EdDSA",
+          "curveType": "Curve25519",
+          "displayName": "Sprout CLI",
+          "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+          "uuid": "11111111-2222-4333-8444-555555555555"
+        },
+        "validUntil": "2026-09-29T12:10:00Z"
+      },
+      "id": "cell:///identity/11111111-2222-4333-8444-555555555555/claims/00000000-0000-4000-8000-000000000005",
+      "issuanceDate": "2026-09-29T12:00:00Z",
+      "issuer": "did:key:z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2",
+      "proof": {
+        "created": "2026-09-29T12:00:00Z",
+        "proofPurpose": "assertionMethod",
+        "signatureData": "h6LjJccafExRqqbwCfhq7gMTg+TH5YsPPHM4dlJwALZQq8Gsy2FxQMH8Dcszi+Xs/So+hulqjnjtvapw18+wDg==",
+        "type": "Ed25519Signature2020",
+        "verificationMethod": "66666666-7777-4888-8999-AAAAAAAAAAAA"
+      },
+      "type": [
+        "VerifiableCredential",
+        "SameEntityIdentityLinkCredential"
+      ]
+    }
+  },
+  "issuerSeedBase64URL": "ICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj8",
+  "now": 1790683200,
+  "package": {
+    "approval": {
+      "approvalID": "00000000-0000-4000-8000-000000000003",
+      "approvedDomains": [
+        "private",
+        "scaffold"
+      ],
+      "approvedIdentityContexts": [
+        "sprout-cli"
+      ],
+      "approvedScopes": [
+        "same_entity"
+      ],
+      "audience": "synthetic-person.example",
+      "createdAt": "2026-09-29T12:00:00Z",
+      "entityBinding": {
+        "audience": "synthetic-person.example",
+        "entityAnchorReference": "cell:///EntityAnchor",
+        "mode": "localEntityAnchor"
+      },
+      "expiresAt": "2026-09-29T12:05:00Z",
+      "freshAuthEvidence": {
+        "authenticatorData": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAA==",
+        "challenge": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+        "clientDataJSON": "c3ludGhldGljLWNsaWVudC1kYXRh",
+        "credentialID": "c3ludGhldGljLWNyZWRlbnRpYWw=",
+        "method": "webauthn",
+        "performedAt": "2026-09-29T12:00:00Z",
+        "signature": "c3ludGhldGljLWF1dGhlbnRpY2F0b3Itc2lnbmF0dXJl"
+      },
+      "freshAuthMethod": "local-user-presence",
+      "freshAuthPerformedAt": "2026-09-29T12:00:00Z",
+      "freshAuthRequired": true,
+      "issuerIdentityUUID": "66666666-7777-4888-8999-AAAAAAAAAAAA",
+      "issuerType": "existingDevice",
+      "jti": "00000000-0000-4000-8000-000000000004",
+      "origin": "https://synthetic-person.example",
+      "proof": {
+        "algorithm": "EdDSA",
+        "curveType": "Curve25519",
+        "issuerIdentityUUID": "66666666-7777-4888-8999-AAAAAAAAAAAA",
+        "issuerType": "existingDevice",
+        "signature": "bFXHCdk0CawsDPKvqFz/2ai7GqZg9Rb6SpyaJCANwT2BRtt/qd+EvYA6DMA9QijT5SzMdUKp4JiU6vH5VGoEDg==",
+        "type": "signature"
+      },
+      "purpose": "approve_link_identity",
+      "requestHash": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+      "subjectIdentity": {
+        "algorithm": "EdDSA",
+        "curveType": "Curve25519",
+        "displayName": "Sprout CLI",
+        "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+        "uuid": "11111111-2222-4333-8444-555555555555"
+      },
+      "version": 1
+    },
+    "audience": "synthetic-person.example",
+    "completeURL": "https://synthetic-person.example/link/api/complete",
+    "issuerIdentity": {
+      "algorithm": "EdDSA",
+      "curveType": "Curve25519",
+      "displayName": "Synthetic owner",
+      "publicKey": "Kay64UG8yvCyLhqU000LxzYeUm0L/hLIl5S8kyKWbdc=",
+      "uuid": "66666666-7777-4888-8999-AAAAAAAAAAAA"
+    },
+    "origin": "https://synthetic-person.example",
+    "presentationChallenge": "Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc=",
+    "presentationDomain": "https://synthetic-person.example",
+    "requestHash": "A_JkIZNQm2sYqcWgaRwHmohdTrR_hlgY9zZutfP7OeU",
+    "sameEntityCredential": {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1"
+      ],
+      "credentialSubject": {
+        "approvedDomains": [
+          "private",
+          "scaffold"
+        ],
+        "approvedIdentityContexts": [
+          "sprout-cli"
+        ],
+        "approvedScopes": [
+          "same_entity"
+        ],
+        "assuranceLevel": "high",
+        "assuranceSource": "fresh_auth_and_possession",
+        "enrollmentRequestHash": "A/JkIZNQm2sYqcWgaRwHmohdTrR/hlgY9zZutfP7OeU=",
+        "entityBinding": {
+          "audience": "synthetic-person.example",
+          "entityAnchorReference": "cell:///EntityAnchor",
+          "mode": "localEntityAnchor"
+        },
+        "id": "did:key:z6MkehRgf7yJbgaGfYsdoAsKdBPE3dj2CYhowQdcjqSJgvVd",
+        "linkType": "same_entity",
+        "linkedIdentity": {
+          "algorithm": "EdDSA",
+          "curveType": "Curve25519",
+          "displayName": "Sprout CLI",
+          "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+          "uuid": "11111111-2222-4333-8444-555555555555"
+        },
+        "validUntil": "2026-09-29T12:10:00Z"
+      },
+      "id": "cell:///identity/11111111-2222-4333-8444-555555555555/claims/00000000-0000-4000-8000-000000000005",
+      "issuanceDate": "2026-09-29T12:00:00Z",
+      "issuer": "did:key:z6MkhFwXNFWosLeugvSf4wcL9t3uuRXueGSFTRgSvHhWj5G2",
+      "proof": {
+        "created": "2026-09-29T12:00:00Z",
+        "proofPurpose": "assertionMethod",
+        "signatureData": "h6LjJccafExRqqbwCfhq7gMTg+TH5YsPPHM4dlJwALZQq8Gsy2FxQMH8Dcszi+Xs/So+hulqjnjtvapw18+wDg==",
+        "type": "Ed25519Signature2020",
+        "verificationMethod": "66666666-7777-4888-8999-AAAAAAAAAAAA"
+      },
+      "type": [
+        "VerifiableCredential",
+        "SameEntityIdentityLinkCredential"
+      ]
+    }
+  },
+  "presentationCanonicalBase64": "eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL2V4YW1wbGVzL3YxIl0sImNoYWxsZW5nZSI6Ik56YzNOemMzTnpjM056YzNOemMzTnpjM056YzNOemMzTnpjM056YzNOemM9IiwiZG9tYWluIjoiaHR0cHM6Ly9zeW50aGV0aWMtcGVyc29uLmV4YW1wbGUiLCJob2xkZXIiOiJkaWQ6a2V5Ono2TWtlaFJnZjd5SmJnYUdmWXNkb0FzS2RCUEUzZGoyQ1lob3dRZGNqcVNKZ3ZWZCIsImhvbGRlckJpbmRpbmciOnsiYWxnb3JpdGhtIjoiRWREU0EiLCJjdXJ2ZVR5cGUiOiJDdXJ2ZTI1NTE5IiwiZGlzcGxheU5hbWUiOiJTcHJvdXQgQ0xJIiwicHVibGljS2V5IjoiQTZFSHYvUE9FTDRkY04wWTUwdkFtV2ZrMWpDYnBRMWZIZHlHWkJKVk1iZz0iLCJ1dWlkIjoiMTExMTExMTEtMjIyMi00MzMzLTg0NDQtNTU1NTU1NTU1NTU1In0sImlkIjoiY2VsbDovLy9pZGVudGl0eS8xMTExMTExMS0yMjIyLTQzMzMtODQ0NC01NTU1NTU1NTU1NTUvY2xhaW1zLzAwMDAwMDAwLTAwMDAtNDAwMC04MDAwLTAwMDAwMDAwMDAwNiIsInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJTYW1lRW50aXR5SWRlbnRpdHlMaW5rUHJlc2VudGF0aW9uIl0sInZlcmlmaWFibGVDcmVkZW50aWFsIjpbeyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL2V4YW1wbGVzL3YxIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFwcHJvdmVkRG9tYWlucyI6WyJwcml2YXRlIiwic2NhZmZvbGQiXSwiYXBwcm92ZWRJZGVudGl0eUNvbnRleHRzIjpbInNwcm91dC1jbGkiXSwiYXBwcm92ZWRTY29wZXMiOlsic2FtZV9lbnRpdHkiXSwiYXNzdXJhbmNlTGV2ZWwiOiJoaWdoIiwiYXNzdXJhbmNlU291cmNlIjoiZnJlc2hfYXV0aF9hbmRfcG9zc2Vzc2lvbiIsImVucm9sbG1lbnRSZXF1ZXN0SGFzaCI6IkEvSmtJWk5RbTJzWXFjV2dhUndIbW9oZFRyUi9obGdZOXpadXRmUDdPZVU9IiwiZW50aXR5QmluZGluZyI6eyJhdWRpZW5jZSI6InN5bnRoZXRpYy1wZXJzb24uZXhhbXBsZSIsImVudGl0eUFuY2hvclJlZmVyZW5jZSI6ImNlbGw6Ly8vRW50aXR5QW5jaG9yIiwibW9kZSI6ImxvY2FsRW50aXR5QW5jaG9yIn0sImlkIjoiZGlkOmtleTp6Nk1rZWhSZ2Y3eUpiZ2FHZllzZG9Bc0tkQlBFM2RqMkNZaG93UWRjanFTSmd2VmQiLCJsaW5rVHlwZSI6InNhbWVfZW50aXR5IiwibGlua2VkSWRlbnRpdHkiOnsiYWxnb3JpdGhtIjoiRWREU0EiLCJjdXJ2ZVR5cGUiOiJDdXJ2ZTI1NTE5IiwiZGlzcGxheU5hbWUiOiJTcHJvdXQgQ0xJIiwicHVibGljS2V5IjoiQTZFSHYvUE9FTDRkY04wWTUwdkFtV2ZrMWpDYnBRMWZIZHlHWkJKVk1iZz0iLCJ1dWlkIjoiMTExMTExMTEtMjIyMi00MzMzLTg0NDQtNTU1NTU1NTU1NTU1In0sInZhbGlkVW50aWwiOiIyMDI2LTA5LTI5VDEyOjEwOjAwWiJ9LCJpZCI6ImNlbGw6Ly8vaWRlbnRpdHkvMTExMTExMTEtMjIyMi00MzMzLTg0NDQtNTU1NTU1NTU1NTU1L2NsYWltcy8wMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDUiLCJpc3N1YW5jZURhdGUiOiIyMDI2LTA5LTI5VDEyOjAwOjAwWiIsImlzc3VlciI6ImRpZDprZXk6ejZNa2hGd1hORldvc0xldWd2U2Y0d2NMOXQzdXVSWHVlR1NGVFJnU3ZIaFdqNUcyIiwicHJvb2YiOnsiY3JlYXRlZCI6IjIwMjYtMDktMjlUMTI6MDA6MDBaIiwicHJvb2ZQdXJwb3NlIjoiYXNzZXJ0aW9uTWV0aG9kIiwic2lnbmF0dXJlRGF0YSI6Img2TGpKY2NhZkV4UnFxYndDZmhxN2dNVGcrVEg1WXNQUEhNNGRsSndBTFpRcThHc3kyRnhRTUg4RGNzemkrWHMvU28raHVscWpuanR2YXB3MTgrd0RnPT0iLCJ0eXBlIjoiRWQyNTUxOVNpZ25hdHVyZTIwMjAiLCJ2ZXJpZmljYXRpb25NZXRob2QiOiI2NjY2NjY2Ni03Nzc3LTQ4ODgtODk5OS1BQUFBQUFBQUFBQUEifSwidHlwZSI6WyJWZXJpZmlhYmxlQ3JlZGVudGlhbCIsIlNhbWVFbnRpdHlJZGVudGl0eUxpbmtDcmVkZW50aWFsIl19XX0=",
+  "receipt": {
+    "domain": "synthetic-person.example",
+    "evidenceReference": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "identity": {
+      "algorithm": "EdDSA",
+      "curveType": "Curve25519",
+      "displayName": "Sprout CLI",
+      "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+      "uuid": "11111111-2222-4333-8444-555555555555"
+    },
+    "linkID": "00000000-0000-4000-8000-000000000003",
+    "version": 1
+  },
+  "request": {
+    "audience": "synthetic-person.example",
+    "createdAt": "2026-09-29T12:00:00Z",
+    "deviceLabel": "Sprout CLI",
+    "entityBinding": {
+      "audience": "synthetic-person.example",
+      "entityAnchorReference": "cell:///EntityAnchor",
+      "mode": "localEntityAnchor"
+    },
+    "expiresAt": "2026-09-29T12:10:00Z",
+    "newIdentity": {
+      "algorithm": "EdDSA",
+      "curveType": "Curve25519",
+      "displayName": "Sprout CLI",
+      "publicKey": "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=",
+      "uuid": "11111111-2222-4333-8444-555555555555"
+    },
+    "nonce": "MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=",
+    "origin": "https://synthetic-person.example",
+    "platform": "linux",
+    "proof": {
+      "algorithm": "EdDSA",
+      "byIdentityUUID": "11111111-2222-4333-8444-555555555555",
+      "curveType": "Curve25519",
+      "signature": "Wgccwprv63sNaYP/onQ6zMQuVMLdxt2767+s1IDERAEhBwFwLzUBePQplLBorpcvifa1ZVsoXFS8faLlH9X6Bw==",
+      "type": "signature"
+    },
+    "purpose": "link_identity",
+    "requestID": "request-00000000-0000-4000-8000-000000000002",
+    "requestedDomains": [
+      "private",
+      "scaffold"
+    ],
+    "requestedIdentityContexts": [
+      "sprout-cli"
+    ],
+    "requestedScopes": [
+      "same_entity"
+    ],
+    "version": 1
+  },
+  "requestCanonicalBase64": "eyJhdWRpZW5jZSI6InN5bnRoZXRpYy1wZXJzb24uZXhhbXBsZSIsImNyZWF0ZWRBdCI6IjIwMjYtMDktMjlUMTI6MDA6MDBaIiwiZGV2aWNlTGFiZWwiOiJTcHJvdXQgQ0xJIiwiZW50aXR5QmluZGluZyI6eyJhdWRpZW5jZSI6InN5bnRoZXRpYy1wZXJzb24uZXhhbXBsZSIsImVudGl0eUFuY2hvclJlZmVyZW5jZSI6ImNlbGw6XC9cL1wvRW50aXR5QW5jaG9yIiwibW9kZSI6ImxvY2FsRW50aXR5QW5jaG9yIn0sImV4cGlyZXNBdCI6IjIwMjYtMDktMjlUMTI6MTA6MDBaIiwibmV3SWRlbnRpdHkiOnsiYWxnb3JpdGhtIjoiRWREU0EiLCJjdXJ2ZVR5cGUiOiJDdXJ2ZTI1NTE5IiwiZGlzcGxheU5hbWUiOiJTcHJvdXQgQ0xJIiwicHVibGljS2V5IjoiQTZFSHZcL1BPRUw0ZGNOMFk1MHZBbVdmazFqQ2JwUTFmSGR5R1pCSlZNYmc9IiwidXVpZCI6IjExMTExMTExLTIyMjItNDMzMy04NDQ0LTU1NTU1NTU1NTU1NSJ9LCJub25jZSI6Ik1URXhNVEV4TVRFeE1URXhNVEV4TVRFeE1URXhNVEV4TVRFeE1URXhNVEU9Iiwib3JpZ2luIjoiaHR0cHM6XC9cL3N5bnRoZXRpYy1wZXJzb24uZXhhbXBsZSIsInBsYXRmb3JtIjoibGludXgiLCJwdXJwb3NlIjoibGlua19pZGVudGl0eSIsInJlcXVlc3RlZERvbWFpbnMiOlsicHJpdmF0ZSIsInNjYWZmb2xkIl0sInJlcXVlc3RlZElkZW50aXR5Q29udGV4dHMiOlsic3Byb3V0LWNsaSJdLCJyZXF1ZXN0ZWRTY29wZXMiOlsic2FtZV9lbnRpdHkiXSwicmVxdWVzdElEIjoicmVxdWVzdC0wMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDIiLCJ2ZXJzaW9uIjoxfQ==",
+  "requestHash": "A_JkIZNQm2sYqcWgaRwHmohdTrR_hlgY9zZutfP7OeU",
+  "resolutionRequest": {
+    "domain": "synthetic-person.example",
+    "goal": "Start a Linux service",
+    "identity_public_key": "A6EHv_POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg",
+    "interests": [
+      "haven.core.bootstrap"
+    ],
+    "purpose": "bootstrap.join_scaffold",
+    "scaffold_admin_public_key": "Kay64UG8yvCyLhqU000LxzYeUm0L_hLIl5S8kyKWbdc"
+  },
+  "resolveProof": {
+    "challenge": "eyJhY3Rpb24iOiJzcHJvdXQuZW50aXR5LnJlc29sdmUudjEiLCJhdWRpZW5jZSI6Imh0dHBzOlwvXC9zeW50aGV0aWMtcGVyc29uLmV4YW1wbGUiLCJkb21haW4iOiJwcml2YXRlIiwiZXhwaXJlc0F0IjoxNzkwNjgzMjYwLCJpZGVudGl0eVVVSUQiOiIxMTExMTExMS0yMjIyLTQzMzMtODQ0NC01NTU1NTU1NTU1NTUiLCJpc3N1ZWRBdCI6MTc5MDY4MzIwMCwibm9uY2UiOiJSMGRIUjBkSFIwZEhSMGRIUjBkSFIwZEhSMGRIUjBkSFIwZEhSMGRIUjBjPSIsInB1YmxpY0tleUZpbmdlcnByaW50IjoiRWREU0E6Q3VydmUyNTUxOTpBNkVIdlwvUE9FTDRkY04wWTUwdkFtV2ZrMWpDYnBRMWZIZHlHWkJKVk1iZz0iLCJwdXJwb3NlIjoiaWRlbnRpdHktb3JpZ2luLXByb29mIiwicmVzb3VyY2UiOiJzcHJvdXQtZW50aXR5LXJlc29sdXRpb246VjAzQkhaYk9uMk9FYktUR0R6REdIRzlRN2xoMjVNWlZqTVZ0LUZ1S3hKRSIsInR5cGUiOiJvcmcuaGF2ZW4uY2VsbHByb3RvY29sLmlkZW50aXR5LXNpZ25pbmctY2hhbGxlbmdlIiwidmVyc2lvbiI6MX0=",
+    "evidenceReference": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "linkID": "00000000-0000-4000-8000-000000000003",
+    "schema": "haven.person-entity-read-route-proof.v1",
+    "signature": "e2fzDz1jNRbEDDNWGct9sqOBwErFzXn8qIkMyf5buv5WsbHdxHlcz1ic+VmdpeBWf6hV0L5Ligv1+kxlHCx9Cg=="
+  },
+  "seedBase64URL": "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8",
+  "ticket": {
+    "approverLabel": "Synthetic browser",
+    "audience": "synthetic-person.example",
+    "entityBinding": {
+      "audience": "synthetic-person.example",
+      "entityAnchorReference": "cell:///EntityAnchor",
+      "mode": "localEntityAnchor"
+    },
+    "expiresAt": "2026-09-29T12:10:00Z",
+    "nonce": "MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=",
+    "origin": "https://synthetic-person.example",
+    "ownerDisplayName": "Synthetic owner",
+    "presentationChallenge": "Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc=",
+    "presentationDomain": "https://synthetic-person.example",
+    "rendezvousURL": "https://synthetic-person.example/link/api",
+    "schema": "haven.identity-link.ticket.v1",
+    "ticketID": "lt-00000000-0000-4000-8000-000000000001"
+  }
+}

@@ -13,13 +13,14 @@ final class OnboardingTests: XCTestCase {
         return url
     }
 
-    private func run(_ answers: [String], root: URL, service: TestOnboardingService) async throws -> [String] {
+    private func run(_ answers: [String], root: URL, service: TestOnboardingService,
+                     enroll: OnboardingDialogue.EnrollmentHandler? = nil) async throws -> [String] {
         var pending = answers
         var output: [String] = []
         let dialogue = OnboardingDialogue(root: root, service: service, ask: { prompt in
             output.append(prompt)
             return pending.isEmpty ? nil : pending.removeFirst()
-        }, say: { output.append($0) })
+        }, say: { output.append($0) }, enroll: enroll)
         try await dialogue.run()
         XCTAssertTrue(pending.isEmpty, "Unexpected unused answers: \(pending)")
         return output
@@ -63,7 +64,9 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(try readProfile(root).entityIntent, .existing)
         XCTAssertNil(try readProfile(root).goal)
         _ = try await run(["ja", "", "", "", "senere", "ja"], root: root, service: service)
-        XCTAssertEqual(try readProfile(root).goal, "Opprette en privat samtalekanal.")
+        XCTAssertEqual(try readProfile(root).goal, "Koble denne maskinen til HAVEN og finne noedvendige scaffolds.")
+        XCTAssertEqual(try readProfile(root).purpose, "bootstrap.join_scaffold")
+        XCTAssertEqual(try readProfile(root).interests, ["haven.core.bootstrap"])
     }
 
     func testDecliningPublicDiscoveryPreventsEveryNetworkCall() async throws {
@@ -89,7 +92,7 @@ final class OnboardingTests: XCTestCase {
         let service = try TestOnboardingService()
         let output = try await run(["ja", "eksisterende", "", "", "", "example.haven.local", "ja", "ja", "ja", "ja"], root: root, service: service)
         XCTAssertEqual(try readProfile(root).lastOutcome, .awaitingApproval)
-        XCTAssertTrue(output.contains { $0.contains("ikke koblet inn") })
+        XCTAssertTrue(output.contains { $0.contains("passkey-godkjenning") })
         _ = try await run(["ja", "ja", "nei"], root: root, service: service)
         let calls = await service.counts()
         XCTAssertEqual(calls, [1, 1])
@@ -97,6 +100,60 @@ final class OnboardingTests: XCTestCase {
         for forbidden in ["signature", "inclusion_proof", "seed", "nonce", "transcript", "bearer"] {
             XCTAssertFalse(json.contains(forbidden))
         }
+    }
+
+    func testEntityEnrollmentNeedsSeparateConsentAndRechecksResolution() async throws {
+        for consent in ["nei", "ja"] {
+            let root = root()
+            let service = try TestOnboardingService(outcomes: [.awaitingApproval, .identityVerified])
+            var enrolled = 0
+            _ = try await run(["ja", "eksisterende", "", "", "", "example.haven.local", "ja", "ja", "ja", "ja", consent],
+                root: root, service: service, enroll: { profile, descriptor, identityRoot in
+                    enrolled += 1
+                    XCTAssertEqual(profile.trustedAdminKeys[profile.domain!], descriptor.scaffold_admin_public_key)
+                    XCTAssertEqual(identityRoot.lastPathComponent, "scaffold-identities")
+                    return true
+                })
+            let calls = await service.counts()
+            XCTAssertEqual(enrolled, consent == "ja" ? 1 : 0)
+            XCTAssertEqual(calls, [1, consent == "ja" ? 2 : 1])
+            XCTAssertEqual(try readProfile(root).lastOutcome, consent == "ja" ? .identityVerified : .awaitingApproval)
+        }
+    }
+
+    func testIncompleteEnrollmentDoesNotClaimVerifiedIdentity() async throws {
+        let root = root()
+        let service = try TestOnboardingService(outcomes: [.awaitingApproval, .identityVerified])
+        _ = try await run(["ja", "eksisterende", "", "", "", "example.haven.local", "ja", "ja", "ja", "ja", "ja"],
+            root: root, service: service, enroll: { _, _, _ in false })
+        let calls = await service.counts()
+        XCTAssertEqual(calls, [1, 1])
+        XCTAssertEqual(try readProfile(root).lastOutcome, .awaitingApproval)
+    }
+
+    func testPersonResolutionReceiptMustBindTheActualFreshRequest() throws {
+        let descriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor(expiresAt: "2099-01-01T00:00:00Z")
+        let subject = try Ed25519.publicKeyBase64URL(fromSeedBase64URL: ResolverFixtureFactory.targetIdentitySeed)
+        let entity = UUID().uuidString
+        var sent = PersonLinkProof(evidenceReference: String(repeating: "a", count: 64), linkID: UUID().uuidString,
+                                   challenge: Data("first-challenge".utf8), signature: Data("signature".utf8))
+        let digest = Hashing.sha256Base64URL(try JCSCanonicalizer.canonicalize(JSONEncoder().encode(sent)))
+        var proof = EntityInclusionProof(
+            proof_id: "proof-person", scaffold_domain: "example.haven.local", entity_id: entity,
+            subject_identity_public_key: subject, subject_domain: "example.haven.local",
+            anchor_snapshot_id: "person-link-v1:\(sent.evidenceReference):\(sent.linkID):\(entity):\(digest)",
+            anchor_snapshot_sha256_b64url: "snapshot-hash", anchor_admin_public_key: descriptor.scaffold_admin_public_key,
+            issued_at: "2026-01-01T00:00:00Z", expires_at: "2099-01-01T00:00:00Z",
+            issued_by: descriptor.resolver_public_keys[0], signature: .init(alg: "Ed25519", sig: ""))
+        proof.signature.sig = try Ed25519.signBase64URL(data: proof.canonicalPayloadData(), seedBase64URL: ResolverFixtureFactory.resolverSeed)
+        let result = EntityResolutionDecision(status: .resolved, entity_id: entity, inclusion_proof: proof)
+        XCTAssertEqual(try OnboardingTrust.validateResolution(result, domain: "example.haven.local", publicKey: subject,
+                        descriptor: descriptor, personLinkProof: sent), .identityVerified)
+        XCTAssertThrowsError(try OnboardingTrust.validateResolution(result, domain: "example.haven.local", publicKey: subject,
+                        descriptor: descriptor))
+        sent.challenge = Data("second-challenge".utf8)
+        XCTAssertThrowsError(try OnboardingTrust.validateResolution(result, domain: "example.haven.local", publicKey: subject,
+                        descriptor: descriptor, personLinkProof: sent))
     }
 
     func testReviewCanEditAnswersWithoutReplacingIdentityOrTrust() async throws {
@@ -185,8 +242,10 @@ private actor TestOnboardingService: OnboardingService {
     private var discoveries = 0
     private var resolutions = 0
     private let descriptor: ScaffoldAdminTrustRootDescriptor
+    private let outcomes: [OnboardingOutcome]
 
-    init() throws {
+    init(outcomes: [OnboardingOutcome] = [.awaitingApproval]) throws {
+        self.outcomes = outcomes
         descriptor = try ResolverFixtureFactory.makeScaffoldTrustRootDescriptor(expiresAt: "2099-01-01T00:00:00Z")
     }
 
@@ -200,6 +259,6 @@ private actor TestOnboardingService: OnboardingService {
     func resolve(profile: OnboardingProfile, descriptor: ScaffoldAdminTrustRootDescriptor,
                  identityRoot: URL) async throws -> OnboardingOutcome {
         resolutions += 1
-        return .awaitingApproval
+        return outcomes[min(resolutions - 1, outcomes.count - 1)]
     }
 }

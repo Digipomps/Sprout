@@ -1,6 +1,7 @@
 # Sprout
 
-Current integration evidence and limits: [2026-09-18 validation](docs/Production_Integration_2026-09-18.md).
+Current scaffold installation contract: [purpose-driven CLI installation](docs/Scaffold_Installation.md).
+Earlier integration evidence: [2026-09-18 validation](docs/Production_Integration_2026-09-18.md).
 
 Sprout is the HAVEN bootstrap and distribution component with explicit `Purpose/Goal`, domain-scoped identities, resolver-enforced contracts/capabilities, and policy-gated update handling.
 
@@ -11,23 +12,29 @@ dialogue. No invitation/proof files, pasted credentials, or external AI account
 are needed by this dialogue. `sprout onboard --help` lists optional initial
 values. `/help`, `/status`, and `/pause` work at every prompt.
 
-This implements local setup and optional live identity verification, **not a
-complete Correspondence connection**. A local Entity draft is not an enrolled
-Entity, scaffold owner, or network membership. Device approval, Entity admission,
-Agreement/Grant-controlled channel startup and a signed Linux release remain
-integration/release gates. Existing low-level `bootstrap` commands are unchanged
-and still have different, development-oriented defaults.
+Personal onboarding supports invitation/passkey enrollment and request-bound
+Entity proof verification. A local draft still grants no remote rights; channel
+startup remains subject to bridge, Agreement and Grant enforcement. See
+[portable IdentityLink](docs/Identity_Link_CLI_Interop_2026-09-29.md).
 
-See [implementation, security boundaries and reusable prompts](docs/Terminal_Onboarding_2026-09-11.md).
-After building, run `bash Scripts/test_terminal_onboarding.sh` for a real CLI
-smoke test that uses disposable local state and no network.
+For the **scaffold administrator**, run `sprout scaffold` or
+`sprout onboard --role scaffoldadmin`. Choose purposes from a signed catalog;
+Sprout resolves required artifacts and dependencies, verifies the publisher and
+immutable OCI digests, downloads images through Docker and writes private
+installation receipts. On Linux, the signed service profile also enrolls a new
+local owner, provisions private runtime state and starts a persistent service.
+`sprout scaffold plan` previews the selection; `status --instance NAME` checks
+that service. `--download-only` explicitly stops after image installation.
+No Mac app is launched by this flow.
 
-`sprout doctor --json` checks the local platform and ephemeral signing without
-reading identity storage or contacting a service. A static Linux x86_64 candidate
-now builds, but has not executed on Linux or been signed for delivery. See
-[recipient readiness and remaining gates](docs/Recipient_Readiness_2026-09-11.md).
-Staging's public bootstrap descriptor was expired when checked on September 11;
-successful health checks do not bypass this trust failure.
+The CLI itself remains portable on Linux and macOS; only OCI scaffold
+installation requires Docker. Registry access and an actually published v1.1
+catalog are prerequisites. No catalog availability or live enrollment is inferred
+from a successful health check. See [installation contract and current limits](docs/Scaffold_Installation.md).
+
+`sprout doctor --json` checks local platform and ephemeral signing without
+reading stored identities. Static Linux CLI candidates have executed successfully
+on Hetzner. An uncommitted/test-installed candidate is not a new signed release.
 
 ## Historical Status (2026-03-11)
 - P0 is implemented: deterministic bootstrap state machine, JCS subset, Ed25519, strict base64url, schemas, OpenAPI, golden vectors and CLI reference flow.

@@ -43,20 +43,42 @@ jobs:
       - name: Lint (syntax/package sanity)
         run: swift package dump-package > /dev/null
 
+      - name: Verify embedded service coordinator
+        run: |
+          python3 Scripts/embed_scaffold_service.py --check
+          python3 Scripts/test_scaffold_service.py
+          python3 Scripts/test_scaffold_stack.py
+
       - name: Build
         run: |
           swift build --product sprout
           swift build --product sprout-updater
+          swift build --product sprout-admin
           swift build --product sprout-macos
 
       - name: Test
         run: swift test
+
+      - name: Service image transport ignores inherited remote Docker context
+        # Set poison variables inside the job container, not on the runner's
+        # own docker-exec operation used to enter that container.
+        run: |
+          env DOCKER_CONTEXT=unexpected-remote DOCKER_HOST=tcp://unexpected.invalid:2376 \
+            DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/unexpected/certificates \
+            DOCKER_CONFIG=/expected/private-registry-config \
+            SPROUT_EXPECTED_DOCKER_CONFIG=/expected/private-registry-config \
+            swift test --skip-build --filter DockerScaffoldRuntimeTests.testServicePullAndInspectionUseTheSameExplicitLocalDaemon
+
+      - name: Real HTTP transport regressions
+        run: python3 Scripts/test_http_transport.py --repeat 3 -- swift test --skip-build --filter BoundedHTTPNetworkTests
 
       - name: Verify installed nearby companion lookup
         run: python3 Scripts/test_nearby_companion.py .build/debug/sprout
       - name: Terminal and release guard regressions
         run: |
           bash Scripts/test_terminal_onboarding.sh
+          python3 Scripts/test_cli_runtime.py --binary .build/debug/sprout --results "$RUNNER_TEMP/sprout-runtime"
+          python3 Scripts/test_scaffold_cli.py --sprout .build/debug/sprout --output-dir "$RUNNER_TEMP/sprout-scaffold"
           bash Scripts/test_release_guards.sh
 
       - name: Build release bundle
@@ -150,17 +172,39 @@ jobs:
       - name: Lint (syntax/package sanity)
         run: swift package dump-package > /dev/null
 
+      - name: Verify embedded service coordinator
+        run: |
+          python3 Scripts/embed_scaffold_service.py --check
+          python3 Scripts/test_scaffold_service.py
+          python3 Scripts/test_scaffold_stack.py
+
       - name: Build
         run: |
           swift build --product sprout
           swift build --product sprout-updater
+          swift build --product sprout-admin
 
       - name: Test
         run: swift test
 
+      - name: Service image transport ignores inherited remote Docker context
+        # Set poison variables inside the job container, not on the runner's
+        # own docker-exec operation used to enter that container.
+        run: |
+          env DOCKER_CONTEXT=unexpected-remote DOCKER_HOST=tcp://unexpected.invalid:2376 \
+            DOCKER_TLS_VERIFY=1 DOCKER_CERT_PATH=/unexpected/certificates \
+            DOCKER_CONFIG=/expected/private-registry-config \
+            SPROUT_EXPECTED_DOCKER_CONFIG=/expected/private-registry-config \
+            swift test --skip-build --filter DockerScaffoldRuntimeTests.testServicePullAndInspectionUseTheSameExplicitLocalDaemon
+
+      - name: Real HTTP transport regressions
+        run: python3 Scripts/test_http_transport.py --repeat 3 -- swift test --skip-build --filter BoundedHTTPNetworkTests
+
       - name: Terminal and release guard regressions
         run: |
           bash Scripts/test_terminal_onboarding.sh
+          python3 Scripts/test_cli_runtime.py --binary .build/debug/sprout --results "$RUNNER_TEMP/sprout-runtime"
+          python3 Scripts/test_scaffold_cli.py --sprout .build/debug/sprout --output-dir "$RUNNER_TEMP/sprout-scaffold"
           bash Scripts/test_release_guards.sh
 
       - name: Build release bundle
@@ -169,7 +213,9 @@ jobs:
       - name: Execute the actual static Linux artifact
         run: |
           "$SPROUT_ARTIFACT_SPROUT" doctor --json
+          python3 Scripts/test_scaffold_cli.py --sprout "$SPROUT_ARTIFACT_SPROUT" --output-dir "$RUNNER_TEMP/sprout-static-scaffold"
           bash Scripts/test_terminal_onboarding.sh "$SPROUT_ARTIFACT_SPROUT"
+          python3 Scripts/test_cli_runtime.py --binary "$SPROUT_ARTIFACT_SPROUT" --results "$RUNNER_TEMP/sprout-static-runtime"
 
       - name: Install cosign
         if: ${{ github.event_name != 'pull_request' }}

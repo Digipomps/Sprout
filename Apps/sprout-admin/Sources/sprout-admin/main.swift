@@ -1,6 +1,7 @@
 import Foundation
 import SproutAdminSupport
 import SproutCore
+import SproutCrypto
 import SproutResolverAdapter
 
 enum AdminCLIError: Error, CustomStringConvertible {
@@ -91,10 +92,17 @@ struct SproutAdminCLI {
         guard let subcommand = arguments.first else {
             throw AdminCLIError.invalidArguments(usage)
         }
-        let flags = try parseFlags(Array(arguments.dropFirst()))
+        let flags = try parseFlags(
+            Array(arguments.dropFirst()),
+            requireUniqueValues: ["renew-from-vapor-vault", "migrate-from-pinned-v2-vault"].contains(subcommand)
+        )
         switch subcommand {
         case "create-from-vapor-vault":
             try createScaffoldTrustRootDescriptor(flags: flags)
+        case "renew-from-vapor-vault":
+            try renewScaffoldTrustRootDescriptor(flags: flags)
+        case "migrate-from-pinned-v2-vault":
+            try migrateScaffoldTrustRootDescriptor(flags: flags)
         default:
             throw AdminCLIError.invalidArguments(usage)
         }
@@ -294,6 +302,112 @@ struct SproutAdminCLI {
         try emitJSON(summary, outPath: flags["summary-out"])
     }
 
+    private static func renewScaffoldTrustRootDescriptor(flags: [String: String]) throws {
+        let supported: Set<String> = [
+            "descriptor", "scaffold-domain", "identity-context", "expires-at", "out",
+            "vault-root", "vault-file", "master-key-file", "descriptor-id"
+        ]
+        let unknown = Set(flags.keys).subtracting(supported).sorted()
+        guard unknown.isEmpty else {
+            throw AdminCLIError.invalidArguments("Unsupported renewal flags: \(unknown.map { "--\($0)" }.joined(separator: ", ")).")
+        }
+        let descriptorPath = try requiredFlag("descriptor", flags)
+        let scaffoldDomain = try requiredFlag("scaffold-domain", flags)
+        let identityContext = try requiredFlag("identity-context", flags)
+        guard identityContext == "Scaffold" else {
+            throw ScaffoldTrustRootRenewalError.wrongIdentityContext
+        }
+        let expiry = try requiredFlag("expires-at", flags)
+        guard let expiresAt = try parseDate(expiry) else {
+            throw AdminCLIError.invalidArguments("Missing required --expires-at.")
+        }
+        let outputPath = try requiredFlag("out", flags)
+        let outputURL = URL(fileURLWithPath: outputPath)
+        guard !FileManager.default.fileExists(atPath: outputURL.path) else {
+            throw AdminCLIError.invalidArguments("Renewal --out must name a new file; refusing to overwrite \(outputPath).")
+        }
+        let descriptor = try ScaffoldTrustRootDescriptorBuilder.decodeDescriptorForRenewal(
+            from: Data(contentsOf: URL(fileURLWithPath: descriptorPath))
+        )
+        let adminIdentity = try VaporVaultDecoder.identity(
+            forContext: identityContext, paths: resolveVaultPaths(flags: flags)
+        )
+        let renewed = try ScaffoldTrustRootDescriptorBuilder.renewSignedDescriptor(
+            descriptor: descriptor,
+            expectedDomain: scaffoldDomain,
+            adminIdentity: adminIdentity,
+            descriptorID: flags["descriptor-id"] ?? "trd_\(UUID().uuidString.lowercased())",
+            expiresAt: expiresAt
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(renewed)
+        try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        // Exclusive creation also rejects a collision that occurs after the preflight check.
+        try data.write(to: outputURL, options: [.withoutOverwriting])
+        let summary: [String: AnyCodable] = [
+            "descriptor_path": AnyCodable(outputPath),
+            "previous_descriptor_id": AnyCodable(descriptor.descriptor_id),
+            "descriptor_id": AnyCodable(renewed.descriptor_id),
+            "scaffold_domain": AnyCodable(renewed.scaffold_domain),
+            "issued_at": AnyCodable(renewed.issued_at),
+            "expires_at": AnyCodable(renewed.expires_at)
+        ]
+        try emitJSON(summary, outPath: nil)
+    }
+
+    private static func migrateScaffoldTrustRootDescriptor(flags: [String: String]) throws {
+        let supported: Set<String> = [
+            "descriptor", "expected-descriptor-sha256", "scaffold-domain", "expected-owner-uuid",
+            "expected-owner-context", "expected-owner-fingerprint", "expected-vault-sha256",
+            "vault-file", "master-key-file", "resolver-public-keys", "bridge-owner-public-keys",
+            "descriptor-id", "expires-at", "out"
+        ]
+        let unknown = Set(flags.keys).subtracting(supported).sorted()
+        guard unknown.isEmpty else {
+            throw AdminCLIError.invalidArguments("Unsupported migration flags: \(unknown.map { "--\($0)" }.joined(separator: ", ")).")
+        }
+        // Every authority input is explicit. There are no environment, descriptor-key, legacy
+        // vault, clock, or key-array defaults for this separate migration operation.
+        for flag in supported.sorted() { _ = try requiredFlag(flag, flags) }
+        let outputPath = try requiredFlag("out", flags)
+        let outputURL = URL(fileURLWithPath: outputPath)
+        guard !FileManager.default.fileExists(atPath: outputURL.path) else {
+            throw AdminCLIError.invalidArguments("Migration --out must name a new file; refusing to overwrite \(outputPath).")
+        }
+        guard let expiresAt = try parseDate(requiredFlag("expires-at", flags)) else {
+            throw AdminCLIError.invalidArguments("Missing required --expires-at.")
+        }
+        let descriptorData = try Data(contentsOf: URL(fileURLWithPath: requiredFlag("descriptor", flags)))
+        let pins = try ScaffoldTrustRootMigrationOwnerPins(
+            uuid: requiredFlag("expected-owner-uuid", flags), context: requiredFlag("expected-owner-context", flags),
+            signingKeyFingerprintDigest: requiredFlag("expected-owner-fingerprint", flags),
+            encryptedVaultSHA256: requiredFlag("expected-vault-sha256", flags))
+        let migrated = try ScaffoldTrustRootMigration.migrate(
+            descriptorData: descriptorData, expectedDescriptorSHA256: requiredFlag("expected-descriptor-sha256", flags),
+            expectedDomain: requiredFlag("scaffold-domain", flags),
+            vaultPaths: VaporVaultPaths(vaultFileURL: URL(fileURLWithPath: requiredFlag("vault-file", flags)),
+                masterKeyFileURL: URL(fileURLWithPath: requiredFlag("master-key-file", flags))),
+            ownerPins: pins, descriptorID: requiredFlag("descriptor-id", flags), expiresAt: expiresAt,
+            resolverPublicKeys: requiredFlag("resolver-public-keys", flags).split(separator: ",", omittingEmptySubsequences: false).map(String.init),
+            bridgeOwnerPublicKeys: requiredFlag("bridge-owner-public-keys", flags).split(separator: ",", omittingEmptySubsequences: false).map(String.init))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(migrated)
+        try FileManager.default.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: outputURL, options: [.withoutOverwriting])
+        let summary: [String: AnyCodable] = [
+            "descriptor_path": AnyCodable(outputPath), "descriptor_id": AnyCodable(migrated.descriptor_id),
+            "scaffold_domain": AnyCodable(migrated.scaffold_domain),
+            "previous_descriptor_sha256": AnyCodable(try requiredFlag("expected-descriptor-sha256", flags)),
+            "migrated_descriptor_sha256": AnyCodable(Hashing.sha256(data).map { String(format: "%02x", $0) }.joined()),
+            "active_owner_fingerprint_digest": AnyCodable(pins.signingKeyFingerprintDigest),
+            "encrypted_vault_sha256": AnyCodable(pins.encryptedVaultSHA256),
+            "issued_at": AnyCodable(migrated.issued_at), "expires_at": AnyCodable(migrated.expires_at)
+        ]
+        try emitJSON(summary, outPath: nil)
+    }
+
     private static func createContinuityProof(flags: [String: String]) throws {
         let sourceScaffoldDomain = try requiredFlag("source-scaffold-domain", flags)
         let identityContext = try requiredFlag("identity-context", flags)
@@ -415,7 +529,7 @@ struct SproutAdminCLI {
         )
     }
 
-    private static func parseFlags(_ arguments: [String]) throws -> [String: String] {
+    private static func parseFlags(_ arguments: [String], requireUniqueValues: Bool = false) throws -> [String: String] {
         var flags = [String: String]()
         var index = 0
         while index < arguments.count {
@@ -424,10 +538,16 @@ struct SproutAdminCLI {
                 throw AdminCLIError.invalidArguments("Unexpected positional argument: \(argument)")
             }
             let key = String(argument.dropFirst(2))
+            if requireUniqueValues, flags[key] != nil {
+                throw AdminCLIError.invalidArguments("Duplicate --\(key).")
+            }
             if index + 1 < arguments.count, !arguments[index + 1].hasPrefix("--") {
                 flags[key] = arguments[index + 1]
                 index += 2
             } else {
+                if requireUniqueValues {
+                    throw AdminCLIError.invalidArguments("Missing value for --\(key).")
+                }
                 flags[key] = "true"
                 index += 1
             }
@@ -514,6 +634,8 @@ struct SproutAdminCLI {
       sprout-admin entity-anchor create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> --entity-id <id> --subject-public-key <b64url> --subject-domain <domain> [--accepted-contract-ids <id1,id2>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--added-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin entity-anchor accept-entity-link --snapshot <snapshot.json> --entity-link <entity-link.json> --identity-context <ctx> [--entity-id <id> | --anchored-public-key <b64url> [--anchored-domain <domain>]] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--snapshot-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin scaffold-trust-root create-from-vapor-vault --scaffold-domain <domain> --identity-context <ctx> [--resolver-public-keys <k1,k2>] [--bridge-owner-public-keys <k1,k2>] [--resolver-base-url <https://domain>] [--starter-bootstrap-url <https://domain/v1/resolver/starter-auth/intent>] [--bridge-discovery-url <https://domain/v1/bridges/query>] [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--descriptor-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
+      sprout-admin scaffold-trust-root renew-from-vapor-vault --descriptor <existing.json> --scaffold-domain <domain> --identity-context Scaffold --expires-at <ISO8601> --out <new-file> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--descriptor-id <new-id>]
+      sprout-admin scaffold-trust-root migrate-from-pinned-v2-vault --descriptor <existing.json> --expected-descriptor-sha256 <hex> --scaffold-domain <domain> --expected-owner-uuid <uuid> --expected-owner-context Scaffold --expected-owner-fingerprint <b64url-digest> --expected-vault-sha256 <hex> --vault-file <path> --master-key-file <path> --resolver-public-keys <k1,k2> --bridge-owner-public-keys <k1,k2> --descriptor-id <new-id> --expires-at <ISO8601> --out <new-file>
       sprout-admin continuity-proof create-from-vapor-vault --source-scaffold-domain <domain> --identity-context <ctx> --source-entity-id <id> --source-identity-public-key <b64url> --source-identity-domain <domain> --target-scaffold-domain <domain> --purpose <purpose> --goal <goal> --interests <i1,i2> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--proof-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
       sprout-admin admission-contract create-from-vapor-vault --target-scaffold-domain <domain> --target-entity-id <id> --target-identity-public-key <b64url> --target-identity-domain <domain> --identity-context <ctx> --continuity-proof <file> --admission-request <file> [--vault-root <dir>] [--vault-file <path>] [--master-key-file <path>] [--contract-id <id>] [--issued-at <ISO8601>] [--expires-at <ISO8601>] [--now <ISO8601>] [--out <file>] [--summary-out <file>]
     """

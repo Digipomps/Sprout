@@ -8,11 +8,23 @@ import SproutCore
 import SproutCrypto
 import SproutResolverAdapter
 
-public enum VaporVaultError: Error, Equatable, Sendable {
+public enum VaporVaultError: Error, Equatable, Sendable, CustomStringConvertible {
     case invalidMasterKey
     case unsupportedLegacyVaultFormat
     case invalidEncryptedVault
     case identityContextNotFound(String)
+    case currentVaultRequiresOwnerBinding
+
+    public var description: String {
+        switch self {
+        case .invalidMasterKey: return "Invalid vault master key."
+        case .unsupportedLegacyVaultFormat: return "Unsupported encrypted vault format."
+        case .invalidEncryptedVault: return "Invalid encrypted vault."
+        case .identityContextNotFound(let context): return "Vault identity context not found: \(context)."
+        case .currentVaultRequiresOwnerBinding:
+            return "Current v2 vault signing requires verified active-owner binding support, which is unavailable in this command. Do not fall back to a legacy vault."
+        }
+    }
 }
 
 public struct VaporVaultIdentityRecord: Codable, Equatable, Sendable {
@@ -52,6 +64,10 @@ public struct VaporVaultPaths: Equatable, Sendable {
 }
 
 public enum VaporVaultDecoder {
+    private struct VaultSchemaHeader: Decodable {
+        let schema: String
+    }
+
     private static let vaultFilename = "OrganisationIdentities.crypt"
     private static let defaultMasterKeyFilename = "vault-master.key"
     private static let vaultMagic = Data("CVLT1".utf8)
@@ -75,6 +91,13 @@ public enum VaporVaultDecoder {
         let encryptedVault = try Data(contentsOf: paths.vaultFileURL)
         let masterKeyData = try loadMasterKeyData(from: paths.masterKeyFileURL)
         let plaintext = try decryptVaultData(encryptedVault, masterKeyData: masterKeyData, scope: vaultScope)
+        // Current CellVapor vaults carry a versioned envelope and an owner-signed
+        // runtime binding. Refuse explicitly until this operator path can verify
+        // that active owner; never unwrap it into the legacy signing path.
+        if let header = try? JSONDecoder().decode(VaultSchemaHeader.self, from: plaintext),
+           header.schema == "haven.vapor-identity-vault.v2" {
+            throw VaporVaultError.currentVaultRequiresOwnerBinding
+        }
         return try JSONDecoder().decode([VaporVaultIdentityRecord].self, from: plaintext)
     }
 

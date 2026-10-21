@@ -73,6 +73,9 @@ public struct ScaffoldExecutableArtifact: Codable, Equatable, Sendable {
     public var sbom_url: String?
     public var provenance_url: String?
     public var signing: [ScaffoldExecutableSigning]
+    public var purpose_ids: [String]?
+    public var dependencies: [String]?
+    public var installation: ScaffoldInstallationSpecification?
 
     public init(
         artifact_id: String,
@@ -88,7 +91,10 @@ public struct ScaffoldExecutableArtifact: Codable, Equatable, Sendable {
         checksum_url: String? = nil,
         sbom_url: String? = nil,
         provenance_url: String? = nil,
-        signing: [ScaffoldExecutableSigning]
+        signing: [ScaffoldExecutableSigning],
+        purpose_ids: [String]? = nil,
+        dependencies: [String]? = nil,
+        installation: ScaffoldInstallationSpecification? = nil
     ) {
         self.artifact_id = artifact_id
         self.name = name
@@ -104,6 +110,9 @@ public struct ScaffoldExecutableArtifact: Codable, Equatable, Sendable {
         self.sbom_url = sbom_url
         self.provenance_url = provenance_url
         self.signing = signing
+        self.purpose_ids = purpose_ids
+        self.dependencies = dependencies
+        self.installation = installation
     }
 }
 
@@ -280,7 +289,10 @@ public final class ScaffoldExecutableCatalogHTTPClient: @unchecked Sendable {
         expectedDomain: String,
         trustedPublisherPublicKeys: [String] = []
     ) async throws -> ScaffoldExecutableCatalog {
-        let (data, response) = try await session.data(from: endpoint)
+        guard endpoint.scheme == "https", endpoint.host != nil, endpoint.user == nil, endpoint.password == nil, endpoint.fragment == nil else {
+            throw ScaffoldExecutableCatalogValidationError.invalidURL(endpoint.absoluteString)
+        }
+        let (data, response) = try await session.boundedData(for: URLRequest(url: endpoint))
         guard let http = response as? HTTPURLResponse else {
             throw ScaffoldExecutableCatalogHTTPClientError.nonHTTPResponse
         }
