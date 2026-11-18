@@ -38,7 +38,11 @@ public final class NativePortholeBindingRuntime: ObservableObject {
     private var currentRequester: Identity?
     private var currentEmit: Emit?
 
-    public init() {}
+    private let contractPresenter: any NativePortholeContractPresenting
+
+    public init(contractPresenter: any NativePortholeContractPresenting = URLSessionNativePortholeContractPresenter()) {
+        self.contractPresenter = contractPresenter
+    }
 
     public func connect(using session: PortholeClientSession) async {
         do {
@@ -61,6 +65,9 @@ public final class NativePortholeBindingRuntime: ObservableObject {
             }
 
             currentRequester = requester
+            statusMessage = "Presenting native porthole contract"
+            // The contract goes in an HTTPS body; the bridge URL carries none.
+            try await contractPresenter.present(descriptor)
             statusMessage = "Connecting native porthole bridge"
 
             let remotePorthole = try await resolver.cellAtEndpoint(

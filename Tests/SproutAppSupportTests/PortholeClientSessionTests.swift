@@ -27,11 +27,12 @@ final class PortholeClientSessionTests: XCTestCase {
 
         XCTAssertEqual(session.mode, .native)
         XCTAssertEqual(session.nativeDescriptor?.cell_endpoint, "cell://bridge.example.haven.local/Porthole")
-        XCTAssertTrue(session.nativeDescriptor?.bridge_websocket_url.contains("contract_payload_b64url=") == true)
-        XCTAssertTrue(session.nativeDescriptor?.bridge_websocket_url.contains("contract_sha256_b64url=") == true)
+        XCTAssertEqual(session.nativeDescriptor?.bridge_websocket_url, contract.bridge_endpoint)
+        XCTAssertEqual(session.nativeDescriptor?.contract_presentation_url, "https://bridge.example.haven.local/cell/contract")
         let descriptorJSON = try session.nativeDescriptorJSON()
         XCTAssertTrue(descriptorJSON.contains("\"bridge_endpoint\""))
         XCTAssertTrue(descriptorJSON.contains("\"bridge_websocket_url\""))
+        XCTAssertTrue(descriptorJSON.contains("\"contract_presentation_url\""))
     }
 
     func testCLISessionIsExplicitlyUnsupportedForMacClient() throws {

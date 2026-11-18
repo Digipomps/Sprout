@@ -9,6 +9,7 @@ public enum JSONSchemaValidationError: Error, Equatable, Sendable {
     case enumMismatch(path: String)
     case arrayTooShort(path: String, minItems: Int)
     case invalidDateTime(path: String)
+    case patternMismatch(path: String)
 }
 
 public enum JSONSchemaValidator {
@@ -40,6 +41,16 @@ public enum JSONSchemaValidator {
             let formatter = ISO8601DateFormatter()
             if formatter.date(from: string) == nil {
                 throw JSONSchemaValidationError.invalidDateTime(path: path)
+            }
+        }
+
+        if let pattern = schema["pattern"] as? String, let string = instance as? String {
+            guard let expression = try? NSRegularExpression(pattern: pattern) else {
+                throw JSONSchemaValidationError.invalidSchema("Invalid pattern at \(path)")
+            }
+            let range = NSRange(string.startIndex..<string.endIndex, in: string)
+            if expression.firstMatch(in: string, range: range) == nil {
+                throw JSONSchemaValidationError.patternMismatch(path: path)
             }
         }
 

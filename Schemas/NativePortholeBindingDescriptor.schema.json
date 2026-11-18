@@ -7,6 +7,7 @@
   "required": [
     "bridge_endpoint",
     "bridge_websocket_url",
+    "contract_presentation_url",
     "cell_endpoint",
     "contract_id",
     "contract_payload_b64url",
@@ -20,7 +21,18 @@
   ],
   "properties": {
     "bridge_endpoint": { "type": "string" },
-    "bridge_websocket_url": { "type": "string", "format": "uri" },
+    "bridge_websocket_url": {
+      "description": "Equal to bridge_endpoint. Carries no contract data: no query, fragment or user info (CellProtocol channel-authenticated endpoints reject them).",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^wss?://[^?#@]+$"
+    },
+    "contract_presentation_url": {
+      "description": "bridge_endpoint with wss->https (ws->http, loopback only) and '/contract' appended. The client POSTs NativePortholeContractPresentation as a JSON body here before opening the bridge.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^?#@]+/contract$"
+    },
     "cell_endpoint": { "type": "string" },
     "contract_id": { "type": "string" },
     "contract_payload_b64url": { "type": "string" },
