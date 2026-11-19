@@ -201,11 +201,12 @@ let package = Package(
             url: "https://github.com/apple/swift-crypto.git",
             "4.5.2"..<"5.0.0"
         ),
-        // Same revision as HavenAgentD pins (CellProtocol main). SproutCore uses
+        // Same revision as HavenAgentD pins (CellProtocol #94: main + musl support,
+        // needed by the static Linux release). SproutCore uses
         // CellBase directly instead of restating CellProtocol's rules.
         .package(
             url: "https://github.com/Digipomps/CellProtocol.git",
-            revision: "304c1cb4b2836d9d28bfa71f76cda87b0043eda1"
+            revision: "d08ef39fe96353379d5f92246fb45b1d9426e2cf"
         )
     ],
     targets: targets
