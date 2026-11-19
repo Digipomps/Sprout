@@ -14,3 +14,4 @@ implementation/entity-correspondence/*.log
 
 # Exact upstream source checked out by release CI.
 .release-dependencies/
+.build-cellprotocol-runtime/

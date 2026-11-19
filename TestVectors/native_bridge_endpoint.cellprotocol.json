@@ -1,5 +1,5 @@
 {
-  "description": "Native Porthole bridge_endpoint vectors. expected = result of CellProtocol BridgeChannelAuthentication.Endpoint(url: endpoint + '/' + UUID, domain: 'bridge', allowInsecureLoopback: true), which is the URL CellResolver.makeCellBridgeEmit opens. Sprout's PortholeContractConsumer.validateNativeBridgeEndpoint must agree; HavenAgentD's SproutCellProtocolEndpointParityTests checks the same vectors against CellProtocol's own type.",
+  "description": "Native Porthole bridge_endpoint vectors. expected = result of CellProtocol BridgeChannelAuthentication.Endpoint(url: endpoint + '/' + UUID, domain: 'bridge', allowInsecureLoopback: true), which is the URL CellResolver.makeCellBridgeEmit opens. Sprout's PortholeContractConsumer.validateNativeBridgeEndpoint calls that CellProtocol type directly (SproutCore links CellBase); Sprout's tests and HavenAgentD's SproutCellProtocolEndpointParityTests run these vectors so a change in CellProtocol's rules shows up as a failing vector.",
   "cellprotocol_source": "Sources/CellBase/Cells/Bridging/BridgeChannelAuthentication.swift (Endpoint.init) and Sources/CellBase/Cells/CellResolver/CellResolver.swift (makeCellBridgeEmit)",
   "vectors": [
     {

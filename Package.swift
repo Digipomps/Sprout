@@ -71,7 +71,10 @@ var targets: [Target] = [
                 "SproutTransport",
                 "SproutBridge",
                 "SproutResolverAdapter",
-                .product(name: "Crypto", package: "swift-crypto")
+                .product(name: "Crypto", package: "swift-crypto"),
+                // CellProtocol's own BridgeChannelAuthentication.Endpoint decides
+                // whether a native bridge endpoint can be opened (R9).
+                .product(name: "CellBase", package: "CellProtocol")
             ],
             path: "Packages/SproutCore/Sources/SproutCore",
             exclude: ["Resources"]
@@ -80,7 +83,12 @@ var targets: [Target] = [
             name: "SproutAppSupport",
             dependencies: [
                 "SproutCore",
-                "SproutCrypto"
+                "SproutCrypto",
+                .product(name: "CellBase", package: "CellProtocol"),
+                // NativePortholeBindingRuntime is compiled only with
+                // -DSPROUT_ENABLE_CELLPROTOCOL_RUNTIME (CI job
+                // cellprotocol-runtime); without it CellApple is linked but unused.
+                .product(name: "CellApple", package: "CellProtocol", condition: .when(platforms: [.macOS, .iOS]))
             ],
             path: "Packages/SproutAppSupport/Sources/SproutAppSupport"
         ),
@@ -144,7 +152,9 @@ var targets: [Target] = [
                 "SproutAppSupport",
                 "SproutCore",
                 "SproutCrypto",
-                "SproutResolverAdapter"
+                "SproutResolverAdapter",
+                .product(name: "CellBase", package: "CellProtocol"),
+                .product(name: "CellApple", package: "CellProtocol", condition: .when(platforms: [.macOS, .iOS]))
             ],
             path: "Tests/SproutAppSupportTests"
         ),
@@ -170,7 +180,10 @@ products.append(.executable(name: "sprout-macos", targets: ["sproutMacOS"]))
 targets.append(
     .executableTarget(
         name: "sproutMacOS",
-        dependencies: ["SproutAppSupport"],
+        dependencies: [
+            "SproutAppSupport",
+            .product(name: "CellApple", package: "CellProtocol")
+        ],
         path: "Apps/sprout-macos/Sources/sprout-macos"
     )
 )
@@ -186,7 +199,13 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/apple/swift-crypto.git",
-            "3.15.1"..<"5.0.0"
+            "4.5.2"..<"5.0.0"
+        ),
+        // Same revision as HavenAgentD pins (CellProtocol main). SproutCore uses
+        // CellBase directly instead of restating CellProtocol's rules.
+        .package(
+            url: "https://github.com/Digipomps/CellProtocol.git",
+            revision: "304c1cb4b2836d9d28bfa71f76cda87b0043eda1"
         )
     ],
     targets: targets
