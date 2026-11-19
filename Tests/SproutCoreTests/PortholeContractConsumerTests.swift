@@ -1,5 +1,6 @@
 import XCTest
 import Foundation
+import SproutCrypto
 import SproutResolverAdapter
 @testable import SproutCore
 
@@ -44,15 +45,86 @@ final class PortholeContractConsumerTests: XCTestCase {
 
         XCTAssertEqual(descriptor.cell_endpoint, "cell://bridge.example.haven.local/Porthole")
         XCTAssertEqual(descriptor.bridge_endpoint, contract.bridge_endpoint)
-        XCTAssertTrue(descriptor.bridge_websocket_url.hasPrefix(contract.bridge_endpoint + "?"))
-        XCTAssertTrue(descriptor.bridge_websocket_url.contains("contract_id=" + contract.contract_id))
-        XCTAssertTrue(descriptor.bridge_websocket_url.contains("contract_payload_b64url="))
-        XCTAssertTrue(descriptor.bridge_websocket_url.contains("contract_sha256_b64url="))
+        // No contract data in any URL: CellProtocol's channel-authenticated
+        // endpoint rejects queries, and the contract travels in a POST body.
+        XCTAssertEqual(descriptor.bridge_websocket_url, contract.bridge_endpoint)
+        XCTAssertEqual(descriptor.contract_presentation_url, "https://bridge.example.haven.local/cell/contract")
+        for url in [descriptor.bridge_websocket_url, descriptor.contract_presentation_url] {
+            let components = try XCTUnwrap(URLComponents(string: url))
+            XCTAssertNil(components.query)
+            XCTAssertNil(components.fragment)
+            XCTAssertFalse(url.contains(descriptor.contract_payload_b64url))
+            XCTAssertFalse(url.contains(descriptor.contract_sha256_b64url))
+            XCTAssertFalse(url.contains(contract.contract_id))
+        }
         XCTAssertEqual(descriptor.identity_public_key, contract.identity_public_key)
+
+        // The presentation body is the exact signed contract bytes plus hash.
+        let presentation = descriptor.contractPresentation
+        XCTAssertEqual(presentation.contract_id, contract.contract_id)
+        let payload = try Base64URL.decode(presentation.contract_payload_b64url)
+        XCTAssertEqual(Hashing.sha256Base64URL(payload), presentation.contract_sha256_b64url)
+        let decoded = try JSONDecoder().decode(PortholeAccessContract.self, from: payload)
+        XCTAssertEqual(decoded, contract)
+        XCTAssertTrue(try decoded.verifySignature())
 
         let schemaData = try Data(contentsOf: rootURL.appendingPathComponent("Schemas/NativePortholeBindingDescriptor.schema.json"))
         let instanceData = try JSONEncoder().encode(descriptor)
         try JSONSchemaValidator.validate(instanceData: instanceData, schemaData: schemaData)
+    }
+
+    func testNativeLoopbackBridgeEndpointPresentsOverLoopbackHTTP() throws {
+        let contract = try ResolverFixtureFactory.makePortholeAccessContract(
+            clientKind: .native,
+            protocolKind: .cellprotocol,
+            bridgeEndpoint: "ws://127.0.0.1:8080/v1/resolver/native-porthole/Porthole/"
+        )
+        let descriptor = try PortholeContractConsumer.makeNativeBindingDescriptor(
+            contract: contract,
+            now: ISO8601DateFormatter().date(from: "2026-02-26T08:02:00Z")!
+        )
+        XCTAssertEqual(descriptor.bridge_websocket_url, contract.bridge_endpoint)
+        XCTAssertEqual(descriptor.contract_presentation_url, "http://127.0.0.1:8080/v1/resolver/native-porthole/Porthole/contract")
+    }
+
+    func testNativeConsumerRejectsBridgeEndpointThatCarriesQueryFragmentOrUserInfo() throws {
+        for endpoint in [
+            "wss://bridge.example.haven.local/cell?contract_id=pac_fixture_0001",
+            "wss://bridge.example.haven.local/cell#fragment",
+            "wss://user:secret@bridge.example.haven.local/cell",
+            "https://bridge.example.haven.local/cell"
+        ] {
+            let contract = try ResolverFixtureFactory.makePortholeAccessContract(
+                clientKind: .native,
+                protocolKind: .cellprotocol,
+                bridgeEndpoint: endpoint
+            )
+            XCTAssertThrowsError(
+                try PortholeContractConsumer.makeNativeBindingDescriptor(
+                    contract: contract,
+                    now: ISO8601DateFormatter().date(from: "2026-02-26T08:02:00Z")!
+                ),
+                endpoint
+            ) { error in
+                XCTAssertEqual(error as? PortholeContractConsumerError, .invalidBridgeEndpoint, endpoint)
+            }
+        }
+    }
+
+    func testNativeDescriptorSchemaRejectsContractDataInWebSocketURL() throws {
+        let contract = try ResolverFixtureFactory.makePortholeAccessContract(
+            clientKind: .native,
+            protocolKind: .cellprotocol
+        )
+        var descriptor = try PortholeContractConsumer.makeNativeBindingDescriptor(
+            contract: contract,
+            now: ISO8601DateFormatter().date(from: "2026-02-26T08:02:00Z")!
+        )
+        descriptor.bridge_websocket_url += "?contract_payload_b64url=" + descriptor.contract_payload_b64url
+        let schemaData = try Data(contentsOf: rootURL.appendingPathComponent("Schemas/NativePortholeBindingDescriptor.schema.json"))
+        XCTAssertThrowsError(try JSONSchemaValidator.validate(instanceData: JSONEncoder().encode(descriptor), schemaData: schemaData)) { error in
+            XCTAssertEqual(error as? JSONSchemaValidationError, .patternMismatch(path: "$.bridge_websocket_url"))
+        }
     }
 
     func testConsumerRejectsWrongClientKind() throws {

@@ -45,9 +45,31 @@ public struct WebPortholeBootstrapDescriptor: Codable, Equatable, Sendable {
     }
 }
 
+/// Body of `POST contract_presentation_url`. The contract travels in an HTTPS
+/// request body, never in a URL: CellProtocol's channel-authenticated bridge
+/// endpoint rejects any query, and URLs end up in logs. The server stores the
+/// verified contract keyed by `identity_public_key`; the WebSocket upgrade then
+/// finds it through the channel-authenticated principal, not through anything
+/// in the upgrade request.
+public struct NativePortholeContractPresentation: Codable, Equatable, Sendable {
+    public var contract_id: String
+    public var contract_payload_b64url: String
+    public var contract_sha256_b64url: String
+
+    public init(contract_id: String, contract_payload_b64url: String, contract_sha256_b64url: String) {
+        self.contract_id = contract_id
+        self.contract_payload_b64url = contract_payload_b64url
+        self.contract_sha256_b64url = contract_sha256_b64url
+    }
+}
+
 public struct NativePortholeBindingDescriptor: Codable, Equatable, Sendable {
     public var bridge_endpoint: String
+    /// Equal to `bridge_endpoint`; carries no query, fragment or user info.
     public var bridge_websocket_url: String
+    /// HTTPS (HTTP only for loopback) URL that receives the contract before the
+    /// bridge is opened. Derived from `bridge_endpoint` + `/contract`.
+    public var contract_presentation_url: String
     public var cell_endpoint: String
     public var contract_id: String
     public var contract_payload_b64url: String
@@ -62,6 +84,7 @@ public struct NativePortholeBindingDescriptor: Codable, Equatable, Sendable {
     public init(
         bridge_endpoint: String,
         bridge_websocket_url: String,
+        contract_presentation_url: String,
         cell_endpoint: String,
         contract_id: String,
         contract_payload_b64url: String,
@@ -75,6 +98,7 @@ public struct NativePortholeBindingDescriptor: Codable, Equatable, Sendable {
     ) {
         self.bridge_endpoint = bridge_endpoint
         self.bridge_websocket_url = bridge_websocket_url
+        self.contract_presentation_url = contract_presentation_url
         self.cell_endpoint = cell_endpoint
         self.contract_id = contract_id
         self.contract_payload_b64url = contract_payload_b64url
@@ -86,9 +110,20 @@ public struct NativePortholeBindingDescriptor: Codable, Equatable, Sendable {
         self.capability_grants = capability_grants
         self.expires_at = expires_at
     }
+
+    public var contractPresentation: NativePortholeContractPresentation {
+        NativePortholeContractPresentation(
+            contract_id: contract_id,
+            contract_payload_b64url: contract_payload_b64url,
+            contract_sha256_b64url: contract_sha256_b64url
+        )
+    }
 }
 
 public enum PortholeContractConsumer {
+    /// Path segment appended to `bridge_endpoint` for contract presentation.
+    public static let nativeContractPresentationPathSuffix = "contract"
+
     public static func makeWebBootstrap(
         contract: PortholeAccessContract,
         now: Date = Date()
@@ -144,16 +179,12 @@ public enum PortholeContractConsumer {
         let contractData = try JSONEncoder.sorted.encode(contract)
         let payloadB64URL = Base64URL.encode(contractData)
         let payloadHash = Hashing.sha256Base64URL(contractData)
-        let websocketURL = try nativeWebSocketURL(
-            from: contract.bridge_endpoint,
-            contractID: contract.contract_id,
-            payloadB64URL: payloadB64URL,
-            payloadHash: payloadHash
-        )
+        let endpoints = try nativeEndpoints(from: contract.bridge_endpoint)
 
         return NativePortholeBindingDescriptor(
             bridge_endpoint: contract.bridge_endpoint,
-            bridge_websocket_url: websocketURL,
+            bridge_websocket_url: endpoints.websocket,
+            contract_presentation_url: endpoints.presentation,
             cell_endpoint: "cell://\(host)/Porthole",
             contract_id: contract.contract_id,
             contract_payload_b64url: payloadB64URL,
@@ -196,26 +227,30 @@ public enum PortholeContractConsumer {
         }
     }
 
-    private static func nativeWebSocketURL(
-        from baseEndpoint: String,
-        contractID: String,
-        payloadB64URL: String,
-        payloadHash: String
-    ) throws -> String {
-        guard var components = URLComponents(string: baseEndpoint) else {
+    /// The WebSocket URL is the bridge endpoint itself: no contract data, no
+    /// query. CellProtocol's `BridgeChannelAuthentication.Endpoint` rejects any
+    /// query, fragment or user info, so such a bridge endpoint is refused here.
+    private static func nativeEndpoints(from baseEndpoint: String) throws -> (websocket: String, presentation: String) {
+        guard let components = URLComponents(string: baseEndpoint),
+              let scheme = components.scheme?.lowercased(),
+              let host = components.host, !host.isEmpty,
+              components.query == nil, components.fragment == nil,
+              components.user == nil, components.password == nil else {
             throw PortholeContractConsumerError.invalidBridgeEndpoint
         }
-
-        var queryItems = components.queryItems ?? []
-        queryItems.append(URLQueryItem(name: "contract_id", value: contractID))
-        queryItems.append(URLQueryItem(name: "contract_payload_b64url", value: payloadB64URL))
-        queryItems.append(URLQueryItem(name: "contract_sha256_b64url", value: payloadHash))
-        components.queryItems = queryItems.sorted { $0.name < $1.name }
-
-        guard let url = components.url else {
+        var presentation = components
+        switch scheme {
+        case "wss": presentation.scheme = "https"
+        case "ws": presentation.scheme = "http"
+        default: throw PortholeContractConsumerError.invalidBridgeEndpoint
+        }
+        var path = components.path
+        while path.hasSuffix("/") { path.removeLast() }
+        presentation.path = path + "/" + nativeContractPresentationPathSuffix
+        guard let websocketURL = components.url, let presentationURL = presentation.url else {
             throw PortholeContractConsumerError.invalidBridgeEndpoint
         }
-        return url.absoluteString
+        return (websocketURL.absoluteString, presentationURL.absoluteString)
     }
 }
 
