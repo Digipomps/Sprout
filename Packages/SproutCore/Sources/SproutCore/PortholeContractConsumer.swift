@@ -169,12 +169,10 @@ public enum PortholeContractConsumer {
     ) throws -> NativePortholeBindingDescriptor {
         try validate(contract: contract, expectedKind: .native, expectedProtocol: .cellprotocol, now: now)
 
-        guard let url = URL(string: contract.bridge_endpoint) else {
+        guard URL(string: contract.bridge_endpoint) != nil else {
             throw PortholeContractConsumerError.invalidBridgeEndpoint
         }
-        guard let host = url.host, !host.isEmpty else {
-            throw PortholeContractConsumerError.missingHost
-        }
+        let cellEndpoint = try nativeCellEndpoint(bridgeEndpoint: contract.bridge_endpoint)
 
         let contractData = try JSONEncoder.sorted.encode(contract)
         let payloadB64URL = Base64URL.encode(contractData)
@@ -185,7 +183,7 @@ public enum PortholeContractConsumer {
             bridge_endpoint: contract.bridge_endpoint,
             bridge_websocket_url: endpoints.websocket,
             contract_presentation_url: endpoints.presentation,
-            cell_endpoint: "cell://\(host)/Porthole",
+            cell_endpoint: cellEndpoint,
             contract_id: contract.contract_id,
             contract_payload_b64url: payloadB64URL,
             contract_sha256_b64url: payloadHash,
@@ -228,29 +226,89 @@ public enum PortholeContractConsumer {
     }
 
     /// The WebSocket URL is the bridge endpoint itself: no contract data, no
-    /// query. CellProtocol's `BridgeChannelAuthentication.Endpoint` rejects any
-    /// query, fragment or user info, so such a bridge endpoint is refused here.
+    /// query. The endpoint must also pass CellProtocol's
+    /// `BridgeChannelAuthentication.Endpoint(url:domain:allowInsecureLoopback:)`
+    /// once CellProtocol's resolver has appended the bridge ID, otherwise the
+    /// connect fails after the contract was already presented.
     private static func nativeEndpoints(from baseEndpoint: String) throws -> (websocket: String, presentation: String) {
-        guard let components = URLComponents(string: baseEndpoint),
-              let scheme = components.scheme?.lowercased(),
-              let host = components.host, !host.isEmpty,
-              components.query == nil, components.fragment == nil,
-              components.user == nil, components.password == nil else {
+        try validateNativeBridgeEndpoint(baseEndpoint)
+        guard var presentation = URLComponents(string: baseEndpoint),
+              let websocketURL = URL(string: baseEndpoint) else {
             throw PortholeContractConsumerError.invalidBridgeEndpoint
         }
-        var presentation = components
-        switch scheme {
-        case "wss": presentation.scheme = "https"
-        case "ws": presentation.scheme = "http"
-        default: throw PortholeContractConsumerError.invalidBridgeEndpoint
-        }
-        var path = components.path
+        presentation.scheme = presentation.scheme == "wss" ? "https" : "http"
+        var path = presentation.path
         while path.hasSuffix("/") { path.removeLast() }
         presentation.path = path + "/" + nativeContractPresentationPathSuffix
-        guard let websocketURL = components.url, let presentationURL = presentation.url else {
+        guard let presentationURL = presentation.url else {
             throw PortholeContractConsumerError.invalidBridgeEndpoint
         }
         return (websocketURL.absoluteString, presentationURL.absoluteString)
+    }
+
+    /// CellProtocol's limit on `origin + route` of a channel-authenticated
+    /// endpoint (`BridgeChannelAuthentication.Endpoint`, UTF-8 bytes).
+    public static let cellProtocolChannelAudienceMaximumBytes = 512
+    private static let cellProtocolLoopbackHosts: Set<String> = ["localhost", "127.0.0.1", "[::1]", "::1"]
+
+    /// Pre-check of a native bridge endpoint against the rules of CellProtocol's
+    /// `BridgeChannelAuthentication.Endpoint.init(url:domain:allowInsecureLoopback:)`
+    /// (CellBase/Cells/Bridging/BridgeChannelAuthentication.swift), applied to
+    /// the URL CellProtocol actually opens (endpoint + "/" + bridge ID).
+    /// SproutCore does not link CellProtocol, so the rule set is restated here;
+    /// `TestVectors/native_bridge_endpoint.cellprotocol.json` holds the expected
+    /// results; HavenAgentD's `SproutCellProtocolEndpointParityTests` runs the
+    /// same vectors through CellProtocol's own type and fails if they disagree.
+    /// The CellProtocol runtime (`NativePortholeBindingRuntime`) calls
+    /// CellProtocol's type directly before it presents the contract.
+    public static func validateNativeBridgeEndpoint(_ endpoint: String) throws {
+        // CellResolver.makeCellBridgeEmit appends a UUID bridge ID as a path
+        // component; the 512-byte limit applies to that URL.
+        guard let base = URL(string: endpoint) else {
+            throw PortholeContractConsumerError.invalidBridgeEndpoint
+        }
+        let opened = base.appendingPathComponent(UUID().uuidString)
+        guard let c = URLComponents(url: opened, resolvingAgainstBaseURL: false),
+              let scheme = c.scheme, let host = c.host,
+              c.user == nil, c.password == nil, c.query == nil, c.fragment == nil,
+              scheme == scheme.lowercased(), host == host.lowercased(),
+              !host.isEmpty, !host.hasSuffix("."),
+              c.port.map({ (1...65535).contains($0) }) ?? true,
+              !c.path.isEmpty, c.path.hasPrefix("/"), !c.path.contains("//"),
+              !c.path.split(separator: "/").contains(where: { $0 == "." || $0 == ".." }),
+              c.percentEncodedPath == c.path else {
+            throw PortholeContractConsumerError.invalidBridgeEndpoint
+        }
+        guard scheme == "wss" || (scheme == "ws" && cellProtocolLoopbackHosts.contains(host)) else {
+            throw PortholeContractConsumerError.invalidBridgeEndpoint
+        }
+        guard c.port != 443 || scheme != "wss", c.port != 80 || scheme != "ws" else {
+            throw PortholeContractConsumerError.invalidBridgeEndpoint
+        }
+        var origin = c
+        origin.path = ""
+        guard let originString = origin.string,
+              (originString + c.path).utf8.count <= cellProtocolChannelAudienceMaximumBytes else {
+            throw PortholeContractConsumerError.invalidBridgeEndpoint
+        }
+    }
+
+    /// `cell://<host>/Porthole`, the CellProtocol remote cell address form
+    /// (`cell://host/CellName`, resolved through the host route). Built with
+    /// URLComponents so IPv6 hosts keep their brackets.
+    static func nativeCellEndpoint(bridgeEndpoint: String) throws -> String {
+        guard let bridge = URLComponents(string: bridgeEndpoint),
+              let host = bridge.percentEncodedHost, !host.isEmpty else {
+            throw PortholeContractConsumerError.missingHost
+        }
+        var cell = URLComponents()
+        cell.scheme = "cell"
+        cell.percentEncodedHost = host
+        cell.path = "/Porthole"
+        guard let string = cell.string else {
+            throw PortholeContractConsumerError.missingHost
+        }
+        return string
     }
 }
 
