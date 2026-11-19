@@ -19,6 +19,7 @@ public struct Published<Value> {
 #if SPROUT_ENABLE_CELLPROTOCOL_RUNTIME && canImport(CellBase) && canImport(CellApple)
 @preconcurrency import CellBase
 @preconcurrency import CellApple
+import SproutCrypto
 
 public enum NativePortholeBindingRuntimeError: Error, Equatable, Sendable {
     case unsupportedMode
@@ -26,6 +27,8 @@ public enum NativePortholeBindingRuntimeError: Error, Equatable, Sendable {
     case resolverUnavailable
     case identityUnavailable
     case connectionFailed(String)
+    case bridgeEndpointRejected(String)
+    case identityMismatch
 }
 
 @MainActor
@@ -63,6 +66,11 @@ public final class NativePortholeBindingRuntime: ObservableObject {
                   let requester = await vault.identity(for: "private", makeNewIfNotFound: true) else {
                 throw NativePortholeBindingRuntimeError.identityUnavailable
             }
+
+            // Both checks use CellProtocol's own types and run before the
+            // contract leaves this process.
+            try Self.validateBridgeEndpoint(descriptor.bridge_websocket_url)
+            try Self.validateRequester(requester, matches: descriptor)
 
             currentRequester = requester
             statusMessage = "Presenting native porthole contract"
@@ -141,6 +149,38 @@ public final class NativePortholeBindingRuntime: ObservableObject {
         return try decodeSkeleton(from: skeletonObject)
     }
 
+    /// CellProtocol's resolver opens `endpoint` + "/" + bridge ID through
+    /// `BridgeChannelAuthentication.Endpoint`; check that exact form here.
+    static func validateBridgeEndpoint(_ endpoint: String) throws {
+        guard let url = URL(string: endpoint), url.scheme == "ws" || url.scheme == "wss" else {
+            throw NativePortholeBindingRuntimeError.bridgeEndpointRejected("not a ws/wss URL")
+        }
+        if url.scheme == "ws" && !CellBase.allowsInsecureWebSocket(toHost: url.host) {
+            throw NativePortholeBindingRuntimeError.bridgeEndpointRejected("insecure WebSocket not allowed")
+        }
+        do {
+            _ = try BridgeChannelAuthentication.Endpoint(
+                url: url.appendingPathComponent(UUID().uuidString),
+                domain: "bridge",
+                allowInsecureLoopback: url.scheme == "ws"
+            )
+        } catch {
+            throw NativePortholeBindingRuntimeError.bridgeEndpointRejected(String(describing: error))
+        }
+    }
+
+    /// The scaffold binds the presented contract to `identity_public_key` and
+    /// admits the WebSocket only when the channel-authenticated principal has
+    /// that key, so the requester that signs the channel must hold it.
+    static func validateRequester(_ requester: Identity, matches descriptor: NativePortholeBindingDescriptor) throws {
+        let channelIdentity = try BridgeChannelAuthentication.PublicIdentity(requester)
+        guard channelIdentity.algorithm == .EdDSA, channelIdentity.curve == .Curve25519,
+              let contractKey = try? Base64URL.decode(descriptor.identity_public_key),
+              channelIdentity.publicKey == contractKey else {
+            throw NativePortholeBindingRuntimeError.identityMismatch
+        }
+    }
+
     private func consume(flowElement: FlowElement) {
         guard case let .object(object) = flowElement.content,
               let skeletonObject = extractSkeletonObject(from: object),
@@ -151,21 +191,26 @@ public final class NativePortholeBindingRuntime: ObservableObject {
         statusMessage = "Received live native porthole update"
     }
 
+    /// CellProtocol's `SkeletonElement` decoder decides what a skeleton is;
+    /// it maps unknown element names to `.Unsupported`, which is not taken as
+    /// a skeleton here. No local list of element names.
     private func extractSkeletonObject(from object: Object) -> Object? {
-        let skeletonRootKeys: Set<String> = [
-            "List", "Object", "Spacer", "Image", "Text", "TextField", "TextArea",
-            "HStack", "VStack", "Reference", "Button", "Divider", "ScrollView",
-            "Section", "ZStack", "Grid", "Toggle"
-        ]
-
-        if object.keys.contains(where: { skeletonRootKeys.contains($0) }) {
+        if Self.isSkeleton(object) {
             return object
         }
-        if case let .object(nested)? = object["skeleton"],
-           nested.keys.contains(where: { skeletonRootKeys.contains($0) }) {
+        if case let .object(nested)? = object["skeleton"], Self.isSkeleton(nested) {
             return nested
         }
         return nil
+    }
+
+    private static func isSkeleton(_ object: Object) -> Bool {
+        guard let data = try? JSONEncoder().encode(object),
+              let element = try? JSONDecoder().decode(SkeletonElement.self, from: data) else {
+            return false
+        }
+        if case .Unsupported = element { return false }
+        return true
     }
 
     private func decodeSkeleton(from object: Object) throws -> SkeletonElement {

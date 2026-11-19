@@ -20,11 +20,17 @@
     "expires_at"
   ],
   "properties": {
-    "bridge_endpoint": { "type": "string" },
+    "bridge_endpoint": {
+      "description": "Upper bound only (476, trailing slash included): CellProtocol opens bridge_endpoint + a UUID bridge ID path component, and BridgeChannelAuthentication.Endpoint limits origin + route to 512 bytes. PortholeContractConsumer.validateNativeBridgeEndpoint is the exact check.",
+      "type": "string",
+      "maxLength": 476,
+      "pattern": "^wss?://[^?#@]+$"
+    },
     "bridge_websocket_url": {
       "description": "Equal to bridge_endpoint. Carries no contract data: no query, fragment or user info (CellProtocol channel-authenticated endpoints reject them).",
       "type": "string",
       "format": "uri",
+      "maxLength": 476,
       "pattern": "^wss?://[^?#@]+$"
     },
     "contract_presentation_url": {
@@ -33,7 +39,11 @@
       "format": "uri",
       "pattern": "^https?://[^?#@]+/contract$"
     },
-    "cell_endpoint": { "type": "string" },
+    "cell_endpoint": {
+      "description": "CellProtocol remote cell address cell://<bridge host>/Porthole.",
+      "type": "string",
+      "pattern": "^cell://[^/?#@]+/Porthole$"
+    },
     "contract_id": { "type": "string" },
     "contract_payload_b64url": { "type": "string" },
     "contract_sha256_b64url": { "type": "string" },

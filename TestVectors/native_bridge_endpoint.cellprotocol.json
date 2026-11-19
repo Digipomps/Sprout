@@ -1,0 +1,131 @@
+{
+  "description": "Native Porthole bridge_endpoint vectors. expected = result of CellProtocol BridgeChannelAuthentication.Endpoint(url: endpoint + '/' + UUID, domain: 'bridge', allowInsecureLoopback: true), which is the URL CellResolver.makeCellBridgeEmit opens. Sprout's PortholeContractConsumer.validateNativeBridgeEndpoint must agree; HavenAgentD's SproutCellProtocolEndpointParityTests checks the same vectors against CellProtocol's own type.",
+  "cellprotocol_source": "Sources/CellBase/Cells/Bridging/BridgeChannelAuthentication.swift (Endpoint.init) and Sources/CellBase/Cells/CellResolver/CellResolver.swift (makeCellBridgeEmit)",
+  "vectors": [
+    {
+      "endpoint": "wss://bridge.example.haven.local/cell",
+      "expected_valid": true,
+      "note": "plain wss"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local:8443/cell",
+      "expected_valid": true,
+      "note": "explicit non-default port"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local",
+      "expected_valid": true,
+      "note": "empty path; CellProtocol opens /<bridge id>"
+    },
+    {
+      "endpoint": "ws://127.0.0.1:8080/v1/resolver/native-porthole/Porthole/",
+      "expected_valid": true,
+      "note": "loopback ws with trailing slash"
+    },
+    {
+      "endpoint": "ws://localhost:9000/bridge",
+      "expected_valid": true,
+      "note": "loopback ws by name"
+    },
+    {
+      "endpoint": "ws://[::1]:9000/bridge",
+      "expected_valid": true,
+      "note": "loopback ws IPv6"
+    },
+    {
+      "endpoint": "wss://h.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected_valid": true,
+      "note": "475 bytes: 512 with /<uuid>"
+    },
+    {
+      "endpoint": "wss://h.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/",
+      "expected_valid": true,
+      "note": "476 bytes with trailing slash: still 512 with <uuid>"
+    },
+    {
+      "endpoint": "wss://h.example/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected_valid": false,
+      "note": "476 bytes without trailing slash: 513 with /<uuid>"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local/cell?contract_id=pac_fixture_0001",
+      "expected_valid": false,
+      "note": "query"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local/cell#fragment",
+      "expected_valid": false,
+      "note": "fragment"
+    },
+    {
+      "endpoint": "wss://user:secret@bridge.example.haven.local/cell",
+      "expected_valid": false,
+      "note": "user info"
+    },
+    {
+      "endpoint": "https://bridge.example.haven.local/cell",
+      "expected_valid": false,
+      "note": "not ws/wss"
+    },
+    {
+      "endpoint": "ws://bridge.example.haven.local/cell",
+      "expected_valid": false,
+      "note": "ws to a non-loopback host"
+    },
+    {
+      "endpoint": "ws://127.0.0.2:8080/cell",
+      "expected_valid": false,
+      "note": "other 127/8 address is not loopback for CellProtocol"
+    },
+    {
+      "endpoint": "wss://Bridge.Example.haven.local/cell",
+      "expected_valid": false,
+      "note": "upper-case host"
+    },
+    {
+      "endpoint": "WSS://bridge.example.haven.local/cell",
+      "expected_valid": false,
+      "note": "upper-case scheme"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local:443/cell",
+      "expected_valid": false,
+      "note": "default wss port spelled out"
+    },
+    {
+      "endpoint": "ws://127.0.0.1:80/cell",
+      "expected_valid": false,
+      "note": "default ws port spelled out"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local:0/cell",
+      "expected_valid": false,
+      "note": "port 0"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local./cell",
+      "expected_valid": false,
+      "note": "trailing dot host"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local//cell",
+      "expected_valid": false,
+      "note": "empty path segment"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local/a/../cell",
+      "expected_valid": false,
+      "note": "dot-dot segment"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local/./cell",
+      "expected_valid": false,
+      "note": "dot segment"
+    },
+    {
+      "endpoint": "wss://bridge.example.haven.local/a%20b",
+      "expected_valid": false,
+      "note": "percent-encoded path"
+    }
+  ]
+}

@@ -140,4 +140,85 @@ final class PortholeContractConsumerTests: XCTestCase {
             )
         )
     }
+
+    // MARK: CellProtocol conformance (R8)
+
+    private struct EndpointVectors: Decodable {
+        struct Vector: Decodable {
+            let endpoint: String
+            let expected_valid: Bool
+            let note: String
+        }
+        let vectors: [Vector]
+    }
+
+    /// Expected results are CellProtocol's `BridgeChannelAuthentication.Endpoint`
+    /// on endpoint + "/" + UUID; HavenAgentD checks the same file against
+    /// CellProtocol itself.
+    func testNativeBridgeEndpointValidationMatchesCellProtocolVectors() throws {
+        let data = try Data(contentsOf: rootURL.appendingPathComponent("TestVectors/native_bridge_endpoint.cellprotocol.json"))
+        let vectors = try JSONDecoder().decode(EndpointVectors.self, from: data).vectors
+        XCTAssertGreaterThanOrEqual(vectors.count, 20)
+        for vector in vectors {
+            let valid = (try? PortholeContractConsumer.validateNativeBridgeEndpoint(vector.endpoint)) != nil
+            XCTAssertEqual(valid, vector.expected_valid, "\(vector.note): \(vector.endpoint)")
+        }
+    }
+
+    func testNativeConsumerRefusesEndpointsCellProtocolRejects() throws {
+        let data = try Data(contentsOf: rootURL.appendingPathComponent("TestVectors/native_bridge_endpoint.cellprotocol.json"))
+        let vectors = try JSONDecoder().decode(EndpointVectors.self, from: data).vectors
+        let now = ISO8601DateFormatter().date(from: "2026-02-26T08:02:00Z")!
+        let schemaData = try Data(contentsOf: rootURL.appendingPathComponent("Schemas/NativePortholeBindingDescriptor.schema.json"))
+        for vector in vectors {
+            let contract = try ResolverFixtureFactory.makePortholeAccessContract(
+                clientKind: .native,
+                protocolKind: .cellprotocol,
+                bridgeEndpoint: vector.endpoint
+            )
+            if vector.expected_valid {
+                let descriptor = try PortholeContractConsumer.makeNativeBindingDescriptor(contract: contract, now: now)
+                XCTAssertEqual(descriptor.bridge_websocket_url, vector.endpoint, vector.note)
+                try JSONSchemaValidator.validate(instanceData: JSONEncoder().encode(descriptor), schemaData: schemaData)
+            } else {
+                XCTAssertThrowsError(try PortholeContractConsumer.makeNativeBindingDescriptor(contract: contract, now: now), vector.note)
+            }
+        }
+    }
+
+    func testNativeCellEndpointUsesCellProtocolAddressForm() throws {
+        let now = ISO8601DateFormatter().date(from: "2026-02-26T08:02:00Z")!
+        for (endpoint, expected) in [
+            ("wss://bridge.example.haven.local:8443/cell", "cell://bridge.example.haven.local/Porthole"),
+            ("ws://[::1]:9000/bridge", "cell://[::1]/Porthole"),
+            ("ws://127.0.0.1:8080/v1/resolver/native-porthole/Porthole/", "cell://127.0.0.1/Porthole")
+        ] {
+            let contract = try ResolverFixtureFactory.makePortholeAccessContract(
+                clientKind: .native,
+                protocolKind: .cellprotocol,
+                bridgeEndpoint: endpoint
+            )
+            let descriptor = try PortholeContractConsumer.makeNativeBindingDescriptor(contract: contract, now: now)
+            XCTAssertEqual(descriptor.cell_endpoint, expected, endpoint)
+            let url = try XCTUnwrap(URL(string: descriptor.cell_endpoint))
+            XCTAssertEqual(url.scheme, "cell")
+            XCTAssertEqual(url.path, "/Porthole")
+        }
+    }
+
+    func testNativeDescriptorSchemaRejectsBridgeURLOverCellProtocolLimit() throws {
+        let contract = try ResolverFixtureFactory.makePortholeAccessContract(
+            clientKind: .native,
+            protocolKind: .cellprotocol
+        )
+        var descriptor = try PortholeContractConsumer.makeNativeBindingDescriptor(
+            contract: contract,
+            now: ISO8601DateFormatter().date(from: "2026-02-26T08:02:00Z")!
+        )
+        descriptor.bridge_websocket_url = "wss://h.example/" + String(repeating: "a", count: 476)
+        let schemaData = try Data(contentsOf: rootURL.appendingPathComponent("Schemas/NativePortholeBindingDescriptor.schema.json"))
+        XCTAssertThrowsError(try JSONSchemaValidator.validate(instanceData: JSONEncoder().encode(descriptor), schemaData: schemaData)) { error in
+            XCTAssertEqual(error as? JSONSchemaValidationError, .stringTooLong(path: "$.bridge_websocket_url", maxLength: 476))
+        }
+    }
 }

@@ -10,6 +10,7 @@ public enum JSONSchemaValidationError: Error, Equatable, Sendable {
     case arrayTooShort(path: String, minItems: Int)
     case invalidDateTime(path: String)
     case patternMismatch(path: String)
+    case stringTooLong(path: String, maxLength: Int)
 }
 
 public enum JSONSchemaValidator {
@@ -52,6 +53,11 @@ public enum JSONSchemaValidator {
             if expression.firstMatch(in: string, range: range) == nil {
                 throw JSONSchemaValidationError.patternMismatch(path: path)
             }
+        }
+
+        if let maxLength = schema["maxLength"] as? Int, let string = instance as? String,
+           string.count > maxLength {
+            throw JSONSchemaValidationError.stringTooLong(path: path, maxLength: maxLength)
         }
 
         if let properties = schema["properties"] as? [String: Any],
