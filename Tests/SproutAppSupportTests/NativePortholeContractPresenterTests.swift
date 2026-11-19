@@ -117,9 +117,15 @@ private final class PresentationStubProtocol: URLProtocol, @unchecked Sendable {
         if (300..<400).contains(status) {
             let redirect = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1",
                 headerFields: ["Location": "https://elsewhere.invalid/collect"])!
+            #if !canImport(FoundationNetworking)
+            // Darwin: offer the redirect so the presenter's NoRedirectDelegate is exercised.
+            // swift-corelibs-foundation traps on urlProtocol(_:wasRedirectedTo:)
+            // ("doesn't currently handle redirects directly"), so on Linux the
+            // stub only returns the 3xx, which must still fail presentation.
             var next = URLRequest(url: URL(string: "https://elsewhere.invalid/collect")!)
             next.httpMethod = "POST"
             client?.urlProtocol(self, wasRedirectedTo: next, redirectResponse: redirect)
+            #endif
             // The presenter's delegate refuses the redirect; finish with the 3xx.
             client?.urlProtocol(self, didReceive: redirect, cacheStoragePolicy: .notAllowed)
             client?.urlProtocolDidFinishLoading(self)

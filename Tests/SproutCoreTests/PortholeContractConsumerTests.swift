@@ -153,8 +153,8 @@ final class PortholeContractConsumerTests: XCTestCase {
     }
 
     /// Expected results are CellProtocol's `BridgeChannelAuthentication.Endpoint`
-    /// on endpoint + "/" + UUID; HavenAgentD checks the same file against
-    /// CellProtocol itself.
+    /// on endpoint + "/" + UUID. `validateNativeBridgeEndpoint` calls that type
+    /// directly (R9), so this runs the vectors through CellProtocol itself.
     func testNativeBridgeEndpointValidationMatchesCellProtocolVectors() throws {
         let data = try Data(contentsOf: rootURL.appendingPathComponent("TestVectors/native_bridge_endpoint.cellprotocol.json"))
         let vectors = try JSONDecoder().decode(EndpointVectors.self, from: data).vectors

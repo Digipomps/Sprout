@@ -59,6 +59,16 @@ jobs:
       - name: Test
         run: swift test
 
+      - name: Build and test the CellProtocol-coupled native Porthole runtime
+        # NativePortholeBindingRuntime and NativePortholeHostView compile only with
+        # SPROUT_ENABLE_CELLPROTOCOL_RUNTIME. Separate scratch path so the default
+        # build above stays as shipped. Fails if the runtime tests did not run.
+        run: |
+          swift build --scratch-path .build-cellprotocol-runtime --product sprout-macos -Xswiftc -DSPROUT_ENABLE_CELLPROTOCOL_RUNTIME
+          swift test --scratch-path .build-cellprotocol-runtime -Xswiftc -DSPROUT_ENABLE_CELLPROTOCOL_RUNTIME \
+            --filter NativePortholeBindingRuntimeCellProtocolTests 2>&1 | tee "$RUNNER_TEMP/cp-runtime-tests.log"
+          grep -Eq "Executed [1-9][0-9]* tests?, with 0 failures" "$RUNNER_TEMP/cp-runtime-tests.log"
+
       - name: Service image transport ignores inherited remote Docker context
         # Set poison variables inside the job container, not on the runner's
         # own docker-exec operation used to enter that container.
